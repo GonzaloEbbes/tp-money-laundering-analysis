@@ -6,3 +6,4 @@ from .dynamic_amount_filter import DynamicAmountFilter
 from .filter_date_window import FilterDateWindow
 from .pay_format_filter import PayFormatFilter
 from .transfer_counter import TransferCounter
+from .bank_deduplicator import BankDeduplicator

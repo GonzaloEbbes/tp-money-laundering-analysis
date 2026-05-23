@@ -25,6 +25,10 @@ class PipelineEntity(ABC):
     def entity_type(self):
         pass
 
+    @abstractmethod
+    def process_message(self, message):
+        pass
+
     def start(self):
         logging.info(
             "Starting %s. input_queue=%s output_queue=%s",
@@ -37,13 +41,17 @@ class PipelineEntity(ABC):
     def _handle_raw_message(self, raw_message, ack, nack):
         try:
             message = message_protocol.deserialize(raw_message)
-            print(f"Soy {self.entity_type()} y recibi un mensaje", flush=True)
             message.setdefault("visited", []).append(self.entity_type())
+            processed = self.process_message(message)
             if self.processing_delay_seconds > 0:
                 time.sleep(self.processing_delay_seconds)
 
-            if self.output_queue:
-                self.output_queue.send(message_protocol.serialize(message))
+            if self.output_queue and processed is not None:
+                if isinstance(processed, tuple):
+                    msg_to_send, r_key = processed
+                else:
+                    msg_to_send, r_key = processed, None
+                self.output_queue.send(message_protocol.serialize(msg_to_send), routing_key=r_key)
             ack()
         except Exception:
             logging.exception("%s failed while processing message", self.entity_type())

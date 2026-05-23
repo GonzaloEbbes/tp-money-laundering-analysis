@@ -65,13 +65,14 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
             self.channel.basic_cancel(self.consumer_tag)
             self.consumer_tag = None
 
-    def send(self, message):
+    def send(self, message, routing_key=None):
         if not self.channel or self.channel.is_closed:
             raise MessageMiddlewareDisconnectedError()
         try:
+            target_routing_key = routing_key if routing_key else self.queue_name
             self.channel.basic_publish(
                 exchange="",
-                routing_key=self.queue_name,
+                routing_key=target_routing_key,
                 body=message,
                 properties=pika.BasicProperties(content_type="application/json"),
             )

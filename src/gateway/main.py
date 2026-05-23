@@ -2,6 +2,7 @@ import logging
 import os
 import socket
 import threading
+import json
 
 from common import message_protocol
 from common.middleware import MessageMiddlewareQueueRabbitMQ
@@ -18,7 +19,10 @@ class Gateway:
         self.output_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, OUTPUT_QUEUE)
         self.input_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, INPUT_QUEUE)
         self.pending_clients = {}
-        self.pending_lock = threading.Lock()
+        self.active_socket = None
+        self.eofs_pending = 0
+        self.finished_event = threading.Event()
+        self.lock = threading.Lock()
 
     def start(self):
         result_thread = threading.Thread(target=self._consume_results, daemon=True)
@@ -32,6 +36,12 @@ class Gateway:
 
             while True:
                 client_socket, _ = server_socket.accept()
+
+                with self.lock:
+                    self.active_socket = client_socket
+                    self.eofs_pending = 2
+                    self.finished_event.clear()
+                
                 threading.Thread(
                     target=self._handle_client,
                     args=(client_socket,),
@@ -39,46 +49,83 @@ class Gateway:
                 ).start()
 
     def _handle_client(self, client_socket):
-        with client_socket:
-            payload = client_socket.recv(4096).decode("utf-8").strip()
-            if not payload:
-                return
+        sent_messages = set()
+        buffer = ""
 
-            message = message_protocol.new_message(payload)
-            correlation_id = message["message_id"]
-            done = threading.Event()
+        try:
+            while True:
+                data = client_socket.recv(4096).decode("utf-8")
+                if not data:
+                    break
+                
+                buffer += data
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    if not line.strip():
+                        continue
 
-            with self.pending_lock:
-                self.pending_clients[correlation_id] = (client_socket, done)
+                    try:
+                        payload = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
 
-            logging.info("Gateway received client message %s", correlation_id)
-            self.output_queue.send(message_protocol.serialize(message))
+                    message = message_protocol.new_message(payload)
+                    correlation_id = message["message_id"]
 
-            if not done.wait(timeout=30):
-                with self.pending_lock:
-                    self.pending_clients.pop(correlation_id, None)
-                logging.warning("Timed out waiting for result %s", correlation_id)
+                    with self.lock:
+                        self.pending_clients[correlation_id] = client_socket
+                        sent_messages.add(correlation_id)
+
+                    self.output_queue.send(message_protocol.serialize(message))
+
+            logging.info("Cliente terminó de enviar datos. Esperando fin del pipeline...")
+            self.finished_event.wait()
+            logging.info("Todas las respuestas del cliente enviadas. Cerrando socket.")
+
+        finally:
+            with self.lock:
+                if self.active_socket == client_socket:
+                    self.active_socket = None
+            client_socket.close()
+
 
     def _consume_results(self):
         def _on_result(raw_message, ack, nack):
             try:
                 message = message_protocol.deserialize(raw_message)
                 correlation_id = message.get("message_id")
+                payload = message.get("payload", {})
 
-                with self.pending_lock:
-                    pending_client = self.pending_clients.pop(correlation_id, None)
 
-                if pending_client:
-                    client_socket, done = pending_client
-                    response = message_protocol.serialize(message)
-                    client_socket.sendall(response + b"\n")
-                    client_socket.shutdown(socket.SHUT_RDWR)
-                    done.set()
+                with self.lock:
+                    client_socket = self.pending_clients.get(correlation_id, None)
+
+                if client_socket:
+                    is_eof = isinstance(payload, dict) and payload.get("type") == "EOF"
+                    is_filtered = isinstance(payload, dict) and payload.get("status") == "FILTERED"
+
+                    if is_eof:
+                        try:
+                            client_socket.sendall(b'{"status": "FINISHED"}\n')
+                            logging.info("Sent FINISHED message for correlation_id %s", correlation_id)
+                        except OSError:
+                            pass
+
+                        self.eofs_pending -= 1
+                        if self.eofs_pending <= 0:
+                            self.finished_event.set()
+
+                    elif not is_filtered:
+                        response = message_protocol.serialize(message)
+                        try:
+                            client_socket.sendall(response + b"\n")
+                        except OSError:
+                            pass
                 else:
-                    logging.warning("No client waiting for %s", correlation_id)
+                    logging.warning("No hay ningún cliente esperando el mensaje %s", correlation_id)
                 ack()
             except Exception:
-                logging.exception("Gateway failed while returning result")
+                logging.exception("Gateway falló al retornar el resultado")
                 nack()
 
         self.input_queue.start_consuming(_on_result)

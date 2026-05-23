@@ -1,3 +1,4 @@
+
 from general import DataPerBankRedirector, TransferDataController
 from joiners import JoinAverage, JoinMaxAmountPerBank, JoinScatterGather
 from mappers import MapAverage, MapMaxAmountPerBank, MapScatterGather
@@ -10,6 +11,7 @@ from workers import (
     FilterDateWindow,
     PayFormatFilter,
     TransferCounter,
+    BankDeduplicator,
 )
 
 
@@ -30,4 +32,5 @@ ENTITY_CLASSES = {
     "PayFormatFilter": PayFormatFilter,
     "CurrencyConverter": CurrencyConverter,
     "TransferCounter": TransferCounter,
+    "BankDeduplicator": BankDeduplicator,
 }
