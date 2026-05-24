@@ -19,7 +19,7 @@ def build_conversion_rate_provider(name=None, environ=None, static_rates=None):
         return _build_frankfurter_provider(env)
     if provider_name == "static":
         return StaticConversionRateProvider(
-            rates=static_rates if static_rates is not None else _static_rates_from_config(env)
+            rates=static_rates if static_rates is not None else _static_rates_from_config(env, required=True)
         )
 
     raise ConversionRateProviderError(f"Unknown conversion provider: {provider_name}")
@@ -30,13 +30,18 @@ def _build_frankfurter_provider(env):
         base_url=env.get("FRANKFURTER_API_URL", DEFAULT_BASE_URL),
         timeout_seconds=float(env.get("FRANKFURTER_TIMEOUT_SECONDS", "5")),
         user_agent=env.get("FRANKFURTER_USER_AGENT", DEFAULT_USER_AGENT),
+        max_retries=int(env.get("FRANKFURTER_MAX_RETRIES", "2")),
+        retry_delay_seconds=float(env.get("FRANKFURTER_RETRY_DELAY_SECONDS", "1")),
+        max_retry_delay_seconds=float(env.get("FRANKFURTER_MAX_RETRY_DELAY_SECONDS", "60")),
     )
     return FrankfurterConversionRateProvider(client=client)
 
 
-def _static_rates_from_config(env):
+def _static_rates_from_config(env, required):
     rates_path = env.get("STATIC_CONVERSION_RATES_PATH")
     if not rates_path:
+        if not required:
+            return {}
         raise ConversionRateProviderError(
             "STATIC_CONVERSION_RATES_PATH is required when CONVERSION_PROVIDER=static"
         )

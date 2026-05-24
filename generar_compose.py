@@ -132,6 +132,7 @@ def generate_compose():
                    extra_env=[
                        f"TOTAL_CONVERSION_WORKERS={SCALE_CONFIG['currency_converter']}",
                        "CONVERSION_CONVERTER_QUEUE_PREFIX=currency_converter_queue",
+                       "CONVERSION_ERROR_QUEUE=gateway_results_queue",
                    ])
 
     for i in range(SCALE_CONFIG["currency_converter"]):
@@ -148,6 +149,9 @@ def generate_compose():
                        "CONVERSION_CURRENCY_FIELD=PaymentCurrency",
                        "CONVERSION_DATE_FIELD=Timestamp",
                        "CONVERSION_OUTPUT_AMOUNT_FIELD=AmountPaidUSD",
+                       "FRANKFURTER_MAX_RETRIES=2",
+                       "FRANKFURTER_RETRY_DELAY_SECONDS=1",
+                       "FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60",
                    ],
                    volumes=["./data:/data"])
 
@@ -173,6 +177,8 @@ def generate_compose():
         "      - SERVER_PORT=5678",
         "      - MESSAGE=mensaje de prueba",
         "      - DATA_PATH=/data/dataset.csv",
+        "      - DATA_PATH_ACCOUNTS=/data/accounts.csv",
+        "      - MAX_TRANSACTION_RECORDS=1000",
         ""
     ])
 

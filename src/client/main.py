@@ -10,6 +10,7 @@ SERVER_PORT = int(os.environ["SERVER_PORT"])
 MESSAGE = os.environ.get("MESSAGE", "mensaje de prueba")
 DATA_PATH_TRANSACTIONS = os.environ.get("DATA_PATH", "/data/dataset.csv")
 DATA_PATH_ACCOUNTS = os.environ.get("DATA_PATH_ACCOUNTS", "/data/accounts.csv")
+MAX_TRANSACTION_RECORDS = int(os.environ.get("MAX_TRANSACTION_RECORDS", "1000"))
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -51,7 +52,7 @@ def main():
             
             reader = csv.DictReader(f, fieldnames=clean_headers)
             for indice, row in enumerate(reader):
-                if indice >= 1000:
+                if indice >= MAX_TRANSACTION_RECORDS:
                     break
                 clean_row = {key.strip(): value for key, value in row.items() if key is not None}
 
@@ -80,7 +81,6 @@ def main():
                     print(f"Resultado filtrado recibido: {line.strip()}", flush=True)
 
     logging.info("Conexión cerrada por el Gateway. Proceso terminado.")
-
 
 if __name__ == "__main__":
     main()

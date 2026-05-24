@@ -1,12 +1,16 @@
 from decimal import Decimal
 
 from ..conversion_rate_provider import ConversionRateProvider, ConversionRateProviderError
+from .btc_rates import btc_rates_to_usd
 
 
 class StaticConversionRateProvider(ConversionRateProvider):
     def __init__(self, rates=None):
         self.rates = {}
-        for key, value in (rates or {}).items():
+        configured_rates = btc_rates_to_usd()
+        configured_rates.update(rates or {})
+
+        for key, value in configured_rates.items():
             self.rates[str(key)] = Decimal(str(value))
 
     def get_rate_to_usd(self, currency, date):

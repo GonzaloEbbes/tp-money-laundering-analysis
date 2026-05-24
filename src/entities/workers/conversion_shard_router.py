@@ -2,7 +2,12 @@ import logging
 import os
 
 from common import message_protocol
-from common.conversions import conversion_key, conversion_shard
+from common.conversions import (
+    ConversionRateProviderError,
+    conversion_key,
+    conversion_shard,
+    to_frankfurter_currency,
+)
 from common.entity import PipelineEntity
 
 
@@ -17,6 +22,7 @@ class ConversionShardRouter(PipelineEntity):
             "CONVERSION_CONVERTER_QUEUE_PREFIX",
             "currency_converter_queue",
         )
+        self.error_queue = os.environ.get("CONVERSION_ERROR_QUEUE", "gateway_results_queue")
         self.currency_field = os.environ.get("CONVERSION_CURRENCY_FIELD", "PaymentCurrency")
         self.date_field = os.environ.get("CONVERSION_DATE_FIELD", "Timestamp")
 
@@ -34,16 +40,26 @@ class ConversionShardRouter(PipelineEntity):
                 )
             return None
 
-        key = conversion_key(
-            payload.get(self.currency_field),
-            payload.get(self.date_field),
-        )
+        try:
+            currency = to_frankfurter_currency(payload.get(self.currency_field))
+            key = conversion_key(currency, payload.get(self.date_field))
+        except ConversionRateProviderError as error:
+            LOGGER.exception("Conversion routing failed. payload=%s", payload)
+            message["payload"] = {
+                "status": "CONVERSION_ERROR",
+                "query_id": payload.get("query_id"),
+                "error": str(error),
+            }
+            return message, self.error_queue
+
         shard = conversion_shard(key, self.total_workers)
+        payload[self.currency_field] = currency
         payload["conversion_key"] = key
         payload["conversion_shard"] = shard
         message["payload"] = payload
 
-        LOGGER.info("Routing conversion. key=%s shard=%s", key, shard)
+        if currency != "USD":
+            LOGGER.info("Routing conversion. key=%s shard=%s", key, shard)
         return message, self._queue_name(shard)
 
     def _queue_name(self, shard):
