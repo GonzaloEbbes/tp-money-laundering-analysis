@@ -4,71 +4,20 @@ import socket
 import time
 import csv
 import json
-from decimal import Decimal
 
-from frankfurter_api import FrankfurterClient, FrankfurterApiError
-
-SERVER_HOST = os.environ.get("SERVER_HOST")
-SERVER_PORT = os.environ.get("SERVER_PORT")
+SERVER_HOST = os.environ["SERVER_HOST"]
+SERVER_PORT = int(os.environ["SERVER_PORT"])
 MESSAGE = os.environ.get("MESSAGE", "mensaje de prueba")
 DATA_PATH_TRANSACTIONS = os.environ.get("DATA_PATH", "/data/dataset.csv")
 DATA_PATH_ACCOUNTS = os.environ.get("DATA_PATH_ACCOUNTS", "/data/accounts.csv")
-CLIENT_MODE = os.environ.get("CLIENT_MODE", "pipeline")
-
-
-def run_frankfurter_smoke():
-    amount = os.environ.get("FRANKFURTER_AMOUNT", "10")
-    base_currency = os.environ.get("FRANKFURTER_BASE", "EUR")
-    quote_currency = os.environ.get("FRANKFURTER_QUOTE", "USD")
-    date = os.environ.get("FRANKFURTER_DATE", "2022-09-01")
-    base_url = os.environ.get("FRANKFURTER_API_URL", "https://api.frankfurter.app")
-    api_version = os.environ.get("FRANKFURTER_API_VERSION", "v1")
-    timeout_seconds = float(os.environ.get("FRANKFURTER_TIMEOUT_SECONDS", "5"))
-    user_agent = os.environ.get(
-        "FRANKFURTER_USER_AGENT",
-        "tp-money-laundering-analysis/1.0",
-    )
-
-    client = FrankfurterClient(
-        base_url=base_url,
-        timeout_seconds=timeout_seconds,
-        api_version=api_version,
-        user_agent=user_agent,
-    )
-    rate = client.get_rate(base_currency, quote_currency, date)
-    converted = Decimal(str(amount)) * rate
-
-    result = {
-        "source": "frankfurter",
-        "api_url": base_url,
-        "api_version": api_version,
-        "date": date,
-        "amount": str(amount),
-        "base": base_currency,
-        "quote": quote_currency,
-        "rate": str(rate),
-        "converted": str(converted),
-    }
-    print(json.dumps(result), flush=True)
 
 def main():
     logging.basicConfig(level=logging.INFO)
 
-    if CLIENT_MODE == "frankfurter_smoke":
-        try:
-            run_frankfurter_smoke()
-        except FrankfurterApiError:
-            logging.exception("Frankfurter smoke test failed")
-            raise
-        return
-
-    if not SERVER_HOST or not SERVER_PORT:
-        raise RuntimeError("SERVER_HOST and SERVER_PORT are required in pipeline mode")
-
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
         for _ in range(30):
             try:
-                client_socket.connect((SERVER_HOST, int(SERVER_PORT)))
+                client_socket.connect((SERVER_HOST, SERVER_PORT))
                 break
             except OSError:
                 time.sleep(1)

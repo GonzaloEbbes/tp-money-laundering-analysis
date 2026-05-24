@@ -7,6 +7,7 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_BASE_URL = "https://api.frankfurter.app"
+DEFAULT_USER_AGENT = "tp-money-laundering-analysis/1.0"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -14,35 +15,25 @@ class FrankfurterApiError(RuntimeError):
     pass
 
 
-DEFAULT_USER_AGENT = "tp-money-laundering-analysis/1.0"
-
-
 class FrankfurterClient:
     def __init__(
         self,
         base_url=DEFAULT_BASE_URL,
         timeout_seconds=5,
-        api_version="v1",
         user_agent=DEFAULT_USER_AGENT,
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
-        self.api_version = api_version
         self.user_agent = user_agent
 
-    def get_rate(self, base_currency, quote_currency, date=None):
+    def get_rate(self, base_currency, quote_currency, date):
         base = _validated_currency(base_currency)
         quote = _validated_currency(quote_currency)
 
         if base == quote:
             return Decimal("1")
 
-        url = self._rate_url(base, quote, date)
-        data = self._get_json(url)
-
-        if "rate" in data:
-            return Decimal(str(data["rate"]))
-
+        data = self._get_json(self._rate_url(base, quote, date))
         try:
             return Decimal(str(data["rates"][quote]))
         except KeyError as error:
@@ -55,9 +46,12 @@ class FrankfurterClient:
             )
             raise FrankfurterApiError(f"Frankfurter response missing rate: {data}") from error
 
-    def convert(self, amount, base_currency, quote_currency="USD", date=None):
-        rate = self.get_rate(base_currency, quote_currency, date)
-        return Decimal(str(amount)) * rate
+    def _rate_url(self, base, quote, date):
+        if not date:
+            raise FrankfurterApiError("Date is required")
+
+        params = {"base": base, "symbols": quote}
+        return f"{self.base_url}/{str(date)[:10]}?{urlencode(params)}"
 
     def _get_json(self, url):
         request = Request(
@@ -67,6 +61,7 @@ class FrankfurterClient:
                 "User-Agent": self.user_agent,
             },
         )
+
         try:
             with urlopen(request, timeout=self.timeout_seconds) as response:
                 body = response.read().decode("utf-8")
@@ -90,22 +85,6 @@ class FrankfurterClient:
         except json.JSONDecodeError as error:
             LOGGER.exception("Frankfurter returned invalid JSON. url=%s body=%s", url, body)
             raise FrankfurterApiError(f"Invalid JSON from Frankfurter: {body}") from error
-
-    def _rate_url(self, base, quote, date):
-        if self.api_version == "v2":
-            path = f"/v2/rate/{base}/{quote}"
-            params = {}
-            if date:
-                params["date"] = str(date)[:10]
-            url = f"{self.base_url}{path}"
-        else:
-            path = f"/{str(date)[:10]}" if date else "/latest"
-            params = {"base": base, "symbols": quote}
-            url = f"{self.base_url}{path}"
-
-        if params:
-            return f"{url}?{urlencode(params)}"
-        return url
 
 
 def _validated_currency(currency):
