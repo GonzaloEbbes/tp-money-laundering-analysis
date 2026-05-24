@@ -17,8 +17,11 @@ class StaticConversionRateProvider(ConversionRateProvider):
 
         currency_key = str(currency).strip()
         date_key = str(date)[:10]
+        full_dated_key = f"{currency_key}|USD|{date_key}"
         dated_key = f"{currency_key}|{date_key}"
 
+        if full_dated_key in self.rates:
+            return self.rates[full_dated_key]
         if dated_key in self.rates:
             return self.rates[dated_key]
         if currency_key in self.rates:

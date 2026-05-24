@@ -5,6 +5,7 @@ from mappers import MapAverage, MapMaxAmountPerBank, MapScatterGather
 from workers import (
     AggregationScatterGather,
     AmountFilter,
+    ConversionShardRouter,
     CurrencyConverter,
     CurrencyFilter,
     DynamicAmountFilter,
@@ -31,6 +32,7 @@ ENTITY_CLASSES = {
     "JoinScatterGather": JoinScatterGather,
     "PayFormatFilter": PayFormatFilter,
     "CurrencyConverter": CurrencyConverter,
+    "ConversionShardRouter": ConversionShardRouter,
     "TransferCounter": TransferCounter,
     "BankDeduplicator": BankDeduplicator,
 }

@@ -2,6 +2,7 @@ from .aggregation_scatter_gather import AggregationScatterGather
 from .amount_filter import AmountFilter
 from .currency_converter import CurrencyConverter
 from .currency_filter import CurrencyFilter
+from .conversion_shard_router import ConversionShardRouter
 from .dynamic_amount_filter import DynamicAmountFilter
 from .filter_date_window import FilterDateWindow
 from .pay_format_filter import PayFormatFilter

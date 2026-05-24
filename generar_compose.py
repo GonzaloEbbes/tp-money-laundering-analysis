@@ -7,6 +7,8 @@ SCALE_CONFIG = {
     "data_per_bank_redirector": 1,
     "map_max_amount_per_bank": 3,
     "join_max_amount_per_bank": 1,
+    "conversion_shard_router": 1,
+    "currency_converter": 4,
 }
 
 def generate_compose():
@@ -50,7 +52,7 @@ def generate_compose():
     all_workers_created = []
 
 
-    def add_worker(name, entity_class, input_queue, output_queue, is_stateful=False, index=None):
+    def add_worker(name, entity_class, input_queue, output_queue, is_stateful=False, index=None, extra_env=None, volumes=None):
         container_name = f"{name}_{index}" if is_stateful and index is not None else name
         in_queue = f"{input_queue}_{index}" if is_stateful and index is not None else input_queue
 
@@ -77,6 +79,13 @@ def generate_compose():
         if entity_class in ["TransferDataController", "JoinMaxAmountPerBank", "DataPerBankRedirector"]:
             yaml_lines.append(f"      - TOTAL_DEDUPLICATORS={SCALE_CONFIG['bank_deduplicator']}")
             yaml_lines.append(f"      - TOTAL_REDUCERS={SCALE_CONFIG['map_max_amount_per_bank']}")
+        if extra_env:
+            for env_var in extra_env:
+                yaml_lines.append(f"      - {env_var}")
+        if volumes:
+            yaml_lines.append("    volumes:")
+            for volume in volumes:
+                yaml_lines.append(f"      - {volume}")
         yaml_lines.append("")
 
     for i in range(SCALE_CONFIG["transfer_data_controller"]):
@@ -114,6 +123,33 @@ def generate_compose():
 
     add_worker("join_max_amount_per_bank", "JoinMaxAmountPerBank", 
                "join_max_amount_per_bank_queue", "gateway_results_queue")
+
+    for i in range(SCALE_CONFIG["conversion_shard_router"]):
+        add_worker(f"conversion_shard_router_{i}",
+                   "ConversionShardRouter",
+                   "conversion_shard_router_queue",
+                   "currency_converter_queue",
+                   extra_env=[
+                       f"TOTAL_CONVERSION_WORKERS={SCALE_CONFIG['currency_converter']}",
+                       "CONVERSION_CONVERTER_QUEUE_PREFIX=currency_converter_queue",
+                   ])
+
+    for i in range(SCALE_CONFIG["currency_converter"]):
+        add_worker("currency_converter",
+                   "CurrencyConverter",
+                   "currency_converter_queue",
+                   "gateway_results_queue",
+                   is_stateful=True,
+                   index=i,
+                   extra_env=[
+                       "CONVERSION_PROVIDER=frankfurter",
+                       "STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json",
+                       "CONVERSION_AMOUNT_FIELD=AmountPaid",
+                       "CONVERSION_CURRENCY_FIELD=PaymentCurrency",
+                       "CONVERSION_DATE_FIELD=Timestamp",
+                       "CONVERSION_OUTPUT_AMOUNT_FIELD=AmountPaidUSD",
+                   ],
+                   volumes=["./data:/data"])
 
     yaml_lines.extend([
         "  client:",
