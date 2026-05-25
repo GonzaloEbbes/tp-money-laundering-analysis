@@ -27,6 +27,7 @@ class InternalMessageType:
     SCATHER_GATHER_JOINER_TO_GATEWAY = 20
     AMOUNT_FILTER_Q5_TO_GATEWAY = 21
     EOF_GENERIC_MESSAGE = 22
+    GATEWAY_TO_BANK_FILTER = 23
 
 class TransactionData(dict):
     timestamp : str
