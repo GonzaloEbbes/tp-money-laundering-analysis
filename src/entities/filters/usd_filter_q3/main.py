@@ -7,7 +7,7 @@ import threading
 from time import sleep
 
 from common import middleware, message_protocol
-from entities.filters.usd_filter_q1q2.message_handler.message_handler import MessageHandler as USDFilterMessageHandler
+from entities.filters.usd_filter_q3.message_handler.message_handler import MessageHandler as USDFilterMessageHandler
 
 logging.basicConfig(
             level=logging.INFO,
@@ -22,27 +22,21 @@ USD_FILTER_PREFIX = int(os.environ["USD_FILTER_PREFIX"])
 USD_FILTER_AMOUNT = int(os.environ["USD_FILTER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
-AMOUNT_FILTER_Q1_QUEUE = os.environ["AMOUNT_FILTER_Q1_QUEUE"]
-DATA_PER_BANK_SHUFFLER_QUEUE = os.environ["DATA_PER_BANK_SHUFFLER_QUEUE"]
+OUTPUT_QUEUE = os.environ["AMOUNT_FILTER_Q3_QUEUE"]
 
 
-
-class USDFilterQ1Q2:
+class USDFilterQ3:
 
     def __init__(self):
-        self.gateway_queue = middleware.MessageMiddlewareQueueRabbitMQ(
+        self.date_filter_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, INPUT_QUEUE
         )
         
         self.id = int(ID)
 
         # definicion de working queue exchanges de la instancia posterior
-        self.amount_filter_q1_queue = middleware.MessageMiddlewareQueueRabbitMQ(
-                MOM_HOST, AMOUNT_FILTER_Q1_QUEUE
-            )
-
-        self.data_per_bank_shuffler_queue = middleware.MessageMiddlewareQueueRabbitMQ(
-                MOM_HOST, DATA_PER_BANK_SHUFFLER_QUEUE
+        self.amount_filter_q3_queue = middleware.MessageMiddlewareQueueRabbitMQ(
+                MOM_HOST, OUTPUT_QUEUE
             )
 
         #Exchange de control EOF
@@ -79,11 +73,11 @@ class USDFilterQ1Q2:
     def _is_leader(self):
         return self.id == 0
     
-    def _run_gateway_consumer(self):
+    def _run_date_filter_consumer(self):
         try:
-            self.gateway_queue.start_consuming(self.process_gateway_messages)
+            self.date_filter_queue.start_consuming(self.process_date_filter_messages)
         except Exception as e:
-            self._handle_runtime_failure(e, "Gateway consumer crashed")
+            self._handle_runtime_failure(e, "Date filter consumer crashed")
 
     
     def _run_control_consumer(self):
@@ -92,10 +86,10 @@ class USDFilterQ1Q2:
         except Exception as e:
             self._handle_runtime_failure(e, "Control consumer crashed")
     
-    def process_gateway_messages(self, message, ack, nack):
+    def process_date_filter_messages(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
         match message.type:
-            case message_protocol.internal.InternalMessageType.GATEWAY_TO_USD_FILTER_Q1Q2:
+            case message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q3:
                 self._add_inflight_message(message.source_client_uuid)
                 client_id = message.source_client_uuid
                 self._process_transaction(message.data, client_id, message.data_id)
@@ -103,27 +97,25 @@ class USDFilterQ1Q2:
                 self._check_and_finalize_client_if_pending(client_id)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
-                self._process_gateway_eof(client_id)
+                self._process_datefilter_eof(client_id)
         ack()
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.info(f"Received GATEWAY_TO_USD_FILTER_Q1Q2 for client {client_id}")
-        payment_currency = transaction_data.get("payment_currency")
+        logging.info(f"Received DATE_FILTER_TO_USD_FILTER_Q3 for client {client_id}")
         receiving_currency = transaction_data.get("receiving_currency")
-        
-        if payment_currency == "US Dollar" and receiving_currency == "US Dollar":
-            self.amount_filter_q1_queue.send(USDFilterMessageHandler.serialize_amount_filter_q1_message(client_id, data_id, transaction_data))
-            self.data_per_bank_shuffler_queue.send(USDFilterMessageHandler.serialize_data_per_bank_shuffler_message(client_id, data_id, transaction_data))
-            logging.info(f"Transaction for client {client_id} sent to amount filter and data per bank shuffler")
+        payment_currency = transaction_data.get("payment_currency")
+
+        if receiving_currency == "US Dollar" and payment_currency == "US Dollar":
+            self.amount_filter_q3_queue.send(USDFilterMessageHandler.serialize_amount_filter_q3_message(client_id, data_id, transaction_data))
+            logging.info(f"Transaction for client {client_id} sent amount Q3 filter")
         
 
     def send_final_eof(self, client_id):
-        self.amount_filter_q1_queue.send(USDFilterMessageHandler.serialize_eof_message(client_id))
-        self.data_per_bank_shuffler_queue.send(USDFilterMessageHandler.serialize_eof_message(client_id))
+        self.amount_filter_q3_queue.send(USDFilterMessageHandler.serialize_eof_message(client_id))
         logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
     
-    def _process_gateway_eof(self, client_id):
+    def _process_datefilter_eof(self, client_id):
         logging.info(f"Received EOF for client {client_id}")
 
         if USD_FILTER_AMOUNT > 1:
@@ -220,7 +212,7 @@ class USDFilterQ1Q2:
                 return
             self._stopping = True
 
-        consumers = [self.gateway_queue]
+        consumers = [self.date_filter_queue]
         if self.usd_filter_eof_exchange is not None:
             consumers.append(self.usd_filter_eof_exchange)
 
@@ -231,13 +223,11 @@ class USDFilterQ1Q2:
                 logging.error(f"Error stopping consumer: {e}")
 
     def _close_resources(self):
-        resources = [self.gateway_queue]
+        resources = [self.date_filter_queue]
         if self.usd_filter_eof_exchange is not None:
             resources.append(self.usd_filter_eof_exchange)
-        if self.amount_filter_q1_queue is not None:
-            resources.append(self.amount_filter_q1_queue)
-        if self.data_per_bank_shuffler_queue is not None:
-            resources.append(self.data_per_bank_shuffler_queue)
+        if self.amount_filter_q3_queue is not None:
+            resources.append(self.amount_filter_q3_queue)
 
         for resource in resources:
             try:
@@ -256,9 +246,9 @@ class USDFilterQ1Q2:
     
     def start(self):
 
-        gateway_thread = threading.Thread(
-        target=self._run_gateway_consumer,
-        name="gateway-consumer-thread",
+        datefilter_thread = threading.Thread(
+        target=self._run_date_filter_consumer,
+        name="date-filter-consumer-thread",
         )
 
 
@@ -268,12 +258,12 @@ class USDFilterQ1Q2:
                 name="usd-control-consumer-thread",
             )
 
-        gateway_started = False
+        datefilter_started = False
         control_started = False
 
         try:
-            gateway_thread.start()
-            gateway_started = True
+            datefilter_thread.start()
+            datefilter_started = True
             if USD_FILTER_AMOUNT > 1:
                 control_thread.start()
                 control_started = True
@@ -284,8 +274,8 @@ class USDFilterQ1Q2:
             self._close_resources()
             return 2
 
-        if gateway_started:
-            gateway_thread.join()
+        if datefilter_started:
+            datefilter_thread.join()
         if control_started:
             control_thread.join()
 
@@ -299,14 +289,14 @@ class USDFilterQ1Q2:
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    usd_filter_q1q2 = USDFilterQ1Q2()
+    usd_filter_q3 = USDFilterQ3()
 
     def _handle_sigterm(signum, frame):
-        logging.info("SIGTERM received in usd filter q1q2")
-        usd_filter_q1q2.notify_sigterm()
+        logging.info("SIGTERM received in usd filter q3")
+        usd_filter_q3.notify_sigterm()
 
     signal.signal(signal.SIGTERM, _handle_sigterm)
-    return usd_filter_q1q2.start()
+    return usd_filter_q3.start()
 
 
 if __name__ == "__main__":
