@@ -47,12 +47,13 @@ class AccountData:
     account_number : str
     entity_id : str
     entity_name : str
+
 class InternalMessage:
 
     type : InternalMessageType
     source_client_uuid : str | None
     data : TransactionData | AccountData | None
-    
+
     def __init__(self, type=None, source_client_uuid=None, data_id=None, data=None):
         self.type = type
         self.source_client_uuid = source_client_uuid
@@ -81,13 +82,31 @@ class InternalMessage:
         self.data = msg["data"] if "data" in msg else None
 
 
-def serialize(type,client_id,data):
-    msg = InternalMessage(type=type, source_client_uuid=client_id, data=data)
+def new_message(payload):
+    return {
+        "message_id": str(uuid.uuid4()),
+        "payload": payload,
+    }
+
+
+def serialize(message_or_type, client_id=None, data=None):
+    if isinstance(message_or_type, dict) and client_id is None and data is None:
+        return json.dumps(message_or_type).encode("utf-8")
+
+    msg = InternalMessage(type=message_or_type, source_client_uuid=client_id, data=data)
     return msg._serialize()
 
 
+def deserialize(data):
+    decoded = json.loads(data.decode("utf-8"))
+    if isinstance(decoded, dict) and "payload" in decoded:
+        return decoded
 
-def deserialize(data) -> InternalMessage:
     msg = InternalMessage()
-    msg._deserialize(data)
+    msg.type = decoded["type"] if "type" in decoded else None
+    msg.source_client_uuid = (
+        decoded["source_client_uuid"] if "source_client_uuid" in decoded else None
+    )
+    msg.data_id = decoded["data_id"] if "data_id" in decoded else None
+    msg.data = decoded["data"] if "data" in decoded else None
     return msg
