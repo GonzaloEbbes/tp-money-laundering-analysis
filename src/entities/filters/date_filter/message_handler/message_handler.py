@@ -21,6 +21,7 @@ class MessageHandler:
         parsedMessage.account_destination = message["account_destination"]
         parsedMessage.amount_received = message["amount_received"]
         parsedMessage.receiving_currency = message["receiving_currency"]
+        parsedMessage.payment_currency = message["payment_currency"]
         parsedMessage.payment_format = message["payment_format"]
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q4, client, message_id, parsedMessage)
     
