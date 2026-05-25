@@ -1,4 +1,5 @@
 
+from entities.filters.date_filter.main import DateFilter
 from general import DataPerBankRedirector, TransferDataController
 from joiners import JoinAverage, JoinMaxAmountPerBank, JoinScatterGather
 from mappers import MapAverage, MapMaxAmountPerBank, MapScatterGather
@@ -8,12 +9,10 @@ from workers import (
     CurrencyConverter,
     CurrencyFilter,
     DynamicAmountFilter,
-    FilterDateWindow,
     PayFormatFilter,
     TransferCounter,
     BankDeduplicator,
 )
-
 
 ENTITY_CLASSES = {
     "TransferDataController": TransferDataController,
@@ -22,7 +21,7 @@ ENTITY_CLASSES = {
     "DataPerBankRedirector": DataPerBankRedirector,
     "MapMaxAmountPerBank": MapMaxAmountPerBank,
     "JoinMaxAmountPerBank": JoinMaxAmountPerBank,
-    "FilterDateWindow": FilterDateWindow,
+    "DateFilter": DateFilter,
     "DynamicAmountFilter": DynamicAmountFilter,
     "MapAverage": MapAverage,
     "JoinAverage": JoinAverage,

@@ -1,7 +1,4 @@
 import json
-import uuid
-
-import json
 
 class InternalMessageType:
     GATEWAY_TO_DATE_FILTER = 0

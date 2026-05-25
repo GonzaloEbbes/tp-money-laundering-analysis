@@ -3,7 +3,7 @@ from .amount_filter import AmountFilter
 from .currency_converter import CurrencyConverter
 from .currency_filter import CurrencyFilter
 from .dynamic_amount_filter import DynamicAmountFilter
-from .filter_date_window import FilterDateWindow
+from ..filters.date_filter.date_filter import DateFilter
 from .pay_format_filter import PayFormatFilter
 from .transfer_counter import TransferCounter
 from .bank_deduplicator import BankDeduplicator
