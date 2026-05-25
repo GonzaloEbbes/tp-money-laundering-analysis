@@ -6,7 +6,7 @@ import signal
 import threading
 from time import sleep
 
-from common import middleware, message_protocol, fruit_item
+from common import middleware, message_protocol
 from entities.filters.date_filter.message_handler.message_handler import MessageHandler as DateFilterMessageHandler
 
 logging.basicConfig(
@@ -18,7 +18,7 @@ logging.basicConfig(
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
 INPUT_QUEUE = os.environ["INPUT_QUEUE"]
-DATE_FILTER_PREFIX = int(os.environ["DATE_FILTER_AMOUNT"])
+DATE_FILTER_PREFIX = int(os.environ["DATE_FILTER_PREFIX"])
 DATE_FILTER_AMOUNT = int(os.environ["DATE_FILTER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
@@ -50,6 +50,7 @@ class DateFilter:
             )
 
         #Exchange de control EOF
+        self.date_filter_eof_exchange = None
         if DATE_FILTER_AMOUNT > 1:
             date_filters = []
             for i in range(DATE_FILTER_AMOUNT):
@@ -62,14 +63,25 @@ class DateFilter:
                     date_filters,
                 )
 
+
         self._sigterm_received = False
         self._runtime_error = False
 
-        
+        if (self._is_leader()):
+            self.total_eof_received_by_client = {}
+            self._leader_eof_lock = threading.Lock()
+
+        self._is_pending_to_finalize_client = set()
+        self._is_pending_to_finalize_client_lock = threading.Lock()
         self._finalized_clients = set()
         self._finalized_clients_lock = threading.Lock()
+        self._inflight_messages = {}
+        self._inflight_message_lock = threading.Lock()
         self._stop_lock = threading.Lock()
         self._stopping = False
+    
+    def _is_leader(self):
+        return self.id == 0
     
     def _run_gateway_consumer(self):
         try:
@@ -88,13 +100,16 @@ class DateFilter:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.GATEWAY_TO_DATE_FILTER:
+                self._add_inflight_message(message.source_client_uuid)
                 client_id = message.source_client_uuid
                 self._process_transaction(message.data, client_id, message.data_id)
-                self._check_if_eof_received(client_id)
+                self._decrease_inflight_message(message.source_client_uuid)
+                self._check_and_finalize_client_if_pending(client_id)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
-                self._process_gateway_eof(client_id,message.data)
+                self._process_gateway_eof(client_id)
         ack()
+        
 
     def _process_transaction(self, transaction_data, client_id, data_id):
         logging.info(f"Received GATEWAY_TO_DATE_FILTER for client {client_id}")
@@ -137,41 +152,102 @@ class DateFilter:
                     DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, message)
                 )
 
+    def send_final_eof(self, client_id):
+        self.usd_filters_q3_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
+        self.usd_filters_q4_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
+        self.pay_format_filter_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
+        logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
+    
     def _process_gateway_eof(self, client_id):
         logging.info(f"Received EOF for client {client_id}")
 
         if DATE_FILTER_AMOUNT > 1:
             self.date_filter_eof_exchange.send(DateFilterMessageHandler.serialize_eof_message(client_id))
             logging.info(f"Sent EOF for client {client_id} to other date filters")
-        
+
         self._finalize_client(client_id)
     
+    def _check_and_finalize_client_if_pending(self, client_id):
+        should_finalize = False
+
+        with self._is_pending_to_finalize_client_lock:
+            is_pending = client_id in self._is_pending_to_finalize_client
+
+        if is_pending:
+            with self._inflight_message_lock:
+                should_finalize = self._inflight_messages.get(client_id, 0) == 0
+
+        if should_finalize:
+            logging.info(f"Finalizando cliente {client_id} que estaba pendiente")
+            self._finalize_client(client_id)
+                        
+    def _finalize_client(self, client_id):
+
+        with self._finalized_clients_lock:
+            if client_id in self._finalized_clients:
+                return
+            logging.info(f"Finalizando cliente {client_id}")
+            self._finalized_clients.add(client_id)
+
+        if self._is_leader():
+            self._leader_count_eof_for_client(client_id)
+        else:
+            self.send_eof_leader_message(client_id)
+
+        with self._is_pending_to_finalize_client_lock:
+            if client_id in self._is_pending_to_finalize_client:
+                self._is_pending_to_finalize_client.remove(client_id)
+        
+
+    def send_eof_leader_message(self, client_id):
+        self.date_filter_eof_exchange.send(DateFilterMessageHandler.serialize_eof_leader_message(client_id))
+        logging.info(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
+
+    def _add_inflight_message(self, client_id):
+        with self._inflight_message_lock:
+            self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) + 1
+    
+    def _decrease_inflight_message(self, client_id):
+        with self._inflight_message_lock:
+            if client_id in self._inflight_messages:
+                self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) - 1
 
     def process_eof_control_message(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 logging.info(f"Received EOF_GENERIC_MESSAGE for client {message.source_client_uuid}")
-                self._mark_client_finalized(message.source_client_uuid)
+                self._process_eof_from_control_exchange(message.source_client_uuid)
+            case message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE:
+                if self._is_leader():
+                    logging.info(f"Received EOF_LEADER_MESSAGE for client {message.source_client_uuid}")
+                    self._leader_count_eof_for_client(message.source_client_uuid)
+                
         ack()
-
-    def _mark_client_finalized(self, client_id):
-        with self._finalized_clients_lock:
-            if client_id in self._finalized_clients:
-                return False
-            self._finalized_clients.add(client_id)
-            return True
-
-    def _finalize_client(self, client_id):
-        logging.info(f"Finalizing client {client_id}")
-        if not self._mark_client_finalized(client_id):
-            return
+    def _leader_count_eof_for_client(self, client_id):
+        should_send_final_eof = False
+        with self._leader_eof_lock:
+            self.total_eof_received_by_client[client_id] = self.total_eof_received_by_client.get(client_id, 0) + 1
+            
+            if self.total_eof_received_by_client[client_id] == DATE_FILTER_AMOUNT:
+                logging.info(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
+                should_send_final_eof = True
+                del self.total_eof_received_by_client[client_id]
         
-    def _check_if_eof_received(self, client_id):
-        with self._finalized_clients_lock:
-            if client_id in self._finalized_clients:
-                logging.info(f"EOF already received for client {client_id}")
+        if should_send_final_eof:
+            self.send_final_eof(client_id)
+
+    def _process_eof_from_control_exchange(self, client_id):
+        with self._inflight_message_lock:
+            if self._inflight_messages.get(client_id, 0) > 0:
+                logging.info(f"EOF received for client {client_id} but there are still inflight messages. Marking client as finalized but waiting for inflight messages to finish.")
+                with self._is_pending_to_finalize_client_lock:
+                    self._is_pending_to_finalize_client.add(client_id)
+            else:
+                logging.info(f"EOF received for client {client_id} and no inflight messages. Finalizing client.")
                 self._finalize_client(client_id)
+
+
 
     def stop(self):
         with self._stop_lock:
