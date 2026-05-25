@@ -34,6 +34,11 @@ class MessageHandler:
             account_obj
         )
     
+    def transaction_is_reinvestment(self, msg_data):
+        (_, _, _, _, _, _, _, _,
+         _, payment_format) = msg_data
+        return payment_format.lower() == "reinvestment"
+    
     def serialize_transaction_currency(self, msg_data):
         (_timestamp, from_bank, account_origin, _, account_destiny,
          amount_received, receiving_currency, _amount_paid,

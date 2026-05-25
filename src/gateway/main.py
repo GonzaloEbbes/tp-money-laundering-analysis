@@ -32,6 +32,8 @@ def handle_client_request(client_socket, message_handler_instance, client_list):
         _send_internal(deduplicator_queue, serialized)
 
     def _handle_transaction(msg_data):
+        if message_handler_instance.transaction_is_reinvestment(msg_data):
+            return
         serialized_currency = message_handler_instance.serialize_transaction_currency(msg_data)
         _send_internal(currency_queue, serialized_currency)
         serialized_date = message_handler_instance.serialize_transaction_date(msg_data)
