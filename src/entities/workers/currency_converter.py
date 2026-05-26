@@ -40,7 +40,7 @@ class CurrencyConverter(PipelineEntity):
         self.date_field = os.environ.get("CONVERSION_DATE_FIELD", "timestamp")
         self.output_amount_field = os.environ.get(
             "CONVERSION_OUTPUT_AMOUNT_FIELD",
-            "amount_paid_usd",
+            "amount_paid",
         )
 
     def entity_type(self):
@@ -64,11 +64,14 @@ class CurrencyConverter(PipelineEntity):
             LOGGER.exception("Currency conversion failed. payload=%s", payload)
             return None
 
+        output_payload = {
+            self.output_amount_field: converted_payload.get(self.output_amount_field),
+        }
         return message_protocol.internal.InternalMessage(
             type=message_protocol.internal.InternalMessageType.USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5,
             source_client_uuid=message.source_client_uuid,
             data_id=message.data_id,
-            data=message_protocol.internal.TransactionData(converted_payload),
+            data=message_protocol.internal.TransactionData(output_payload),
         )
 
     def _convert_payload(self, payload):

@@ -139,7 +139,7 @@ def generate_compose():
                        "CONVERSION_AMOUNT_FIELD=amount_paid",
                        "CONVERSION_CURRENCY_FIELD=payment_currency",
                        "CONVERSION_DATE_FIELD=timestamp",
-                       "CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid_usd",
+                       "CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid",
                        "FRANKFURTER_MAX_RETRIES=2",
                        "FRANKFURTER_RETRY_DELAY_SECONDS=1",
                        "FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60",
