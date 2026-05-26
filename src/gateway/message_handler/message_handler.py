@@ -46,7 +46,7 @@ class MessageHandler:
         currency_data = {
             "from_bank": from_bank,
             "account_origin": account_origin,
-            "account_destiny": account_destiny,
+            "account_destination": account_destiny,
             "amount_received": amount_received,
             "receiving_currency": receiving_currency,
             "payment_currency": payment_currency,
@@ -67,7 +67,7 @@ class MessageHandler:
         date_data = {
             "timestamp": timestamp,
             "account_origin": account_origin,
-            "account_destiny": account_destiny,
+            "account_destination": account_destiny,
             "amount_received": amount_received,
             "receiving_currency": receiving_currency,
             "amount_paid": amount_paid,

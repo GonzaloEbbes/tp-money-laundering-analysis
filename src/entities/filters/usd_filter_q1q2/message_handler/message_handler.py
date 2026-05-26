@@ -23,10 +23,10 @@ class MessageHandler:
 
 
     def serialize_eof_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None, None)
     
     def serialize_eof_leader_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE, client, None)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE, client, None, None)
     
     def deserialize_gateway_message(message):
         internal_message = message_protocol.internal.deserialize(message)

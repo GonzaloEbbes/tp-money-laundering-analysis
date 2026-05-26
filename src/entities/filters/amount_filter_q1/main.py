@@ -7,7 +7,7 @@ import threading
 from time import sleep
 
 from common import middleware, message_protocol
-from entities.filters.amount_filter_q1.message_handler.message_handler import MessageHandler as AmountFilterQ1MessageHandler
+from message_handler import MessageHandler as AmountFilterQ1MessageHandler
 
 logging.basicConfig(
             level=logging.INFO,
@@ -18,7 +18,7 @@ logging.basicConfig(
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
 USD_FILTER_Q1Q2_QUEUE = os.environ["INPUT_QUEUE"] #Es la propia, que conecta con el filtro USD q1q2
-AMOUNT_FILTER_PREFIX = int(os.environ["AMOUNT_FILTER_PREFIX"])
+AMOUNT_FILTER_PREFIX = os.environ["AMOUNT_FILTER_PREFIX"]
 AMOUNT_FILTER_AMOUNT = int(os.environ["AMOUNT_FILTER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
@@ -40,18 +40,26 @@ class AmountFilterQ1:
             )
 
         #Exchange de control EOF
-        self.amount_filter_eof_exchange = None
+        self.amount_filter_eof_exchange_consumer = None
+        self.amount_filter_eof_exchange_producer = None
         if AMOUNT_FILTER_AMOUNT > 1:
             amount_filters = []
             for i in range(AMOUNT_FILTER_AMOUNT):
                 if i != self.id:
                     amount_filters.append(f"{AMOUNT_FILTER_PREFIX}_{i}")
         
-            self.amount_filter_eof_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
+            self.amount_filter_eof_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
+                    MOM_HOST,
+                    EOF_CONTROL_EXCHANGE,
+                    [f"{AMOUNT_FILTER_PREFIX}_{self.id}"],
+                )
+            self._eof_producer_lock = threading.Lock()
+            self.amount_filter_eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
                     MOM_HOST,
                     EOF_CONTROL_EXCHANGE,
                     amount_filters,
                 )
+            
 
 
         self._sigterm_received = False
@@ -82,7 +90,7 @@ class AmountFilterQ1:
     
     def _run_control_consumer(self):
         try:
-            self.amount_filter_eof_exchange.start_consuming(self.process_eof_control_message)
+            self.amount_filter_eof_exchange_consumer.start_consuming(self.process_eof_control_message)
         except Exception as e:
             self._handle_runtime_failure(e, "Control consumer crashed")
     
@@ -118,7 +126,8 @@ class AmountFilterQ1:
         logging.info(f"Received EOF for client {client_id}")
 
         if AMOUNT_FILTER_AMOUNT > 1:
-            self.amount_filter_eof_exchange.send(AmountFilterQ1MessageHandler.serialize_eof_message(client_id))
+            with self._eof_producer_lock:
+                self.amount_filter_eof_exchange_producer.send(AmountFilterQ1MessageHandler.serialize_eof_message(client_id))
             logging.info(f"Sent EOF for client {client_id} to other amount filters")
 
         self._finalize_client(client_id)
@@ -156,7 +165,8 @@ class AmountFilterQ1:
         
 
     def send_eof_leader_message(self, client_id):
-        self.amount_filter_eof_exchange.send(AmountFilterQ1MessageHandler.serialize_eof_leader_message(client_id))
+        with self._eof_producer_lock:
+            self.amount_filter_eof_exchange_producer.send(AmountFilterQ1MessageHandler.serialize_eof_leader_message(client_id))
         logging.info(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
 
     def _add_inflight_message(self, client_id):
@@ -212,8 +222,8 @@ class AmountFilterQ1:
             self._stopping = True
 
         consumers = [self.usd_filter_q1q2_queue]
-        if self.amount_filter_eof_exchange is not None:
-            consumers.append(self.amount_filter_eof_exchange)
+        if self.amount_filter_eof_exchange_consumer is not None:
+            consumers.append(self.amount_filter_eof_exchange_consumer)
 
         for consumer in consumers:
             try:
@@ -223,10 +233,12 @@ class AmountFilterQ1:
 
     def _close_resources(self):
         resources = [self.usd_filter_q1q2_queue]
-        if self.amount_filter_eof_exchange is not None:
-            resources.append(self.amount_filter_eof_exchange)
+        if self.amount_filter_eof_exchange_consumer is not None:
+            resources.append(self.amount_filter_eof_exchange_consumer)
         if self.gateway_final_query_queue is not None:
             resources.append(self.gateway_final_query_queue)
+        if self.amount_filter_eof_exchange_producer is not None:
+            resources.append(self.amount_filter_eof_exchange_producer)
 
         for resource in resources:
             try:

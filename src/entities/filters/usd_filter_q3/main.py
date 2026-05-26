@@ -7,7 +7,7 @@ import threading
 from time import sleep
 
 from common import middleware, message_protocol
-from entities.filters.usd_filter_q3.message_handler.message_handler import MessageHandler as USDFilterMessageHandler
+from message_handler import MessageHandler as USDFilterMessageHandler
 
 logging.basicConfig(
             level=logging.INFO,
@@ -18,7 +18,7 @@ logging.basicConfig(
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
 INPUT_QUEUE = os.environ["INPUT_QUEUE"]
-USD_FILTER_PREFIX = int(os.environ["USD_FILTER_PREFIX"])
+USD_FILTER_PREFIX = os.environ["USD_FILTER_PREFIX"]
 USD_FILTER_AMOUNT = int(os.environ["USD_FILTER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
@@ -40,14 +40,20 @@ class USDFilterQ3:
             )
 
         #Exchange de control EOF
-        self.usd_filter_eof_exchange = None
+        self.usd_filter_eof_exchange_consumer = None
         if USD_FILTER_AMOUNT > 1:
             usd_filters = []
             for i in range(USD_FILTER_AMOUNT):
                 if i != self.id:
                     usd_filters.append(f"{USD_FILTER_PREFIX}_{i}")
         
-            self.usd_filter_eof_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
+            self.usd_filter_eof_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
+                    MOM_HOST,
+                    EOF_CONTROL_EXCHANGE,
+                    [f"{USD_FILTER_PREFIX}_{self.id}"],
+                )
+            self._eof_producer_lock = threading.Lock()
+            self.usd_filter_eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
                     MOM_HOST,
                     EOF_CONTROL_EXCHANGE,
                     usd_filters,
@@ -82,7 +88,7 @@ class USDFilterQ3:
     
     def _run_control_consumer(self):
         try:
-            self.usd_filter_eof_exchange.start_consuming(self.process_eof_control_message)
+            self.usd_filter_eof_exchange_consumer.start_consuming(self.process_eof_control_message)
         except Exception as e:
             self._handle_runtime_failure(e, "Control consumer crashed")
     
@@ -119,7 +125,8 @@ class USDFilterQ3:
         logging.info(f"Received EOF for client {client_id}")
 
         if USD_FILTER_AMOUNT > 1:
-            self.usd_filter_eof_exchange.send(USDFilterMessageHandler.serialize_eof_message(client_id))
+            with self._eof_producer_lock:
+                self.usd_filter_eof_exchange_producer.send(USDFilterMessageHandler.serialize_eof_message(client_id))
             logging.info(f"Sent EOF for client {client_id} to other usd filters")
 
         self._finalize_client(client_id)
@@ -157,7 +164,8 @@ class USDFilterQ3:
         
 
     def send_eof_leader_message(self, client_id):
-        self.usd_filter_eof_exchange.send(USDFilterMessageHandler.serialize_eof_leader_message(client_id))
+        with self._eof_producer_lock:
+            self.usd_filter_eof_exchange_producer.send(USDFilterMessageHandler.serialize_eof_leader_message(client_id))
         logging.info(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
 
     def _add_inflight_message(self, client_id):
@@ -213,8 +221,8 @@ class USDFilterQ3:
             self._stopping = True
 
         consumers = [self.date_filter_queue]
-        if self.usd_filter_eof_exchange is not None:
-            consumers.append(self.usd_filter_eof_exchange)
+        if self.usd_filter_eof_exchange_consumer is not None:
+            consumers.append(self.usd_filter_eof_exchange_consumer)
 
         for consumer in consumers:
             try:
@@ -224,10 +232,12 @@ class USDFilterQ3:
 
     def _close_resources(self):
         resources = [self.date_filter_queue]
-        if self.usd_filter_eof_exchange is not None:
-            resources.append(self.usd_filter_eof_exchange)
+        if self.usd_filter_eof_exchange_consumer is not None:
+            resources.append(self.usd_filter_eof_exchange_consumer)
         if self.amount_filter_q3_queue is not None:
             resources.append(self.amount_filter_q3_queue)
+        if self.usd_filter_eof_exchange_producer is not None:
+            resources.append(self.usd_filter_eof_exchange_producer)
 
         for resource in resources:
             try:

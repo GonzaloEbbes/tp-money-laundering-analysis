@@ -7,7 +7,7 @@ import threading
 from time import sleep
 
 from common import middleware, message_protocol
-from entities.filters.date_filter.message_handler.message_handler import MessageHandler as DateFilterMessageHandler
+from message_handler import MessageHandler as DateFilterMessageHandler
 
 logging.basicConfig(
             level=logging.INFO,
@@ -18,7 +18,7 @@ logging.basicConfig(
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
 INPUT_QUEUE = os.environ["INPUT_QUEUE"]
-DATE_FILTER_PREFIX = int(os.environ["DATE_FILTER_PREFIX"])
+DATE_FILTER_PREFIX = os.environ["DATE_FILTER_PREFIX"]
 DATE_FILTER_AMOUNT = int(os.environ["DATE_FILTER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
@@ -50,18 +50,27 @@ class DateFilter:
             )
 
         #Exchange de control EOF
-        self.date_filter_eof_exchange = None
+        self.date_filter_eof_exchange_consumer = None
+        self.date_filter_eof_exchange_producer = None
+        
         if DATE_FILTER_AMOUNT > 1:
             date_filters = []
             for i in range(DATE_FILTER_AMOUNT):
                 if i != self.id:
                     date_filters.append(f"{DATE_FILTER_PREFIX}_{i}")
-        
-            self.date_filter_eof_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
+            
+            self.date_filter_eof_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
+                    MOM_HOST,
+                    EOF_CONTROL_EXCHANGE,
+                    [f"{DATE_FILTER_PREFIX}_{self.id}"],
+                )
+            self._eof_producer_lock = threading.Lock()
+            self.date_filter_eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
                     MOM_HOST,
                     EOF_CONTROL_EXCHANGE,
                     date_filters,
                 )
+            
 
 
         self._sigterm_received = False
@@ -92,7 +101,7 @@ class DateFilter:
     
     def _run_control_consumer(self):
         try:
-            self.date_filter_eof_exchange.start_consuming(self.process_eof_control_message)
+            self.date_filter_eof_exchange_consumer.start_consuming(self.process_eof_control_message)
         except Exception as e:
             self._handle_runtime_failure(e, "Control consumer crashed")
     
@@ -123,24 +132,12 @@ class DateFilter:
 
         if anio == "2022" and mes == "09":
             if dia in ["01", "02", "03", "04", "05"]:
-                message = {
-                    "account_origin": transaction_data["account_origin"],
-                    "amount_received": transaction_data["amount_received"],
-                    "receiving_currency": transaction_data["receiving_currency"]
-                }
                 self.usd_filters_q3_queue.send(
-                    DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, message)
+                    DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
                 )
             elif dia in ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
-                message = {
-                    "account_origin": transaction_data["account_origin"],
-                    "account_destination": transaction_data["account_destination"],
-                    "amount_received": transaction_data["amount_received"],
-                    "receiving_currency": transaction_data["receiving_currency"],
-                    "payment_format": transaction_data["payment_format"]
-                }
                 self.usd_filters_q4_queue.send(
-                    DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, message)
+                    DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
                 )
                 message = {
                     "timestamp": transaction_data["timestamp"],
@@ -162,8 +159,9 @@ class DateFilter:
         logging.info(f"Received EOF for client {client_id}")
 
         if DATE_FILTER_AMOUNT > 1:
-            self.date_filter_eof_exchange.send(DateFilterMessageHandler.serialize_eof_message(client_id))
-            logging.info(f"Sent EOF for client {client_id} to other date filters")
+            with self._eof_producer_lock:
+                self.date_filter_eof_exchange_producer.send(DateFilterMessageHandler.serialize_eof_message(client_id))
+                logging.info(f"Sent EOF for client {client_id} to other date filters")
 
         self._finalize_client(client_id)
     
@@ -200,7 +198,8 @@ class DateFilter:
         
 
     def send_eof_leader_message(self, client_id):
-        self.date_filter_eof_exchange.send(DateFilterMessageHandler.serialize_eof_leader_message(client_id))
+        with self._eof_producer_lock:
+            self.date_filter_eof_exchange_producer.send(DateFilterMessageHandler.serialize_eof_leader_message(client_id))
         logging.info(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
 
     def _add_inflight_message(self, client_id):
@@ -256,8 +255,8 @@ class DateFilter:
             self._stopping = True
 
         consumers = [self.gateway_queue]
-        if self.date_filter_eof_exchange is not None:
-            consumers.append(self.date_filter_eof_exchange)
+        if self.date_filter_eof_exchange_consumer is not None:
+            consumers.append(self.date_filter_eof_exchange_consumer)
 
         for consumer in consumers:
             try:
@@ -267,14 +266,16 @@ class DateFilter:
 
     def _close_resources(self):
         resources = [self.gateway_queue]
-        if self.date_filter_eof_exchange is not None:
-            resources.append(self.date_filter_eof_exchange)
+        if self.date_filter_eof_exchange_consumer is not None:
+            resources.append(self.date_filter_eof_exchange_consumer)
         if self.usd_filters_q3_queue is not None:
             resources.append(self.usd_filters_q3_queue)
         if self.usd_filters_q4_queue is not None:
             resources.append(self.usd_filters_q4_queue)
         if self.pay_format_filter_queue is not None:
             resources.append(self.pay_format_filter_queue)
+        if self.date_filter_eof_exchange_producer is not None:
+            resources.append(self.date_filter_eof_exchange_producer)
 
         for resource in resources:
             try:

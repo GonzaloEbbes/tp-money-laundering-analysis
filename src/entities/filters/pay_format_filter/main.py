@@ -7,7 +7,7 @@ import threading
 from time import sleep
 
 from common import middleware, message_protocol
-from entities.filters.pay_format_filter.message_handler.message_handler import MessageHandler as PayFormatFilterMessageHandler
+from message_handler import MessageHandler as PayFormatFilterMessageHandler
 
 logging.basicConfig(
             level=logging.INFO,
@@ -18,7 +18,7 @@ logging.basicConfig(
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
 INPUT_QUEUE = os.environ["INPUT_QUEUE"] #es el date filter
-PAY_FORMAT_FILTER_PREFIX = int(os.environ["PAY_FORMAT_FILTER_PREFIX"])
+PAY_FORMAT_FILTER_PREFIX = os.environ["PAY_FORMAT_FILTER_PREFIX"]
 PAY_FORMAT_FILTER_AMOUNT = int(os.environ["PAY_FORMAT_FILTER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
@@ -44,17 +44,24 @@ class PayFormatFilter:
             )
 
         #Exchange de control EOF
-        self.pay_format_filter_eof_exchange = None
+        self.pay_format_filter_eof_exchange_consumer = None
+        self.pay_format_filter_eof_exchange_producer = None
         if PAY_FORMAT_FILTER_AMOUNT > 1:
-            par_format_filters = []
+            pay_format_filters = []
             for i in range(PAY_FORMAT_FILTER_AMOUNT):
                 if i != self.id:
-                    par_format_filters.append(f"{PAY_FORMAT_FILTER_PREFIX}_{i}")
+                    pay_format_filters.append(f"{PAY_FORMAT_FILTER_PREFIX}_{i}")
         
-            self.pay_format_filter_eof_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
+            self.pay_format_filter_eof_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
                     MOM_HOST,
                     EOF_CONTROL_EXCHANGE,
-                    par_format_filters,
+                    [f"{PAY_FORMAT_FILTER_PREFIX}_{self.id}"],
+                )
+            self._eof_producer_lock = threading.Lock()
+            self.pay_format_filter_eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
+                    MOM_HOST,
+                    EOF_CONTROL_EXCHANGE,
+                    pay_format_filters,
                 )
 
 
@@ -86,7 +93,7 @@ class PayFormatFilter:
     
     def _run_control_consumer(self):
         try:
-            self.pay_format_filter_eof_exchange.start_consuming(self.process_eof_control_message)
+            self.pay_format_filter_eof_exchange_consumer.start_consuming(self.process_eof_control_message)
         except Exception as e:
             self._handle_runtime_failure(e, "Control consumer crashed")
     
@@ -125,7 +132,8 @@ class PayFormatFilter:
         logging.info(f"Received EOF for client {client_id}")
 
         if PAY_FORMAT_FILTER_AMOUNT > 1:
-            self.pay_format_filter_eof_exchange.send(PayFormatFilterMessageHandler.serialize_eof_message(client_id))
+            with self._eof_producer_lock:
+                self.pay_format_filter_eof_exchange_producer.send(PayFormatFilterMessageHandler.serialize_eof_message(client_id))
             logging.info(f"Sent EOF for client {client_id} to other pay format filters")
 
         self._finalize_client(client_id)
@@ -163,7 +171,8 @@ class PayFormatFilter:
         
 
     def send_eof_leader_message(self, client_id):
-        self.pay_format_filter_eof_exchange.send(PayFormatFilterMessageHandler.serialize_eof_leader_message(client_id))
+        with self._eof_producer_lock:
+            self.pay_format_filter_eof_exchange_producer.send(PayFormatFilterMessageHandler.serialize_eof_leader_message(client_id))
         logging.info(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
 
     def _add_inflight_message(self, client_id):
@@ -219,8 +228,8 @@ class PayFormatFilter:
             self._stopping = True
 
         consumers = [self.date_filter_queue]
-        if self.pay_format_filter_eof_exchange is not None:
-            consumers.append(self.pay_format_filter_eof_exchange)
+        if self.pay_format_filter_eof_exchange_consumer is not None:
+            consumers.append(self.pay_format_filter_eof_exchange_consumer)
 
         for consumer in consumers:
             try:
@@ -230,12 +239,14 @@ class PayFormatFilter:
 
     def _close_resources(self):
         resources = [self.date_filter_queue]
-        if self.pay_format_filter_eof_exchange is not None:
-            resources.append(self.pay_format_filter_eof_exchange)
+        if self.pay_format_filter_eof_exchange_consumer is not None:
+            resources.append(self.pay_format_filter_eof_exchange_consumer)
         if self.usd_currency_converter_queue is not None:
             resources.append(self.usd_currency_converter_queue)
         if self.amount_filter_q5_queue is not None:
             resources.append(self.amount_filter_q5_queue)
+        if self.pay_format_filter_eof_exchange_producer is not None:
+            resources.append(self.pay_format_filter_eof_exchange_producer)
 
         for resource in resources:
             try:
