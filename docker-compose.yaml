@@ -130,7 +130,7 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
-  
+
   usd_filter_q1q2_2:
     build:
       context: ./src
@@ -274,7 +274,10 @@ services:
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
       - PAY_FORMAT_FILTER_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
-      - USD_CURRENCY_CONVERTER_QUEUE=pay_format_filter_to_usd_currency_converter_queue
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
   pay_format_filter_1:
     build:
@@ -292,7 +295,10 @@ services:
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
       - PAY_FORMAT_FILTER_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
-      - USD_CURRENCY_CONVERTER_QUEUE=pay_format_filter_to_usd_currency_converter_queue
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
   pay_format_filter_2:
     build:
@@ -310,7 +316,10 @@ services:
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
       - PAY_FORMAT_FILTER_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
-      - USD_CURRENCY_CONVERTER_QUEUE=pay_format_filter_to_usd_currency_converter_queue
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
 
 
@@ -571,6 +580,122 @@ services:
       - TOTAL_DEDUPLICATORS=4
       - TOTAL_REDUCERS=3
 
+  currency_converter_0:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: currency_converter_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=CurrencyConverter
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_converter_queue_0
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_ROUTING_KEY=conversion.0
+      - CONVERSION_PROVIDER=frankfurter
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CONVERSION_AMOUNT_FIELD=amount_paid
+      - CONVERSION_CURRENCY_FIELD=payment_currency
+      - CONVERSION_DATE_FIELD=timestamp
+      - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - FRANKFURTER_MAX_RETRIES=2
+      - FRANKFURTER_RETRY_DELAY_SECONDS=1
+      - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
+    volumes:
+      - ./data:/data
+
+  currency_converter_1:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: currency_converter_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=CurrencyConverter
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_converter_queue_1
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_ROUTING_KEY=conversion.1
+      - CONVERSION_PROVIDER=frankfurter
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CONVERSION_AMOUNT_FIELD=amount_paid
+      - CONVERSION_CURRENCY_FIELD=payment_currency
+      - CONVERSION_DATE_FIELD=timestamp
+      - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - FRANKFURTER_MAX_RETRIES=2
+      - FRANKFURTER_RETRY_DELAY_SECONDS=1
+      - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
+    volumes:
+      - ./data:/data
+
+  currency_converter_2:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: currency_converter_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=CurrencyConverter
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_converter_queue_2
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_ROUTING_KEY=conversion.2
+      - CONVERSION_PROVIDER=frankfurter
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CONVERSION_AMOUNT_FIELD=amount_paid
+      - CONVERSION_CURRENCY_FIELD=payment_currency
+      - CONVERSION_DATE_FIELD=timestamp
+      - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - FRANKFURTER_MAX_RETRIES=2
+      - FRANKFURTER_RETRY_DELAY_SECONDS=1
+      - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
+    volumes:
+      - ./data:/data
+
+  currency_converter_3:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: currency_converter_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=CurrencyConverter
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_converter_queue_3
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_ROUTING_KEY=conversion.3
+      - CONVERSION_PROVIDER=frankfurter
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CONVERSION_AMOUNT_FIELD=amount_paid
+      - CONVERSION_CURRENCY_FIELD=payment_currency
+      - CONVERSION_DATE_FIELD=timestamp
+      - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - FRANKFURTER_MAX_RETRIES=2
+      - FRANKFURTER_RETRY_DELAY_SECONDS=1
+      - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
+    volumes:
+      - ./data:/data
+
   client:
     build:
       context: ./src
@@ -605,6 +730,10 @@ services:
       - map_max_amount_per_bank_1
       - map_max_amount_per_bank_2
       - join_max_amount_per_bank
+      - currency_converter_0
+      - currency_converter_1
+      - currency_converter_2
+      - currency_converter_3
     volumes:
       - ./data:/data
     environment:

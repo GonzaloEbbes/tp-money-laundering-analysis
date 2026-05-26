@@ -6,6 +6,7 @@ SCALE_CONFIG = {
     "data_per_bank_redirector": 1,
     "map_max_amount_per_bank": 3,
     "join_max_amount_per_bank": 1,
+    "currency_converter": 4,
     "date_filter": 2,
 }
 
@@ -50,7 +51,17 @@ def generate_compose():
     all_workers_created = []
 
 
-    def add_worker(name, entity_class, input_queue, output_queue=None, extra_env=None, queue_index=None, scale=1):
+    def add_worker(
+        name,
+        entity_class,
+        input_queue,
+        output_queue=None,
+        extra_env=None,
+        queue_index=None,
+        scale=1,
+        shard_input=False,
+        volumes=None,
+    ):
         """
         Agrega uno o varios contenedores para un worker.
         Si scale > 1, se añaden múltiples instancias con el mismo nombre base.
@@ -58,7 +69,10 @@ def generate_compose():
         """
         for i in range(scale):
             container_name = f"{name}_{i}" if scale > 1 else name
-            in_queue = f"{input_queue}_{queue_index}" if queue_index is not None else input_queue
+            if shard_input:
+                in_queue = f"{input_queue}_{i}"
+            else:
+                in_queue = f"{input_queue}_{queue_index}" if queue_index is not None else input_queue
             all_workers_created.append(container_name)
 
             yaml_lines.extend([
@@ -80,10 +94,16 @@ def generate_compose():
             if output_queue:
                 yaml_lines.append(f"      - OUTPUT_QUEUE={output_queue}")
             if extra_env:
-                for k, v in extra_env.items():
-                    yaml_lines.append(f"      - {k}={v}")
+                env_vars = extra_env(i) if callable(extra_env) else extra_env
+                if isinstance(env_vars, dict):
+                    env_vars = [f"{key}={value}" for key, value in env_vars.items()]
+                for env_var in env_vars:
+                    yaml_lines.append(f"      - {env_var}")
+            if volumes:
+                yaml_lines.append("    volumes:")
+                for volume in volumes:
+                    yaml_lines.append(f"      - {volume}")
             yaml_lines.append("")
-
 
     add_worker(
         "currency_filter",
@@ -140,6 +160,30 @@ def generate_compose():
     }
     add_worker("date_filter", "DateFilter", "date_filter_queue", output_queue=None, extra_env=date_filter_extra, scale=SCALE_CONFIG["date_filter"])
 
+    add_worker(
+        "currency_converter",
+        "CurrencyConverter",
+        "currency_converter_queue",
+        "pay_format_filter_to_amount_filter_q5_queue",
+        scale=SCALE_CONFIG["currency_converter"],
+        shard_input=True,
+        extra_env=lambda i: [
+            "CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange",
+            "CONVERSION_QUEUE_PREFIX=currency_converter_queue",
+            f"CONVERSION_ROUTING_KEY=conversion.{i}",
+            "CONVERSION_PROVIDER=frankfurter",
+            "STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json",
+            "CONVERSION_AMOUNT_FIELD=amount_paid",
+            "CONVERSION_CURRENCY_FIELD=payment_currency",
+            "CONVERSION_DATE_FIELD=timestamp",
+            "CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid",
+            "FRANKFURTER_MAX_RETRIES=2",
+            "FRANKFURTER_RETRY_DELAY_SECONDS=1",
+            "FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60",
+        ],
+        volumes=["./data:/data"],
+    )
+
     yaml_lines.extend([
         "  client:",
         "    build:",
@@ -162,7 +206,8 @@ def generate_compose():
         "      - SERVER_PORT=5678",
         "      - DATA_PATH=/data/dataset.csv",
         "      - DATA_PATH_ACCOUNTS=/data/accounts.csv",
-        "",
+        "      - MAX_TRANSACTION_RECORDS=1000",
+        ""
     ])
 
     with open("docker-compose.yaml", "w", encoding="utf-8") as f:
