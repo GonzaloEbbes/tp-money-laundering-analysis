@@ -368,12 +368,59 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+  amount_filter_q5_0:
+    build:
+      context: ./src
+      dockerfile: entities/filters/amount_filter_q5/Dockerfile
+    container_name: amount_filter_q5_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=0
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=pay_format_filter_and_currency_converter_to_amount_filter_q5_queue
+      - AMOUNT_FILTER_PREFIX=amount_filter_q5
+      - AMOUNT_FILTER_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
 
+  amount_filter_q5_1:
+    build:
+      context: ./src
+      dockerfile: entities/filters/amount_filter_q5/Dockerfile
+    container_name: amount_filter_q5_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=1
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=pay_format_filter_and_currency_converter_to_amount_filter_q5_queue
+      - AMOUNT_FILTER_PREFIX=amount_filter_q5
+      - AMOUNT_FILTER_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
 
-
-
-
-
+  amount_filter_q5_2:
+    build:
+      context: ./src
+      dockerfile: entities/filters/amount_filter_q5/Dockerfile
+    container_name: amount_filter_q5_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=2
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=pay_format_filter_and_currency_converter_to_amount_filter_q5_queue
+      - AMOUNT_FILTER_PREFIX=amount_filter_q5
+      - AMOUNT_FILTER_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
 
 
   bank_deduplicator_0:
