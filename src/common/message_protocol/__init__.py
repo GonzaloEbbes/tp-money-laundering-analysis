@@ -1,1 +1,2 @@
-from .internal import deserialize, new_message, serialize
+from .internal import deserialize, serialize, InternalMessageType, InternalMessage, TransactionData, AccountData
+from .external import send_msg, recv_msg, MsgType
