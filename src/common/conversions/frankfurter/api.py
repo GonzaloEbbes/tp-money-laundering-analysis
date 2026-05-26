@@ -60,7 +60,8 @@ class FrankfurterClient:
             raise FrankfurterApiError("Date is required")
 
         params = {"base": base, "symbols": quote}
-        return f"{self.base_url}/{str(date)[:10]}?{urlencode(params)}"
+        date_key = str(date)[:10].replace("/", "-")
+        return f"{self.base_url}/{date_key}?{urlencode(params)}"
 
     def _get_json(self, url):
         request = Request(

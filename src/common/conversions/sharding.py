@@ -13,7 +13,7 @@ def conversion_key(currency, date, target_currency="USD"):
 
     source = str(currency).strip()
     target = str(target_currency).strip()
-    day = str(date)[:10]
+    day = str(date)[:10].replace("/", "-")
     return f"{source}|{target}|{day}"
 
 

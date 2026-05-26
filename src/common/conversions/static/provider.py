@@ -20,7 +20,7 @@ class StaticConversionRateProvider(ConversionRateProvider):
             raise ConversionRateProviderError("Date is required")
 
         currency_key = str(currency).strip()
-        date_key = str(date)[:10]
+        date_key = str(date)[:10].replace("/", "-")
         full_dated_key = f"{currency_key}|USD|{date_key}"
         dated_key = f"{currency_key}|{date_key}"
 

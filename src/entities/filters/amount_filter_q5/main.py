@@ -22,6 +22,7 @@ PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE = os.environ["INPUT_QUEUE"] #Es l
 AMOUNT_FILTER_PREFIX = os.environ["AMOUNT_FILTER_PREFIX"]
 AMOUNT_FILTER_AMOUNT = int(os.environ["AMOUNT_FILTER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
+EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", "2"))
 
 OUTPUT_QUEUE = os.environ["GATEWAY_FINAL_QUERY_QUEUE"]
 
@@ -31,6 +32,15 @@ class AmountFilterQ1:
     def __init__(self):
         self.pay_format_filter_and_currency_converter_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE
+        )
+        logging.info(
+            "AmountFilterQ5 wiring: input_queue=%s output_queue=%s amount_filter_prefix=%s "
+            "amount_filter_amount=%s expected_input_eofs=%s",
+            PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE,
+            OUTPUT_QUEUE,
+            AMOUNT_FILTER_PREFIX,
+            AMOUNT_FILTER_AMOUNT,
+            EXPECTED_INPUT_EOFS,
         )
         
         self.id = int(ID)
@@ -87,6 +97,10 @@ class AmountFilterQ1:
     
     def _run_pay_format_filter_and_currency_converter_consumer(self):
         try:
+            logging.info(
+                "AmountFilterQ5 consuming combined Q5 queue=%s",
+                PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE,
+            )
             self.pay_format_filter_and_currency_converter_queue.start_consuming(self.process_pay_format_and_currency_converter_messages)
         except Exception as e:
             self._handle_runtime_failure(e, "Pay format filter and currency converter consumer crashed")
@@ -130,18 +144,25 @@ class AmountFilterQ1:
         
 
     def _process_usd_currency_converter_message(self, transaction_data, client_id, data_id): 
-        #TODO: GONZA completa con la logica de suma en base al dato que pases. El resto ya esta
         logging.info(f"Received USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5 for client {client_id}")
-        #amount_received = float(transaction_data.get("amount_received"))
+        amount_paid = float(transaction_data.get("amount_paid"))
 
-        #if amount_received > 0 and amount_received < 1:
-        #    self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data))
-        #    logging.info(f"Transaction for client {client_id} sent to final gateway queue")
+        if amount_paid > 0 and amount_paid < 1:
+            with self.cant_trx_lock:
+                self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
 
     def send_final_eof(self, client_id):
         data_id = str(uuid.uuid4()) 
         with self.cant_trx_lock:
-            self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_gateway_query_message(client_id, data_id, { "cantTrx": self.cant_trx_by_client.get(client_id, 0) }))
+            cant_trx = self.cant_trx_by_client.get(client_id, 0)
+            self.gateway_final_query_queue.send(
+                AmountFilterQ1MessageHandler.serialize_gateway_query_message(
+                    client_id,
+                    data_id,
+                    {"cantTrx": cant_trx},
+                )
+            )
+        logging.info("Q5 final result for client %s: cantTrx=%s", client_id, cant_trx)
         self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_eof_message(client_id))
         logging.info(f"Sent final EOF for client {client_id} to gateway final query queue")
     
@@ -194,7 +215,7 @@ class AmountFilterQ1:
                 self._is_pending_to_finalize_client.add(client_id)
             logging.info(f"There are inflight messages for client {client_id}. Marking client as finalized but waiting for inflight messages to finish.")
             return
-        logging.info(f"2 EOFs for client {client_id} and no inflight messages. Finalizing client.")
+        logging.info(f"Required EOFs for client {client_id} and no inflight messages. Finalizing client.")
         self._finalize_client(client_id)
 
     def send_eof_leader_message(self, client_id):
@@ -255,13 +276,13 @@ class AmountFilterQ1:
             count = self._eof_count_by_client.get(client_id, 0) + 1
             self._eof_count_by_client[client_id] = count
 
-        logging.info(f"EOF count for client {client_id}: {count}/2")
-        return count >= 2
+        logging.info(f"EOF count for client {client_id}: {count}/{EXPECTED_INPUT_EOFS}")
+        return count >= EXPECTED_INPUT_EOFS
 
 
     def _has_required_eofs_for_client(self, client_id):
         with self._eof_count_lock:
-            return self._eof_count_by_client.get(client_id, 0) >= 2
+            return self._eof_count_by_client.get(client_id, 0) >= EXPECTED_INPUT_EOFS
 
     def stop(self):
         with self._stop_lock:
@@ -304,28 +325,19 @@ class AmountFilterQ1:
         self.stop()
     
     def start(self):
-
-        pay_format_filter_and_currency_converter_thread = threading.Thread(
-        target=self._run_pay_format_filter_and_currency_converter_consumer,
-        name="pay-format-filter-and-currency-converter-consumer-thread",
-        )
-
-
         if AMOUNT_FILTER_AMOUNT > 1:
             control_thread = threading.Thread(
                 target=self._run_control_consumer,
                 name="amount-control-consumer-thread",
             )
 
-        input_filter_thread_started = False
         control_started = False
 
         try:
-            pay_format_filter_and_currency_converter_thread.start()
-            input_filter_thread_started = True
             if AMOUNT_FILTER_AMOUNT > 1:
                 control_thread.start()
                 control_started = True
+            self._run_pay_format_filter_and_currency_converter_consumer()
 
         except Exception as e:
             logging.error(e)
@@ -333,8 +345,6 @@ class AmountFilterQ1:
             self._close_resources()
             return 2
 
-        if input_filter_thread_started:
-            pay_format_filter_and_currency_converter_thread.join()
         if control_started:
             control_thread.join()
 
