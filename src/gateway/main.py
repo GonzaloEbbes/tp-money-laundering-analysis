@@ -115,9 +115,9 @@ RESULT_DATA_EXTRACTORS = {
     message_protocol.internal.InternalMessageType.SCATHER_GATHER_JOINER_TO_GATEWAY:
         lambda data: (data.get("accounts"),) if isinstance(data.get("accounts"), (list, tuple)) else ([]),
     
-    # QUERY_5_RESULT espera transaction_amount (Puede cambiar)
+    # QUERY_5_RESULT espera cantTrx 
     message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q5_TO_GATEWAY:
-        lambda data: (data.get("transaction_amount"),),
+        lambda data: (data.get("cantTrx"),),
 }
 
 def handle_client_response(client_list):
