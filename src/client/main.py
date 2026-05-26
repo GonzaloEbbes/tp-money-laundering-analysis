@@ -139,7 +139,7 @@ class Client:
                 tag, data = self.result_queue.get(timeout=60)
                 if tag == 'eof':
                     logging.info(f"Received EOF from gateway. Total results: {result_count}")
-                    continue
+                    break
                 elif isinstance(tag, int):
                     result_count += 1
                 if self.result_queue is queue.Empty:

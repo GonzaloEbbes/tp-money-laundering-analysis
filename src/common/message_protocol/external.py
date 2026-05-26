@@ -86,11 +86,11 @@ def _recv_transaction_record(socket):
     to_bank = external_serializer.deserialize_string(
         _recv_sized(socket, to_bank_size)
     )
-    account_destiny_size = external_serializer.deserialize_uint32(
+    account_destination_size = external_serializer.deserialize_uint32(
         _recv_sized(socket, external_serializer.UINT32_SIZE)
     )
-    account_destiny = external_serializer.deserialize_string(
-        _recv_sized(socket, account_destiny_size)
+    account_destination = external_serializer.deserialize_string(
+        _recv_sized(socket, account_destination_size)
     )
     amount_received = external_serializer.deserialize_double(
         _recv_sized(socket, external_serializer.DOUBLE_SIZE)
@@ -117,7 +117,7 @@ def _recv_transaction_record(socket):
         _recv_sized(socket, payment_format_size)
     )
 
-    return (timestamp, from_bank, account_origin, to_bank, account_destiny,
+    return (timestamp, from_bank, account_origin, to_bank, account_destination,
             amount_received, receiving_currency, amount_paid,
             payment_currency, payment_format)
 
@@ -128,17 +128,17 @@ def _recv_query_1_result(socket):
     account_origin = external_serializer.deserialize_string(
         _recv_sized(socket, account_origin_size)
     )
-    account_destiny_size = external_serializer.deserialize_uint32(
+    account_destination_size = external_serializer.deserialize_uint32(
         _recv_sized(socket, external_serializer.UINT32_SIZE)
     )
-    account_destiny = external_serializer.deserialize_string(
-        _recv_sized(socket, account_destiny_size)
+    account_destination = external_serializer.deserialize_string(
+        _recv_sized(socket, account_destination_size)
     )
     total_amount = external_serializer.deserialize_double(
         _recv_sized(socket, external_serializer.DOUBLE_SIZE)
     )
 
-    return (account_origin, account_destiny, total_amount)
+    return (account_origin, account_destination, total_amount)
 
 def _recv_query_2_result(socket):
     bank_name_size = external_serializer.deserialize_uint32(
@@ -147,28 +147,28 @@ def _recv_query_2_result(socket):
     bank_name = external_serializer.deserialize_string(
         _recv_sized(socket, bank_name_size)
     )
-    origin_account_size = external_serializer.deserialize_uint32(
+    account_origin_size = external_serializer.deserialize_uint32(
         _recv_sized(socket, external_serializer.UINT32_SIZE)
     )
-    origin_account = external_serializer.deserialize_string(
-        _recv_sized(socket, origin_account_size)
+    account_origin = external_serializer.deserialize_string(
+        _recv_sized(socket, account_origin_size)
     )
     max_amount = external_serializer.deserialize_double(
         _recv_sized(socket, external_serializer.DOUBLE_SIZE)
     )
-    return (bank_name, origin_account, max_amount)
+    return (bank_name, account_origin, max_amount)
 
 def _recv_query_3_result(socket):
-    origin_account_size = external_serializer.deserialize_uint32(
+    account_origin_size = external_serializer.deserialize_uint32(
         _recv_sized(socket, external_serializer.UINT32_SIZE)
     )
-    origin_account = external_serializer.deserialize_string(
-        _recv_sized(socket, origin_account_size)
+    account_origin = external_serializer.deserialize_string(
+        _recv_sized(socket, account_origin_size)
     )
     amount = external_serializer.deserialize_double(
         _recv_sized(socket, external_serializer.DOUBLE_SIZE)
     )
-    return (origin_account, amount)
+    return (account_origin, amount)
 
 def _recv_query_4_result(socket):
     accounts_size = external_serializer.deserialize_uint32(
@@ -235,7 +235,7 @@ def _serialize_account_record(bank_name, bank_id, account_number, entity_id, ent
     )
 
 def _serialize_transaction_record(timestamp, from_bank, account_origin,
-                                  to_bank, account_destiny, amount_received,
+                                  to_bank, account_destination, amount_received,
                                   receiving_currency, amount_paid,
                                   payment_currency, payment_format):
     return b"".join(
@@ -249,8 +249,8 @@ def _serialize_transaction_record(timestamp, from_bank, account_origin,
             external_serializer.serialize_string(account_origin),
             external_serializer.serialize_uint32(len(to_bank)),
             external_serializer.serialize_string(to_bank),
-            external_serializer.serialize_uint32(len(account_destiny)),
-            external_serializer.serialize_string(account_destiny),
+            external_serializer.serialize_uint32(len(account_destination)),
+            external_serializer.serialize_string(account_destination),
             external_serializer.serialize_double(amount_received),
             external_serializer.serialize_uint32(len(receiving_currency)),
             external_serializer.serialize_string(receiving_currency),
@@ -262,37 +262,38 @@ def _serialize_transaction_record(timestamp, from_bank, account_origin,
         ]
     )
 
-def _serialize_query_1_result(account_origin, account_destiny, total_amount):
+def _serialize_query_1_result(account_origin, account_destination, amount_received : float
+):
     return b"".join(
         [
             external_serializer.serialize_uint32(MsgType.QUERY_1_RESULT),
             external_serializer.serialize_uint32(len(account_origin)),
             external_serializer.serialize_string(account_origin),
-            external_serializer.serialize_uint32(len(account_destiny)),
-            external_serializer.serialize_string(account_destiny),
-            external_serializer.serialize_double(total_amount),
+            external_serializer.serialize_uint32(len(account_destination)),
+            external_serializer.serialize_string(account_destination),
+            external_serializer.serialize_double(amount_received),
         ]
     )
 
-def _serialize_query_2_result(bank_name, origin_account, max_amount):
+def _serialize_query_2_result(bank_name, account_origin, amount_received):
     return b"".join(
         [
             external_serializer.serialize_uint32(MsgType.QUERY_2_RESULT),
             external_serializer.serialize_uint32(len(bank_name)),
             external_serializer.serialize_string(bank_name),
-            external_serializer.serialize_uint32(len(origin_account)),
-            external_serializer.serialize_string(origin_account),
-            external_serializer.serialize_double(max_amount),
+            external_serializer.serialize_uint32(len(account_origin)),
+            external_serializer.serialize_string(account_origin),
+            external_serializer.serialize_double(amount_received),
         ]
     )
 
-def _serialize_query_3_result(origin_account, amount):
+def _serialize_query_3_result(account_origin, amount_received):
     return b"".join(
         [
             external_serializer.serialize_uint32(MsgType.QUERY_3_RESULT),
-            external_serializer.serialize_uint32(len(origin_account)),
-            external_serializer.serialize_string(origin_account),
-            external_serializer.serialize_double(amount),
+            external_serializer.serialize_uint32(len(account_origin)),
+            external_serializer.serialize_string(account_origin),
+            external_serializer.serialize_double(amount_received),
         ]
     )
 
@@ -309,16 +310,16 @@ def _serialize_query_5_result(transaction_amount):
     msg += external_serializer.serialize_uint32(transaction_amount)
     return msg
 
-def _send_query_1_result(socket, account_origin, account_destiny, total_amount):
-    msg = _serialize_query_1_result(account_origin, account_destiny, total_amount)
+def _send_query_1_result(socket, account_origin, account_destination, total_amount):
+    msg = _serialize_query_1_result(account_origin, account_destination, total_amount)
     socket.sendall(msg)
 
-def _send_query_2_result(socket, bank_name, origin_account, max_amount):
-    msg = _serialize_query_2_result(bank_name, origin_account, max_amount)
+def _send_query_2_result(socket, bank_name, account_origin, max_amount):
+    msg = _serialize_query_2_result(bank_name, account_origin, max_amount)
     socket.sendall(msg)
 
-def _send_query_3_result(socket, origin_account, amount):
-    msg = _serialize_query_3_result(origin_account, amount)
+def _send_query_3_result(socket, account_origin, amount):
+    msg = _serialize_query_3_result(account_origin, amount)
     socket.sendall(msg)
 
 def _send_query_4_result(socket, accounts):
@@ -334,11 +335,11 @@ def _send_account_record(socket, bank_name, bank_id, account_number, entity_id, 
     socket.sendall(msg)
 
 def _send_transaction_record(socket, timestamp, from_bank, account_origin,
-                                to_bank, account_destiny, amount_received,
+                                to_bank, account_destination, amount_received,
                                 receiving_currency, amount_paid,
                                 payment_currency, payment_format):
     msg = _serialize_transaction_record(timestamp, from_bank, account_origin,
-                                        to_bank, account_destiny, amount_received,
+                                        to_bank, account_destination, amount_received,
                                         receiving_currency, amount_paid,
                                         payment_currency, payment_format)
     socket.sendall(msg)

@@ -40,13 +40,13 @@ class MessageHandler:
         return payment_format.lower() == "reinvestment"
     
     def serialize_transaction_currency(self, msg_data):
-        (_timestamp, from_bank, account_origin, _, account_destiny,
+        (_timestamp, from_bank, account_origin, _, account_destination,
          amount_received, receiving_currency, _amount_paid,
          payment_currency, _payment_format) = msg_data
         currency_data = {
             "from_bank": from_bank,
             "account_origin": account_origin,
-            "account_destiny": account_destiny,
+            "account_destination": account_destination,
             "amount_received": amount_received,
             "receiving_currency": receiving_currency,
             "payment_currency": payment_currency,
@@ -61,13 +61,13 @@ class MessageHandler:
         )
     
     def serialize_transaction_date(self, msg_data):
-        (timestamp, _from_bank, account_origin, _, account_destiny,
+        (timestamp, _from_bank, account_origin, _, account_destination,
          amount_received, receiving_currency, amount_paid,
          payment_currency, payment_format) = msg_data
         date_data = {
             "timestamp": timestamp,
             "account_origin": account_origin,
-            "account_destiny": account_destiny,
+            "account_destination": account_destination,
             "amount_received": amount_received,
             "receiving_currency": receiving_currency,
             "amount_paid": amount_paid,

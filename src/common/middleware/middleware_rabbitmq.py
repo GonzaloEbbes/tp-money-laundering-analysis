@@ -1,3 +1,4 @@
+import logging
 import pika
 from .middleware import MessageMiddlewareCloseError, MessageMiddlewareDisconnectedError, MessageMiddlewareMessageError, MessageMiddlewareQueue, MessageMiddlewareExchange
 
@@ -22,7 +23,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 		#Flags
 		self._consuming = False
 		self._consumer_tag = None
-
+		logging.getLogger("pika").setLevel(logging.WARNING) 
 		try:
 			self._connection = pika.BlockingConnection(pika.ConnectionParameters(host))
 			self._channel = self._connection.channel()
