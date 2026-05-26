@@ -41,7 +41,6 @@ class PipelineEntity(ABC):
     def _handle_raw_message(self, raw_message, ack, nack):
         try:
             message = message_protocol.deserialize(raw_message)
-            message.setdefault("visited", []).append(self.entity_type())
             processed = self.process_message(message)
             if self.processing_delay_seconds > 0:
                 time.sleep(self.processing_delay_seconds)
@@ -51,7 +50,14 @@ class PipelineEntity(ABC):
                     msg_to_send, r_key = processed
                 else:
                     msg_to_send, r_key = processed, None
-                self.output_queue.send(message_protocol.serialize(msg_to_send), routing_key=r_key)
+                serialized_bytes = message_protocol.internal.serialize(
+                    msg_to_send.type,
+                    msg_to_send.source_client_uuid,
+                    msg_to_send.data_id,
+                    msg_to_send.data
+                )
+                
+                self.output_queue.send(serialized_bytes)
             ack()
         except Exception:
             logging.exception("%s failed while processing message", self.entity_type())

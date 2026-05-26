@@ -1,1 +1,3 @@
-from .middleware_rabbitmq import MessageMiddlewareQueueRabbitMQ
+from .middleware_rabbitmq import (MessageMiddlewareQueueRabbitMQ,
+                                  MessageMiddlewareExchangeRabbitMQ
+)

@@ -2,6 +2,7 @@ import logging
 import os
 from decimal import Decimal, InvalidOperation
 
+from common import message_protocol
 from common.entity import PipelineEntity
 from common.conversions import (
     ConversionRateProviderError,
@@ -22,41 +23,48 @@ class CurrencyConverter(PipelineEntity):
         self.provider = build_conversion_rate_provider()
         self.static_fallback_provider = _build_static_fallback_provider()
         self.cache = {}
-        self.amount_field = os.environ.get("CONVERSION_AMOUNT_FIELD", "AmountPaid")
-        self.currency_field = os.environ.get("CONVERSION_CURRENCY_FIELD", "PaymentCurrency")
-        self.date_field = os.environ.get("CONVERSION_DATE_FIELD", "Timestamp")
+        self.amount_field = os.environ.get("CONVERSION_AMOUNT_FIELD", "amount_paid")
+        self.currency_field = os.environ.get("CONVERSION_CURRENCY_FIELD", "payment_currency")
+        self.date_field = os.environ.get("CONVERSION_DATE_FIELD", "timestamp")
         self.output_amount_field = os.environ.get(
             "CONVERSION_OUTPUT_AMOUNT_FIELD",
-            "AmountPaidUSD",
+            "amount_paid_usd",
         )
 
     def entity_type(self):
         return "currency_converter"
 
     def process_message(self, message):
-        payload = message.get("payload", {})
-
-        if payload.get("type") == "EOF":
+        if message.type == message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
             return message
+
+        if (
+            message.type
+            != message_protocol.internal.InternalMessageType.PAY_FORMAT_FILTER_TO_USD_CURRENCY_CONVERTER
+        ):
+            return None
+
+        payload = message.data or {}
 
         try:
             converted_payload = self._convert_payload(payload)
         except (ConversionRateProviderError, InvalidOperation, ValueError, TypeError) as error:
             LOGGER.exception("Currency conversion failed. payload=%s", payload)
-            message["payload"] = {
-                "status": "CONVERSION_ERROR",
-                "query_id": payload.get("query_id"),
-                "error": str(error),
-            }
-            return message
+            return None
 
-        message["payload"] = converted_payload
-        return message
+        return message_protocol.internal.InternalMessage(
+            type=message_protocol.internal.InternalMessageType.USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5,
+            source_client_uuid=message.source_client_uuid,
+            data_id=message.data_id,
+            data=message_protocol.internal.TransactionData(converted_payload),
+        )
 
     def _convert_payload(self, payload):
-        currency = to_frankfurter_currency(payload.get(self.currency_field))
-        date = payload.get(self.date_field)
-        amount = Decimal(str(payload.get(self.amount_field)))
+        currency = to_frankfurter_currency(
+            self._payload_get(payload, self.currency_field, "payment_currency", "PaymentCurrency")
+        )
+        date = self._payload_get(payload, self.date_field, "timestamp", "Timestamp")
+        amount = Decimal(str(self._payload_get(payload, self.amount_field, "amount_paid", "AmountPaid")))
         key = payload.get("conversion_key") or conversion_key(currency, date)
 
         rate = self.cache.get(key)
@@ -70,6 +78,12 @@ class CurrencyConverter(PipelineEntity):
         converted_payload["conversion_rate_to_usd"] = str(rate)
         converted_payload[self.output_amount_field] = str(amount * rate)
         return converted_payload
+
+    def _payload_get(self, payload, *field_names):
+        for field_name in field_names:
+            if field_name in payload:
+                return payload[field_name]
+        return None
 
     def _get_rate(self, currency, date):
         if is_unsupported_by_frankfurter(currency):
