@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 
 from common import message_protocol
 from common.entity import PipelineEntity
+from common.middleware import MessageMiddlewareExchangeRabbitMQ
 from common.conversions import (
     ConversionRateProviderError,
     build_conversion_rate_provider,
@@ -20,6 +21,17 @@ LOGGER = logging.getLogger(__name__)
 class CurrencyConverter(PipelineEntity):
     def __init__(self, mom_host, input_queue, output_queue=None):
         super().__init__(mom_host, input_queue, output_queue)
+        input_exchange = os.environ.get("CONVERSION_INPUT_EXCHANGE")
+        routing_key = os.environ.get("CONVERSION_ROUTING_KEY")
+        if input_exchange and routing_key:
+            self.input_queue.close()
+            self.input_queue = MessageMiddlewareExchangeRabbitMQ(
+                mom_host,
+                input_exchange,
+                [routing_key],
+                queue_name=input_queue,
+                exclusive=False,
+            )
         self.provider = build_conversion_rate_provider()
         self.static_fallback_provider = _build_static_fallback_provider()
         self.cache = {}

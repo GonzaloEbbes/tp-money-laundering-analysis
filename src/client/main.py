@@ -13,13 +13,10 @@ SERVER_HOST = os.environ["SERVER_HOST"]
 SERVER_PORT = int(os.environ["SERVER_PORT"])
 DATA_PATH_TRANSACTIONS = os.environ.get("DATA_PATH", "/data/dataset.csv")
 DATA_PATH_ACCOUNTS = os.environ.get("DATA_PATH_ACCOUNTS", "/data/accounts.csv")
-MAX_TRANSACTION_RECORDS = int(os.environ.get("MAX_TRANSACTION_RECORDS", "1000"))
-EXPECTED_RESULT_EOFS = int(os.environ.get("EXPECTED_RESULT_EOFS", "2"))
 
 class Client:
     def __init__(self):
         self.closed = False
-        self.server_socket = None
         self._prev_sigterm_handler = signal.signal(signal.SIGTERM, self.handle_sigterm)
         self.ack_queue = queue.Queue()
         self.result_queue = queue.Queue()
@@ -71,12 +68,7 @@ class Client:
         if self._receiver_thread:
             self._receiver_thread.join(timeout=2)
         if self.server_socket:
-            try:
-                self.server_socket.shutdown(socket.SHUT_RDWR)
-            except OSError:
-                pass
-            self.server_socket.close()
-            self.server_socket = None
+            self.server_socket.shutdown(socket.SHUT_RDWR)
 
     def _send_and_wait_ack(self, msg_type, *args):
         message_protocol.external.send_msg(self.server_socket, msg_type, *args)
@@ -115,9 +107,7 @@ class Client:
         with open(input_file, newline="\n", encoding="utf-8-sig") as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=",", quotechar='"')
             next(csv_reader, None)
-            for index, row in enumerate(csv_reader):
-                if index >= MAX_TRANSACTION_RECORDS:
-                    break
+            for row in csv_reader:
                 [timestamp, from_bank, account_origin,
                  to_bank, account_destiny, amount_received,
                  receiving_currency, amount_paid, payment_currency,
@@ -144,26 +134,19 @@ class Client:
     def receive_all_results(self):
         logging.info("Waiting for results from gateway")
         result_count = 0
-        eof_count = 0
         while True:
             try:
                 tag, data = self.result_queue.get(timeout=60)
                 if tag == 'eof':
-                    eof_count += 1
-                    logging.info(
-                        "Received EOF from gateway. eof_count=%s/%s Total results: %s",
-                        eof_count,
-                        EXPECTED_RESULT_EOFS,
-                        result_count,
-                    )
-                    if eof_count >= EXPECTED_RESULT_EOFS:
-                        break
-                    continue
+                    logging.info(f"Received EOF from gateway. Total results: {result_count}")
+                    break
                 elif isinstance(tag, int):
                     result_count += 1
+                if self.result_queue is queue.Empty:
+                    logging.info(f"Total results received: {result_count}")
+                    break
             except queue.Empty:
                 raise socket.error("Timeout waiting for results")
-        logging.info(f"Total results received: {result_count}")
 
 def main():
     logging.basicConfig(level=logging.INFO)

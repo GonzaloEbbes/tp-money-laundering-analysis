@@ -1,5 +1,14 @@
+import logging
+
 import pika
-from .middleware import MessageMiddlewareCloseError, MessageMiddlewareDisconnectedError, MessageMiddlewareMessageError, MessageMiddlewareQueue, MessageMiddlewareExchange
+from .middleware import (
+	MessageMiddlewareCloseError,
+	MessageMiddlewareDisconnectedError,
+	MessageMiddlewareMessageError,
+	MessageMiddlewareQueue,
+	MessageMiddlewareExchange,
+	MessageMiddlewareExchangePublisher,
+)
 
 # Cantidad maxima de mensajes sin ack entregados al consumidor al mismo tiempo.
 MAX_UNACKED_MESSAGES = 1
@@ -22,7 +31,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 		#Flags
 		self._consuming = False
 		self._consumer_tag = None
-
+		logging.getLogger("pika").setLevel(logging.WARNING) 
 		try:
 			self._connection = pika.BlockingConnection(pika.ConnectionParameters(host))
 			self._channel = self._connection.channel()
@@ -137,12 +146,13 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 	# parciales y eleva MessageMiddlewareMessageError.
 	# Si ocurre un error al liberar recursos parciales, 
 	# eleva MessageMiddlewareCloseError.
-	def __init__(self, host, exchange_name, routing_keys):
+	def __init__(self, host, exchange_name, routing_keys, queue_name=None, exclusive=True):
 		self._connection = None
 		self._channel = None
 		self._exchange_name = exchange_name
 		self._routing_keys = list(routing_keys)
-		self._queue_name = None
+		self._queue_name = queue_name
+		self._exclusive = exclusive
 		self._on_message_callback = None
 
 		#Flags
@@ -196,8 +206,11 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 	# Crea una cola exclusiva autogenerada y la vincula al exchange con cada
 	# routing key indicada en el constructor.
 	def _declare_and_bind_queue_to_routing_keys(self):
-		result = self._channel.queue_declare(queue='',exclusive=True)
-		self._queue_name = result.method.queue
+		if self._queue_name is None:
+			result = self._channel.queue_declare(queue='', exclusive=True)
+			self._queue_name = result.method.queue
+		else:
+			self._channel.queue_declare(queue=self._queue_name, durable=True, exclusive=self._exclusive)
 		for routing_key in self._routing_keys:
 			self._channel.queue_bind(
 				queue=self._queue_name,
@@ -257,6 +270,69 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 		self._consuming = False
 		self._consumer_tag = None
 		self._queue_name = None
+
+		if errors:
+			detail = "; ".join(str(e) for e in errors)
+			raise MessageMiddlewareCloseError(f"Close Error: {detail}")
+
+
+class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublisher):
+	def __init__(self, host, exchange_name, bindings=None):
+		self._connection = None
+		self._channel = None
+		self._exchange_name = exchange_name
+		self._bindings = list(bindings or [])
+
+		try:
+			self._connection = pika.BlockingConnection(pika.ConnectionParameters(host))
+			self._channel = self._connection.channel()
+			self._channel.exchange_declare(
+				exchange=exchange_name,
+				exchange_type='direct',
+				durable=True,
+			)
+			for queue_name, routing_key in self._bindings:
+				self._channel.queue_declare(queue=queue_name, durable=True)
+				self._channel.queue_bind(
+					queue=queue_name,
+					exchange=exchange_name,
+					routing_key=routing_key,
+				)
+		except Exception as e:
+			self.close()
+			raise MessageMiddlewareMessageError("Internal Error during initialization") from e
+
+	def send(self, message, routing_key):
+		try:
+			self._channel.basic_publish(
+				exchange=self._exchange_name,
+				routing_key=routing_key,
+				body=message,
+			)
+		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
+			raise MessageMiddlewareDisconnectedError("Connection Error during send") from e
+		except Exception as e:
+			raise MessageMiddlewareMessageError("Internal Error during send") from e
+
+	def close(self):
+		errors = []
+
+		if self._channel is not None:
+			try:
+				if self._channel.is_open:
+					self._channel.close()
+			except Exception as e:
+				errors.append(e)
+
+		if self._connection is not None:
+			try:
+				if self._connection.is_open:
+					self._connection.close()
+			except Exception as e:
+				errors.append(e)
+
+		self._channel = None
+		self._connection = None
 
 		if errors:
 			detail = "; ".join(str(e) for e in errors)

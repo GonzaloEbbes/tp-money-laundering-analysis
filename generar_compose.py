@@ -7,7 +7,6 @@ SCALE_CONFIG = {
     "data_per_bank_redirector": 1,
     "map_max_amount_per_bank": 3,
     "join_max_amount_per_bank": 1,
-    "conversion_shard_router": 1,
     "currency_converter": 4,
 }
 
@@ -124,25 +123,17 @@ def generate_compose():
     add_worker("join_max_amount_per_bank", "JoinMaxAmountPerBank", 
                "join_max_amount_per_bank_queue", "gateway_results_queue")
 
-    for i in range(SCALE_CONFIG["conversion_shard_router"]):
-        add_worker(f"conversion_shard_router_{i}",
-                   "ConversionShardRouter",
-                   "conversion_shard_router_queue",
-                   "currency_converter_queue",
-                   extra_env=[
-                       f"TOTAL_CONVERSION_WORKERS={SCALE_CONFIG['currency_converter']}",
-                       "CONVERSION_CONVERTER_QUEUE_PREFIX=currency_converter_queue",
-                       "CONVERSION_ERROR_QUEUE=gateway_results_queue",
-                   ])
-
     for i in range(SCALE_CONFIG["currency_converter"]):
         add_worker("currency_converter",
                    "CurrencyConverter",
                    "currency_converter_queue",
-                   "gateway_results_queue",
+                   "pay_format_filter_to_amount_filter_q5_queue",
                    is_stateful=True,
                    index=i,
                    extra_env=[
+                       "CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange",
+                       "CONVERSION_QUEUE_PREFIX=currency_converter_queue",
+                       f"CONVERSION_ROUTING_KEY=conversion.{i}",
                        "CONVERSION_PROVIDER=frankfurter",
                        "STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json",
                        "CONVERSION_AMOUNT_FIELD=amount_paid",

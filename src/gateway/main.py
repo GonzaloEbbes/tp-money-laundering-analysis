@@ -75,6 +75,7 @@ def handle_client_request(client_socket, message_handler_instance, client_list):
                 continue
             result = handler(msg_data)
             if result == "CLOSE":
+                message_protocol.external.send_msg(client_socket, message_protocol.external.MsgType.ACK)
                 break
             message_protocol.external.send_msg(client_socket, message_protocol.external.MsgType.ACK)
     except socket.error:
@@ -95,6 +96,28 @@ MAP_OUTPUT_TYPES = {
     message_protocol.internal.InternalMessageType.SCATHER_GATHER_JOINER_TO_GATEWAY: message_protocol.external.MsgType.QUERY_4_RESULT,
     message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q5_TO_GATEWAY: message_protocol.external.MsgType.QUERY_5_RESULT,
     message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE: message_protocol.external.MsgType.EOF
+}
+
+RESULT_DATA_EXTRACTORS = {
+    # QUERY_1_RESULT espera (account_origin, account_destination, amount_received)
+    message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q1_TO_GATEWAY: 
+        lambda data: (data.get("account_origin"), data.get("account_destination"), data.get("amount_received")),
+    
+    # QUERY_2_RESULT espera (bank_name, account_origin, amount_received)
+    message_protocol.internal.InternalMessageType.DATE_PER_BANK_REDUCER_TO_GATEWAY:
+        lambda data: (data.get("bank_name"), data.get("account_origin"), data.get("amount_received")),
+    
+    # QUERY_3_RESULT espera (account_origin, amount_received)
+    message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q3_TO_GATEWAY:
+        lambda data: (data.get("account_origin"), data.get("amount_received")),
+    
+    # QUERY_4_RESULT espera una tupla de accounts (Puede cambiar)
+    message_protocol.internal.InternalMessageType.SCATHER_GATHER_JOINER_TO_GATEWAY:
+        lambda data: (data.get("accounts"),) if isinstance(data.get("accounts"), (list, tuple)) else ([]),
+    
+    # QUERY_5_RESULT espera transaction_amount (Puede cambiar)
+    message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q5_TO_GATEWAY:
+        lambda data: (data.get("transaction_amount"),),
 }
 
 def handle_client_response(client_list):
@@ -120,6 +143,8 @@ def handle_client_response(client_list):
                     client_index += 1
                     continue
 
+                
+
                 response_msg_type = MAP_OUTPUT_TYPES[deserialized_message.type]
                 if response_msg_type == message_protocol.external.MsgType.EOF:
                     logging.info("Received EOF message, sending EOF to client")
@@ -131,11 +156,18 @@ def handle_client_response(client_list):
                     if deserialized_message.data is None:
                         logging.warning("Received message with no data, skipping: %s", deserialized_message)
                         continue
-                    message_protocol.external.send_msg(
-                        client_socket,
-                        response_msg_type,
-                        *deserialized_message.data
-                    )
+                    if msg_type in RESULT_DATA_EXTRACTORS:
+                        args = RESULT_DATA_EXTRACTORS[msg_type](deserialized_message.data)
+                        message_protocol.external.send_msg(
+                            client_socket,
+                            response_msg_type,
+                            *args)
+                    else:
+                        message_protocol.external.send_msg(
+                            client_socket,
+                            response_msg_type,
+                            *deserialized_message.data
+                        )
                 ack()
                 return
             logging.warning("Received message with no matching client handler: %s", message)

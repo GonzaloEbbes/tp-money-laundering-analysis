@@ -1,7 +1,4 @@
 import json
-import uuid
-
-import json
 
 class InternalMessageType:
     GATEWAY_TO_DATE_FILTER = 0
@@ -26,8 +23,11 @@ class InternalMessageType:
     AMOUNT_FILTER_Q3_TO_GATEWAY = 19
     SCATHER_GATHER_JOINER_TO_GATEWAY = 20
     AMOUNT_FILTER_Q5_TO_GATEWAY = 21
-    EOF_GENERIC_MESSAGE = 22
-    GATEWAY_TO_BANK_FILTER = 23
+    USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3 = 22
+    EOF_GENERIC_MESSAGE = 23
+    EOF_LEADER_MESSAGE = 24
+    GATEWAY_TO_BANK_FILTER = 25
+
 
 class TransactionData(dict):
     timestamp : str
