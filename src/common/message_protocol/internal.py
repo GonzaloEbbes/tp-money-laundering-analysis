@@ -60,6 +60,26 @@ class TransactionData(dict):
         except KeyError:
             raise AttributeError(name)
 
+class CantTrxData(dict):
+    cantTrx : int
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        try:
+            del self[name]
+        except KeyError:
+            raise AttributeError(name)
 class AccountData(dict):
     bank_name : str
     bank_id : str
@@ -88,7 +108,7 @@ class InternalMessage:
 
     type : InternalMessageType
     source_client_uuid : str | None
-    data : TransactionData | AccountData | None
+    data : TransactionData | AccountData | CantTrxData | None
     
     def __init__(self, type=None, source_client_uuid=None, data_id=None, data=None):
         self.type = type
