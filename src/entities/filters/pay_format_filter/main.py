@@ -55,6 +55,15 @@ class PayFormatFilter:
         self.amount_filter_q5_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, AMOUNT_FILTER_Q5_QUEUE
             )
+        logging.info(
+            "PayFormatFilter wiring: input_queue=%s conversion_exchange=%s conversion_queue_prefix=%s "
+            "conversion_workers=%s amount_filter_q5_queue=%s",
+            INPUT_QUEUE,
+            CONVERSION_EXCHANGE,
+            CONVERSION_QUEUE_PREFIX,
+            TOTAL_CONVERSION_WORKERS,
+            AMOUNT_FILTER_Q5_QUEUE,
+        )
 
         #Exchange de control EOF
         self.pay_format_filter_eof_exchange_consumer = None
@@ -173,10 +182,22 @@ class PayFormatFilter:
     def send_final_eof(self, client_id):
         eof_message = PayFormatFilterMessageHandler.serialize_eof_message(client_id)
         for shard in range(TOTAL_CONVERSION_WORKERS):
+            logging.info(
+                "Q5 route: sending EOF to converter shard client=%s exchange=%s routing_key=%s expected_converter_queue=%s",
+                client_id,
+                CONVERSION_EXCHANGE,
+                self._conversion_routing_key(shard),
+                f"{CONVERSION_QUEUE_PREFIX}_{shard}",
+            )
             self.usd_currency_converter_exchange.send(
                 eof_message,
                 routing_key=self._conversion_routing_key(shard),
             )
+        logging.info(
+            "Q5 route: sending EOF directly to amount filter client=%s queue=%s",
+            client_id,
+            AMOUNT_FILTER_Q5_QUEUE,
+        )
         self.amount_filter_q5_queue.send(PayFormatFilterMessageHandler.serialize_eof_message(client_id))
         logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
 
@@ -319,28 +340,19 @@ class PayFormatFilter:
         self.stop()
     
     def start(self):
-
-        datefilter_thread = threading.Thread(
-        target=self._run_date_filter_consumer,
-        name="date-filter-consumer-thread",
-        )
-
-
         if PAY_FORMAT_FILTER_AMOUNT > 1:
             control_thread = threading.Thread(
                 target=self._run_control_consumer,
                 name="pay-format    -control-consumer-thread",
             )
 
-        datefilter_started = False
         control_started = False
 
         try:
-            datefilter_thread.start()
-            datefilter_started = True
             if PAY_FORMAT_FILTER_AMOUNT > 1:
                 control_thread.start()
                 control_started = True
+            self._run_date_filter_consumer()
 
         except Exception as e:
             logging.error(e)
@@ -348,8 +360,6 @@ class PayFormatFilter:
             self._close_resources()
             return 2
 
-        if datefilter_started:
-            datefilter_thread.join()
         if control_started:
             control_thread.join()
 

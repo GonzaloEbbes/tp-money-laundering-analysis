@@ -389,9 +389,10 @@ services:
       - PYTHONUNBUFFERED=1
       - ID=0
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=pay_format_filter_and_currency_converter_to_amount_filter_q5_queue
+      - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
       - AMOUNT_FILTER_AMOUNT=3
+      - EXPECTED_INPUT_EOFS=5
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
 
@@ -407,9 +408,10 @@ services:
       - PYTHONUNBUFFERED=1
       - ID=1
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=pay_format_filter_and_currency_converter_to_amount_filter_q5_queue
+      - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
       - AMOUNT_FILTER_AMOUNT=3
+      - EXPECTED_INPUT_EOFS=5
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
 
@@ -425,9 +427,10 @@ services:
       - PYTHONUNBUFFERED=1
       - ID=2
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=pay_format_filter_and_currency_converter_to_amount_filter_q5_queue
+      - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
       - AMOUNT_FILTER_AMOUNT=3
+      - EXPECTED_INPUT_EOFS=5
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
 
@@ -742,3 +745,4 @@ services:
       - SERVER_PORT=5678
       - MESSAGE=mensaje de prueba
       - DATA_PATH=/data/dataset.csv
+      - EXPECTED_RESULT_EOFS=5

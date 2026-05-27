@@ -32,6 +32,13 @@ class CurrencyConverter(PipelineEntity):
                 queue_name=input_queue,
                 exclusive=False,
             )
+        LOGGER.info(
+            "CurrencyConverter wiring: input_queue=%s output_queue=%s input_exchange=%s routing_key=%s",
+            input_queue,
+            output_queue,
+            input_exchange,
+            routing_key,
+        )
         self.provider = build_conversion_rate_provider()
         self.static_fallback_provider = _build_static_fallback_provider()
         self.cache = {}

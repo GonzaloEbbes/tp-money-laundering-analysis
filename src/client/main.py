@@ -13,6 +13,16 @@ SERVER_HOST = os.environ["SERVER_HOST"]
 SERVER_PORT = int(os.environ["SERVER_PORT"])
 DATA_PATH_TRANSACTIONS = os.environ.get("DATA_PATH", "/data/dataset.csv")
 DATA_PATH_ACCOUNTS = os.environ.get("DATA_PATH_ACCOUNTS", "/data/accounts.csv")
+EXPECTED_RESULT_EOFS = int(os.environ.get("EXPECTED_RESULT_EOFS", "1"))
+LOG_EACH_RESULT = os.environ.get("LOG_EACH_RESULT", "0") == "1"
+
+RESULT_TYPE_NAMES = {
+    message_protocol.external.MsgType.QUERY_1_RESULT: "QUERY_1_RESULT",
+    message_protocol.external.MsgType.QUERY_2_RESULT: "QUERY_2_RESULT",
+    message_protocol.external.MsgType.QUERY_3_RESULT: "QUERY_3_RESULT",
+    message_protocol.external.MsgType.QUERY_4_RESULT: "QUERY_4_RESULT",
+    message_protocol.external.MsgType.QUERY_5_RESULT: "QUERY_5_RESULT",
+}
 
 class Client:
     def __init__(self):
@@ -134,19 +144,38 @@ class Client:
     def receive_all_results(self):
         logging.info("Waiting for results from gateway")
         result_count = 0
+        eof_count = 0
+        result_counts_by_type = {}
+        q5_results = []
         while True:
             try:
                 tag, data = self.result_queue.get(timeout=60)
                 if tag == 'eof':
-                    logging.info(f"Received EOF from gateway. Total results: {result_count}")
-                    break
+                    eof_count += 1
+                    logging.info(
+                        "Received EOF from gateway (%s/%s). Total results: %s",
+                        eof_count,
+                        EXPECTED_RESULT_EOFS,
+                        result_count,
+                    )
+                    if eof_count >= EXPECTED_RESULT_EOFS:
+                        break
                 elif isinstance(tag, int):
                     result_count += 1
+                    result_name = RESULT_TYPE_NAMES.get(tag, tag)
+                    result_counts_by_type[result_name] = result_counts_by_type.get(result_name, 0) + 1
+                    if tag == message_protocol.external.MsgType.QUERY_5_RESULT:
+                        q5_results.append(data)
+                        logging.info("Received QUERY_5_RESULT from gateway with data %s", data)
+                    elif LOG_EACH_RESULT:
+                        logging.info("Received %s from gateway with data %s", result_name, data)
                 if self.result_queue is queue.Empty:
                     logging.info(f"Total results received: {result_count}")
                     break
             except queue.Empty:
                 raise socket.error("Timeout waiting for results")
+        logging.info("Result counts by type: %s", result_counts_by_type)
+        logging.info("Q5 results: %s", q5_results)
 
 def main():
     logging.basicConfig(level=logging.INFO)

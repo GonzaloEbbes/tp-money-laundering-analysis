@@ -135,10 +135,6 @@ class DateFilter:
                 self.usd_filters_q3_queue.send(
                     DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
                 )
-            elif dia in ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
-                self.usd_filters_q4_queue.send(
-                    DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
-                )
                 message = {
                     "timestamp": transaction_data["timestamp"],
                     "amount_paid": transaction_data["amount_paid"],
@@ -147,6 +143,10 @@ class DateFilter:
                 }
                 self.pay_format_filter_queue.send(
                     DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, message)
+                )
+            elif dia in ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
+                self.usd_filters_q4_queue.send(
+                    DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
                 )
 
     def send_final_eof(self, client_id):
@@ -293,28 +293,19 @@ class DateFilter:
         self.stop()
     
     def start(self):
-
-        gateway_thread = threading.Thread(
-        target=self._run_gateway_consumer,
-        name="gateway-consumer-thread",
-        )
-
-
         if DATE_FILTER_AMOUNT > 1:
             control_thread = threading.Thread(
                 target=self._run_control_consumer,
                 name="date-control-consumer-thread",
             )
 
-        gateway_started = False
         control_started = False
 
         try:
-            gateway_thread.start()
-            gateway_started = True
             if DATE_FILTER_AMOUNT > 1:
                 control_thread.start()
                 control_started = True
+            self._run_gateway_consumer()
 
         except Exception as e:
             logging.error(e)
@@ -322,8 +313,6 @@ class DateFilter:
             self._close_resources()
             return 2
 
-        if gateway_started:
-            gateway_thread.join()
         if control_started:
             control_thread.join()
 
