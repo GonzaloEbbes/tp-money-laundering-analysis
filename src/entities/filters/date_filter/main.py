@@ -25,6 +25,7 @@ EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 USD_FILTER_Q3_QUEUE = os.environ["USD_FILTER_Q3_QUEUE"]
 USD_FILTER_Q4_QUEUE = os.environ["USD_FILTER_Q4_QUEUE"]
 PAY_FORMAT_FILTER_QUEUE = os.environ["PAY_FORMAT_FILTER_QUEUE"]
+ENABLE_PAY_FORMAT_OUTPUT = os.environ.get("ENABLE_PAY_FORMAT_OUTPUT", "1") == "1"
 
 
 
@@ -47,7 +48,7 @@ class DateFilter:
             )
         self.pay_format_filter_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, PAY_FORMAT_FILTER_QUEUE
-            )
+            ) if ENABLE_PAY_FORMAT_OUTPUT else None
 
         #Exchange de control EOF
         self.date_filter_eof_exchange_consumer = None
@@ -135,15 +136,16 @@ class DateFilter:
                 self.usd_filters_q3_queue.send(
                     DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
                 )
-                message = {
-                    "timestamp": transaction_data["timestamp"],
-                    "amount_paid": transaction_data["amount_paid"],
-                    "payment_currency": transaction_data["payment_currency"],
-                    "payment_format": transaction_data["payment_format"]
-                }
-                self.pay_format_filter_queue.send(
-                    DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, message)
-                )
+                if self.pay_format_filter_queue is not None:
+                    message = {
+                        "timestamp": transaction_data["timestamp"],
+                        "amount_paid": transaction_data["amount_paid"],
+                        "payment_currency": transaction_data["payment_currency"],
+                        "payment_format": transaction_data["payment_format"]
+                    }
+                    self.pay_format_filter_queue.send(
+                        DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, message)
+                    )
             elif dia in ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
                 self.usd_filters_q4_queue.send(
                     DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
@@ -152,7 +154,8 @@ class DateFilter:
     def send_final_eof(self, client_id):
         self.usd_filters_q3_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
         self.usd_filters_q4_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
-        self.pay_format_filter_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
+        if self.pay_format_filter_queue is not None:
+            self.pay_format_filter_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
         logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
     
     def _process_gateway_eof(self, client_id):
@@ -337,4 +340,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
