@@ -66,8 +66,8 @@ class ScatherGatherMapper:
                 )
             
         self.partial_dicts_lock = threading.Lock()
-        self.partial_fanout_by_client : dict[str, dict[str, list]] = {}
-        self.partial_fanin_by_client : dict[str, dict[str, list]] = {}
+        self.partial_fanout_by_client : dict[str, dict[str, set[str]]] = {}
+        self.partial_fanin_by_client : dict[str, dict[str, set[str]]] = {}
 
 
         #Control de shutdown y estado de clientes
@@ -117,8 +117,8 @@ class ScatherGatherMapper:
         destination = transaction_data.get("account_destination")
 
         with self.partial_dicts_lock:
-            self.partial_fanin_by_client.setdefault(client_id, {}).setdefault(destination, []).append(origin)
-            self.partial_fanout_by_client.setdefault(client_id, {}).setdefault(origin, []).append(destination)
+            self.partial_fanin_by_client.setdefault(client_id, {}).setdefault(destination, set()).add(origin)
+            self.partial_fanout_by_client.setdefault(client_id, {}).setdefault(origin, set()).add(destination)
 
 
     def _send_eof_to_aggregators(self, client_id):
@@ -139,15 +139,16 @@ class ScatherGatherMapper:
                 destino: list(origenes)
                 for destino, origenes in self.partial_fanin_by_client.get(client_id, {}).items()
             }
-                
 
         for (origen,destinos) in fanout_data.items():
             aggregation_worker = self._worker_to_send_data_to_aggregator(origen)
             self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_mapper_message_fanout(client_id, origen, destinos))
+        del fanout_data
 
         for (destino,origenes) in fanin_data.items():
             aggregation_worker = self._worker_to_send_data_to_aggregator(destino)
             self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_mapper_message_fanin(client_id, destino, origenes))
+        del fanin_data
 
     def _worker_to_send_data_to_aggregator(self, clave_fanin_fanout):
         key=(clave_fanin_fanout).encode("utf-8")
@@ -318,14 +319,14 @@ class ScatherGatherMapper:
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    amount_filter_q1 = ScatherGatherMapper()
+    scather_gather_mapper = ScatherGatherMapper()
 
     def _handle_sigterm(signum, frame):
         logging.info("SIGTERM received in scather gather mapper, stopping consumers...")
-        amount_filter_q1.notify_sigterm()
+        scather_gather_mapper.notify_sigterm()
 
     signal.signal(signal.SIGTERM, _handle_sigterm)
-    return amount_filter_q1.start()
+    return scather_gather_mapper.start()
 
 
 if __name__ == "__main__":

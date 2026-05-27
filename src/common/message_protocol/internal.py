@@ -29,8 +29,9 @@ class InternalMessageType:
     GATEWAY_TO_BANK_FILTER = 25
 
 class ScatherGatherData(dict):
+    type : str
     key : str
-    value : list
+    value : list[str]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
