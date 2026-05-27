@@ -1,11 +1,9 @@
-import json
+import uuid
 import threading
 from collections import defaultdict
 
+from common import message_protocol
 from common.entity import PipelineEntity
-
-# TODO: Reemplazar por el client_id definitivo del mensaje cuando este mergeado.
-DEFAULT_TEST_CLIENT_ID = "555555"
 
 
 class MapAverage(PipelineEntity):
@@ -19,21 +17,24 @@ class MapAverage(PipelineEntity):
         return "map_average"
 
     def process_message(self, message):
-        payload = message.get("payload", {})
-        client_id = payload.get("client_id", DEFAULT_TEST_CLIENT_ID)
+        client_id = message.source_client_uuid
 
-        if payload.get("type") == "EOF":
+        if message.type == message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
             return self._flush_client(client_id, message)
 
-        if payload.get("query_id") != "query_3_avg":
+        if (
+            message.type
+            != message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_AVERAGE_PER_PAY_FORMAT_MAPPER
+        ):
             return None
 
-        payment_format = payload.get("PaymentFormat")
+        payload = message.data or {}
+        payment_format = payload.get("payment_format")
         if not client_id or not payment_format:
             return None
 
         try:
-            amount = float(payload.get("AmountReceived", 0))
+            amount = float(payload.get("amount_received", 0))
         except (TypeError, ValueError):
             return None
 
@@ -56,21 +57,26 @@ class MapAverage(PipelineEntity):
             self.flushed_clients.add(client_id)
 
         for payment_format, values in client_state.items():
-            partial_msg = base_message.copy()
-            partial_msg["payload"] = {
-                "query_id": "query_3_avg_partial",
-                "client_id": client_id,
+            partial_payload = message_protocol.internal.TransactionData({
                 "PaymentFormat": payment_format,
                 "sum_total": values["sum_total"],
                 "count": values["count"],
-            }
-            self.output_queue.send(json.dumps(partial_msg).encode("utf-8"))
+            })
+            self.output_queue.send(
+                message_protocol.internal.serialize(
+                    message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_MAPPER_TO_AVERAGE_PER_PAY_FORMAT_AGGREGATOR,
+                    client_id,
+                    str(uuid.uuid4()),
+                    partial_payload,
+                )
+            )
 
-        eof_msg = base_message.copy()
-        eof_msg["payload"] = {
-            "type": "EOF",
-            "query_id": "query_3_avg_partial",
-            "client_id": client_id,
-        }
-        self.output_queue.send(json.dumps(eof_msg).encode("utf-8"))
+        self.output_queue.send(
+            message_protocol.internal.serialize(
+                message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE,
+                client_id,
+                base_message.data_id,
+                None,
+            )
+        )
         return None

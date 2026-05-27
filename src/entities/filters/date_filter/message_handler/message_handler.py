@@ -13,6 +13,7 @@ class MessageHandler:
         parsedMessage.amount_received = message["amount_received"]
         parsedMessage.payment_currency = message["payment_currency"]
         parsedMessage.receiving_currency = message["receiving_currency"]
+        parsedMessage.payment_format = message["payment_format"]
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q3, client, message_id, parsedMessage)
 
     def serialize_usd_filter_q4_message(client : str, message_id : str, message : any):

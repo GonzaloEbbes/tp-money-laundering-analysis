@@ -54,7 +54,7 @@ class USDFilterQ4:
             self.usd_filter_eof_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
                     MOM_HOST,
                     EOF_CONTROL_EXCHANGE,
-                    usd_filters,
+                    [f"{USD_FILTER_PREFIX}_{self.id}"],
                 )
             self._eof_producer_lock = threading.Lock()
             self.usd_filter_eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(

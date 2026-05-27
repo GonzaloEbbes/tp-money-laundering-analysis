@@ -15,6 +15,7 @@ DATA_PATH_TRANSACTIONS = os.environ.get("DATA_PATH", "/data/dataset.csv")
 DATA_PATH_ACCOUNTS = os.environ.get("DATA_PATH_ACCOUNTS", "/data/accounts.csv")
 EXPECTED_RESULT_EOFS = int(os.environ.get("EXPECTED_RESULT_EOFS", "1"))
 LOG_EACH_RESULT = os.environ.get("LOG_EACH_RESULT", "0") == "1"
+MAX_TRANSACTION_RECORDS = int(os.environ.get("MAX_TRANSACTION_RECORDS", "0"))
 
 RESULT_TYPE_NAMES = {
     message_protocol.external.MsgType.QUERY_1_RESULT: "QUERY_1_RESULT",
@@ -114,10 +115,14 @@ class Client:
 
     def send_transaction_records(self, input_file):
         logging.info("Sending transaction records")
+        records_sent = 0
         with open(input_file, newline="\n", encoding="utf-8-sig") as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=",", quotechar='"')
             next(csv_reader, None)
             for row in csv_reader:
+                if MAX_TRANSACTION_RECORDS > 0 and records_sent >= MAX_TRANSACTION_RECORDS:
+                    break
+
                 [timestamp, from_bank, account_origin,
                  to_bank, account_destiny, amount_received,
                  receiving_currency, amount_paid, payment_currency,
@@ -135,7 +140,8 @@ class Client:
                     payment_currency,
                     payment_format
                 )
-        logging.info("Finished sending transaction records, sending EOF")
+                records_sent += 1
+        logging.info("Finished sending %s transaction records, sending EOF", records_sent)
         self._send_and_wait_ack(
             message_protocol.external.MsgType.EOF
         )
