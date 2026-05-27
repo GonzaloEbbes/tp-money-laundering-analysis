@@ -7,20 +7,20 @@ from common.message_protocol.internal import InternalMessage, ScatherGatherData,
 class MessageHandler:
 
 
-    def serialize_scather_gather_agg_message_fanout(client : str, origen : str, destinos: list[str]):
-        return MessageHandler._serialize_scather_gather_aggregator_message(client, "FANOUT", origen, destinos)
+    def serialize_scather_gather_middle_message_fanout(client : str, origen : str, destino_middle: str):
+        return MessageHandler._serialize_scather_gather_aggregator_message(client, "FANOUT_MIDDLE", origen, destino_middle)
 
-    def serialize_scather_gather_agg_message_fanin(client : str, destino : str, origenes: list[str]):
-        return MessageHandler._serialize_scather_gather_aggregator_message(client, "FANIN", destino, origenes)
+    def serialize_scather_gather_middle_message_fanin(client : str, destino : str, origen_middle: str):
+        return MessageHandler._serialize_scather_gather_aggregator_message(client, "FANIN_MIDDLE", destino, origen_middle)
 
 
-    def _serialize_scather_gather_aggregator_message(client : str, type:str, key : str, values: list[str]):
+    def _serialize_scather_gather_aggregator_message(client : str, type:str, key : str, values: str):
         message_id = str(uuid.uuid4())
         parsedMessage = ScatherGatherData()
         parsedMessage.type = type
         parsedMessage.key = key
         parsedMessage.value = values
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_AGGREGATOR_TO_SCATHER_GATHER_JOINER, client, message_id, parsedMessage)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_AGGREGATOR_TO_SCATHER_GATHER_PAIR_JOINER, client, message_id, parsedMessage)
 
     def serialize_eof_message(client):
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None, None)

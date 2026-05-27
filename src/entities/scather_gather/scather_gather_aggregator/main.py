@@ -18,9 +18,9 @@ MOM_HOST = os.environ["MOM_HOST"]
 SCATHER_GATHER_MAPPER_AMOUNT = int(os.environ["SCATHER_GATHER_MAPPER_AMOUNT"])
 SCATHER_GATHER_AGG_PREFIX = os.environ["SCATHER_GATHER_AGG_PREFIX"]
 
-SCATHER_GATHER_JOINER_AMOUNT = int(os.environ["SCATHER_GATHER_JOINER_AMOUNT"])
-SCATHER_GATHER_JOINER_PREFIX = os.environ["SCATHER_GATHER_JOINER_PREFIX"]
-FANIN_FANOUT_THRESHOLD = 5
+SCATHER_GATHER_PAIR_JOINER_AMOUNT = int(os.environ["SCATHER_GATHER_PAIR_JOINER_AMOUNT"])
+SCATHER_GATHER_PAIR_JOINER_PREFIX = os.environ["SCATHER_GATHER_PAIR_JOINER_PREFIX"]
+MINIMUM_FANIN_FANOUT_THRESHOLD = 5
 
 class ScatherGatherAggregator:
 
@@ -32,14 +32,14 @@ class ScatherGatherAggregator:
         self.id = int(ID)
 
         # definicion de exchanges para enviar a los agregadores
-        self.scather_gather_joiner_exchanges = []
-        self.scather_gather_joiner_producer_lock = threading.Lock()
+        self.scather_gather_pair_joiner_exchanges = []
+        self.scather_gather_pair_joiner_producer_lock = threading.Lock()
 
-        for i in range(SCATHER_GATHER_JOINER_AMOUNT):
-            scather_gather_joiner_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
-                MOM_HOST, SCATHER_GATHER_JOINER_PREFIX, [f"{SCATHER_GATHER_JOINER_PREFIX}_{i}"]
+        for i in range(SCATHER_GATHER_PAIR_JOINER_AMOUNT):
+            scather_gather_pair_joiner_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
+                MOM_HOST, SCATHER_GATHER_PAIR_JOINER_PREFIX, [f"{SCATHER_GATHER_PAIR_JOINER_PREFIX}_{i}"]
             )
-            self.scather_gather_joiner_exchanges.append(scather_gather_joiner_exchange)
+            self.scather_gather_pair_joiner_exchanges.append(scather_gather_pair_joiner_exchange)
 
 
 
@@ -64,7 +64,7 @@ class ScatherGatherAggregator:
         try:
             self.scather_gather_agg_input_exchange.start_consuming(self.process_scather_gather_mapper_messages)
         except Exception as e:
-            self._handle_runtime_failure(e, "Scather Gather mapper consumer crashed")
+            self._handle_runtime_failure(e, "Scather Gather aggregator consumer crashed")
     
     def process_scather_gather_mapper_messages(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
@@ -97,7 +97,7 @@ class ScatherGatherAggregator:
             origins = self.posible_fanin_by_client.setdefault(client_id, {}).setdefault(destination, set())
             origins.update(new_origins)
         
-            if len(origins) >= FANIN_FANOUT_THRESHOLD:
+            if len(origins) >= MINIMUM_FANIN_FANOUT_THRESHOLD:
                 self._save_in_final_fanin(client_id, destination,origins)
 
     def _process_fanout_transaction(self, client_id, origin, new_destinations):
@@ -105,7 +105,7 @@ class ScatherGatherAggregator:
             destinations = self.posible_fanout_by_client.setdefault(client_id, {}).setdefault(origin, set())
             destinations.update(new_destinations)
         
-            if len(destinations) >= FANIN_FANOUT_THRESHOLD:
+            if len(destinations) >= MINIMUM_FANIN_FANOUT_THRESHOLD:
                 self._save_in_final_fanout(client_id, origin,destinations)
 
     def _save_in_final_fanin(self, client_id, destination, origins):
@@ -114,14 +114,14 @@ class ScatherGatherAggregator:
     def _save_in_final_fanout(self, client_id, origin, destinations):
         self.fanout_by_client.setdefault(client_id, {})[origin] = set(destinations)
 
-    def _send_eof_to_joiners(self, client_id):
+    def _send_eof_to_pair_joiners(self, client_id):
         eof_message = ScatherGatherMessageHandler.serialize_eof_message(client_id)
-        for exchange in self.scather_gather_joiner_exchanges:
-            with self.scather_gather_joiner_producer_lock:
+        for exchange in self.scather_gather_pair_joiner_exchanges:
+            with self.scather_gather_pair_joiner_producer_lock:
                 exchange.send(eof_message)
-        logging.info(f"Sent final EOFs for client {client_id} to scather gather joiners")
+        logging.info(f"Sent final EOFs for client {client_id} to scather gather pair joiners")
 
-    def _send_data_to_joiners(self, client_id):
+    def _send_data_to_pair_joiners(self, client_id):
         with self.dicts_lock:
             fanout_data = {
                 origen: sorted(destinos)
@@ -131,23 +131,25 @@ class ScatherGatherAggregator:
                 destino: sorted(origenes)
                 for destino, origenes in self.fanin_by_client.get(client_id, {}).items()
             }
-
+        #buclea por las cuentas del medio del fanout para enviar un mensaje por cada middle account a los pair joiners correspondientes
         for (origen,destinos) in fanout_data.items():
-            joiner_worker = self._worker_to_send_data_to_joiners(destinos)
-            self.scather_gather_joiner_exchanges[joiner_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_agg_message_fanout(client_id, origen, destinos))
+            for destino_middle in destinos: 
+                joiner_worker = self._worker_to_send_data_to_pair_joiners(destino_middle)
+                self.scather_gather_pair_joiner_exchanges[joiner_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_middle_message_fanout(client_id, origen, destino_middle))
         del fanout_data
         
         for (destino,origenes) in fanin_data.items():
-            joiner_worker = self._worker_to_send_data_to_joiners(origenes)
-            self.scather_gather_joiner_exchanges[joiner_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_agg_message_fanin(client_id, destino, origenes))
+            for origen_middle in origenes:
+                joiner_worker = self._worker_to_send_data_to_pair_joiners(origen_middle)
+                self.scather_gather_pair_joiner_exchanges[joiner_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_middle_message_fanin(client_id, destino, origen_middle))
         del fanin_data
 
 
-    def _worker_to_send_data_to_joiners(self, destinos_o_origenes):
-        hashkey=("".join(destinos_o_origenes)).encode("utf-8")
+    def _worker_to_send_data_to_pair_joiners(self, middle_account : str):
+        hashkey=middle_account.encode("utf-8")
         digest=hashlib.sha256(hashkey).digest()
         value = int.from_bytes(digest, byteorder="big")
-        return value % SCATHER_GATHER_JOINER_AMOUNT
+        return value % SCATHER_GATHER_PAIR_JOINER_AMOUNT
 
     def _process_scather_gather_mapper_eofs(self, client_id):
         logging.info(f"Received EOF for client {client_id}")
@@ -155,8 +157,8 @@ class ScatherGatherAggregator:
 
         if self.eof_count_by_client[client_id] == SCATHER_GATHER_MAPPER_AMOUNT:
             self._discard_below_threshold_candidates(client_id)
-            self._send_data_to_joiners(client_id)
-            self._send_eof_to_joiners(client_id)
+            self._send_data_to_pair_joiners(client_id)
+            self._send_eof_to_pair_joiners(client_id)
             self._finalize_client(client_id)
 
     def _discard_below_threshold_candidates(self, client_id):
@@ -203,7 +205,7 @@ class ScatherGatherAggregator:
     def _close_resources(self):
         resources = [self.scather_gather_agg_input_exchange]
 
-        resources.extend(self.scather_gather_joiner_exchanges)
+        resources.extend(self.scather_gather_pair_joiner_exchanges)
 
         for resource in resources:
             try:

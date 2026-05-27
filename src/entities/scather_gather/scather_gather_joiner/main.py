@@ -15,7 +15,7 @@ logging.basicConfig(
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
-SCATHER_GATHER_AGG_AMOUNT = int(os.environ["SCATHER_GATHER_AGG_AMOUNT"])
+SCATHER_GATHER_PAIR_JOINER_AMOUNT = int(os.environ["SCATHER_GATHER_PAIR_JOINER_AMOUNT"])
 SCATHER_GATHER_JOIN_PREFIX = os.environ["SCATHER_GATHER_JOIN_PREFIX"]
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
@@ -24,7 +24,7 @@ SCATHER_GATHER_JOINER_PREFIX = os.environ["SCATHER_GATHER_JOINER_PREFIX"]
 
 
 OUTPUT_QUEUE = os.environ["GATEWAY_FINAL_QUERY_QUEUE"]
-FANIN_FANOUT_THRESHOLD = 5
+MINIMUM_FANIN_FANOUT_THRESHOLD = 5
 
 class ScatherGatherJoiner:
 
@@ -41,8 +41,7 @@ class ScatherGatherJoiner:
 
 
         self.dicts_lock = threading.Lock()
-        self.fanout_by_client : dict[str, dict[tuple[str], set[str]]] = {}
-        self.fanin_by_client : dict[str, dict[tuple[str], set[str]]] = {}
+        self.scather_gather_accounts : dict[str, dict[tuple[str], set[str]]] = {}
 
         self.eof_count_by_client : dict[str, int] = {}
         self._eof_count_lock = threading.Lock()
@@ -90,7 +89,7 @@ class ScatherGatherJoiner:
     
     def _run_input_exchange_consumer(self):
         try:
-            self.scather_gather_join_input_exchange.start_consuming(self.process_scather_gather_agg_messages)
+            self.scather_gather_join_input_exchange.start_consuming(self.process_scather_gather_pair_joiner_messages)
         except Exception as e:
             self._handle_runtime_failure(e, "Scather Gather joiner consumer crashed")
     
@@ -100,28 +99,26 @@ class ScatherGatherJoiner:
         except Exception as e:
             self._handle_runtime_failure(e, "Control consumer crashed")
     
-    def process_scather_gather_agg_messages(self, message, ack, nack):
+    def process_scather_gather_pair_joiner_messages(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
         match message.type:
-            case message_protocol.internal.InternalMessageType.SCATHER_GATHER_AGGREGATOR_TO_SCATHER_GATHER_JOINER:
+            case message_protocol.internal.InternalMessageType.SCATHER_GATHER_PAIR_JOINER_TO_SCATHER_GATHER_JOINER:
                 client_id = message.source_client_uuid
                 self._process_transaction(message.data, client_id, message.data_id)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
-                self._process_scather_gather_agg_eofs(client_id)
+                self._process_scather_gather_pair_joiner_eofs(client_id)
         ack()
     
 
     def _process_transaction(self, transaction_data, client_id, data_id):
         type = transaction_data.get("type")
-        key = transaction_data.get("key")
         value = transaction_data.get("value")
-        if type == "FANIN":
-            logging.info(f"Received FANIN message for client {client_id}")
-            self._process_fanin_transaction(client_id, key, value)
-        elif type == "FANOUT":
-            logging.info(f"Received FANOUT message for client {client_id}")
-            self._process_fanout_transaction(client_id, key, value)
+        
+        if type == "PAIR_MIDDLE":
+            logging.info(f"Received PAIR_MIDDLE message for client {client_id}")
+            [origen, destino, middle_account] = value
+            self._process_pair_middle_transaction(client_id, origen, destino, middle_account)
         else:
             logging.warning(f"Received unknown transaction type {type} for client {client_id}")
 
@@ -135,53 +132,33 @@ class ScatherGatherJoiner:
                 
         ack()
 
-    def _process_fanin_transaction(self, client_id, destination, origins):
+    def _process_pair_middle_transaction(self, client_id, origen, destino, middle_account):
         with self.dicts_lock:
-            #se transforma el str[] origins en tuple str para usarlos de clave
-            self.fanin_by_client.setdefault(client_id, {}).setdefault(tuple(origins), set()).add(destination)
-        pass
+            self.scather_gather_accounts.setdefault(client_id, {}).setdefault(tuple([origen, destino]), set()).add(middle_account)
 
-    def _process_fanout_transaction(self, client_id, origin, destinations):
-        with self.dicts_lock:
-            #se transforma el str[] destinations en tuple str para usarlos de clave
-            self.fanout_by_client.setdefault(client_id, {}).setdefault(tuple(destinations), set()).add(origin)
-        pass
 
 
     def _send_data_to_gateway(self, client_id):
         with self.dicts_lock:
-            fanout_data = {
-                destinos: origen
-                for destinos, origen  in self.fanout_by_client.get(client_id, {}).items()
-            }
-            fanin_data = {
-                origenes: destino
-                for origenes, destino in self.fanin_by_client.get(client_id, {}).items()
+            final_data = {
+                (origen, destino): middle_accounts
+                for (origen, destino), middle_accounts in self.scather_gather_accounts.get(client_id, {}).items()
             }
 
-        for fanout_destinations, fanout_origin in fanout_data.items():
-            
-            if fanin_data.get(fanout_destinations) is None:
-                logging.warning(f"No se encontraron datos de FANIN para las FANOUT destinations {fanout_destinations} con cuenta origen {fanout_origin} del cliente {client_id}.")
-                continue
-
-            scather_gather_flux = []
-            scather_gather_flux.extend(fanout_origin)
-            scather_gather_flux.extend(fanout_destinations)
-            scather_gather_flux.extend(fanin_data[fanout_destinations])
-            
-            message = ScatherGatherMessageHandler._serialize_scather_gather_final_message(client_id, scather_gather_flux)
-            with self.gateway_final_query_queue_producer_lock:
-                self.gateway_final_query_queue.send(message)
+        for (origen, destino), middle_accounts in final_data.items():
+            if len(middle_accounts)>=MINIMUM_FANIN_FANOUT_THRESHOLD:
+                message = ScatherGatherMessageHandler._serialize_scather_gather_final_message(client_id, origen, destino)
+                with self.gateway_final_query_queue_producer_lock:
+                    self.gateway_final_query_queue.send(message)
         
         logging.info(f"Sent all final data for client {client_id} to gateway final query queue")
 
-    def _process_scather_gather_agg_eofs(self, client_id):
+    def _process_scather_gather_pair_joiner_eofs(self, client_id):
         logging.info(f"Received EOF for client {client_id}")
         should_finalize = False
         with self._eof_count_lock:
             self.eof_count_by_client[client_id] = self.eof_count_by_client.get(client_id, 0) + 1
-            if self.eof_count_by_client[client_id] == SCATHER_GATHER_AGG_AMOUNT:
+            if self.eof_count_by_client[client_id] == SCATHER_GATHER_PAIR_JOINER_AMOUNT:
                 should_finalize = True
         
         if (should_finalize):
@@ -222,8 +199,7 @@ class ScatherGatherJoiner:
             self.send_eof_leader_message(client_id)
         
         with self.dicts_lock:
-            self.fanout_by_client.pop(client_id, None)
-            self.fanin_by_client.pop(client_id, None)
+            self.scather_gather_accounts.pop(client_id, None)
 
         with self._eof_count_lock:
             self.eof_count_by_client.pop(client_id, None)
@@ -321,14 +297,14 @@ class ScatherGatherJoiner:
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    scather_gather_aggregator = ScatherGatherJoiner()
+    scather_gather_joiner = ScatherGatherJoiner()
 
     def _handle_sigterm(signum, frame):
         logging.info("SIGTERM received in scather gather joiner, stopping consumers...")
-        scather_gather_aggregator.notify_sigterm()
+        scather_gather_joiner.notify_sigterm()
 
     signal.signal(signal.SIGTERM, _handle_sigterm)
-    return scather_gather_aggregator.start()
+    return scather_gather_joiner.start()
 
 
 if __name__ == "__main__":
