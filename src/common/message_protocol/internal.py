@@ -143,8 +143,16 @@ def serialize(type,client_id,data_id,data) -> bytes:
     return msg._serialize()
 
 
+def deserialize(data):
+    decoded = json.loads(data.decode("utf-8"))
+    if isinstance(decoded, dict) and "payload" in decoded:
+        return decoded
 
-def deserialize(data) -> InternalMessage:
     msg = InternalMessage()
-    msg._deserialize(data)
+    msg.type = decoded["type"] if "type" in decoded else None
+    msg.source_client_uuid = (
+        decoded["source_client_uuid"] if "source_client_uuid" in decoded else None
+    )
+    msg.data_id = decoded["data_id"] if "data_id" in decoded else None
+    msg.data = decoded["data"] if "data" in decoded else None
     return msg
