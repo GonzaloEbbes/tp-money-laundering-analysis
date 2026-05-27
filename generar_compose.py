@@ -206,7 +206,6 @@ def generate_compose():
         "      - SERVER_PORT=5678",
         "      - DATA_PATH=/data/dataset.csv",
         "      - DATA_PATH_ACCOUNTS=/data/accounts.csv",
-        "      - MAX_TRANSACTION_RECORDS=1000",
         ""
     ])
 

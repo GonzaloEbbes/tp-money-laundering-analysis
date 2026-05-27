@@ -1,29 +1,103 @@
+import logging
+import os
+from collections import defaultdict
+
+from common import message_protocol
 from common.entity import PipelineEntity
 
-# TODO: Reemplazar por el client_id definitivo del mensaje cuando este mergeado.
-DEFAULT_TEST_CLIENT_ID = "555555"
+EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", "2"))
 
 
 class DynamicAmountFilter(PipelineEntity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.averages_by_client = {}
-        self.average_eofs = set()
+        self.pending_transactions_by_client = defaultdict(list)
+        self.eof_counts_by_client = defaultdict(int)
 
     def entity_type(self):
         return "dynamic_amount_filter"
 
     def process_message(self, message):
-        payload = message.get("payload", {})
-        if payload.get("query_id") != "query_3_avg_result":
+        client_id = message.source_client_uuid
+
+        if message.type == message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_AGGREGATOR_TO_AMOUNT_FILTER_Q3:
+            averages = (message.data or {}).get("averages", {})
+            self.averages_by_client[client_id] = averages
+            self._flush_pending_transactions(client_id)
             return None
 
-        client_id = payload.get("client_id", DEFAULT_TEST_CLIENT_ID)
-
-        if payload.get("type") == "EOF":
-            self.average_eofs.add(client_id)
+        if message.type == message_protocol.internal.InternalMessageType.USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3:
+            self._process_transaction(client_id, message.data_id, message.data or {})
             return None
 
-        # Se guarda en memoria; no hace falta persistir esta tabla a disco.
-        self.averages_by_client[client_id] = payload.get("averages", {})
+        if message.type == message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
+            self.eof_counts_by_client[client_id] += 1
+            if self.eof_counts_by_client[client_id] >= EXPECTED_INPUT_EOFS:
+                self._flush_pending_transactions(client_id, force=True)
+                self._send_eof(client_id)
+                self._clear_client(client_id)
+            return None
+
+        return None
+
+    def _process_transaction(self, client_id, data_id, transaction):
+        if client_id not in self.averages_by_client:
+            self.pending_transactions_by_client[client_id].append((data_id, transaction))
+            return
+
+        self._emit_if_above_average(client_id, data_id, transaction)
+
+    def _flush_pending_transactions(self, client_id, force=False):
+        if not force and client_id not in self.averages_by_client:
+            return
+
+        pending = self.pending_transactions_by_client.pop(client_id, [])
+        for data_id, transaction in pending:
+            self._emit_if_above_average(client_id, data_id, transaction)
+
+    def _emit_if_above_average(self, client_id, data_id, transaction):
+        payment_format = transaction.get("payment_format")
+        averages = self.averages_by_client.get(client_id, {})
+        average_data = averages.get(payment_format)
+        if not average_data:
+            return
+
+        try:
+            amount_received = float(transaction.get("amount_received"))
+            average = float(average_data.get("average"))
+        except (TypeError, ValueError):
+            logging.exception("Invalid Q3 amount data. transaction=%s average=%s", transaction, average_data)
+            return
+
+        if amount_received <= average:
+            return
+
+        output_payload = message_protocol.internal.TransactionData({
+            "account_origin": transaction.get("account_origin"),
+            "amount_received": amount_received,
+        })
+        self.output_queue.send(
+            message_protocol.internal.serialize(
+                message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q3_TO_GATEWAY,
+                client_id,
+                data_id,
+                output_payload,
+            )
+        )
+
+    def _send_eof(self, client_id):
+        self.output_queue.send(
+            message_protocol.internal.serialize(
+                message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE,
+                client_id,
+                None,
+                None,
+            )
+        )
+
+    def _clear_client(self, client_id):
+        self.averages_by_client.pop(client_id, None)
+        self.pending_transactions_by_client.pop(client_id, None)
+        self.eof_counts_by_client.pop(client_id, None)
         return None

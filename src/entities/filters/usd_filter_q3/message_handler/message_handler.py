@@ -11,6 +11,7 @@ class MessageHandler:
         parsedMessage = TransactionData()
         parsedMessage.account_origin = message["account_origin"]
         parsedMessage.amount_received = message["amount_received"]
+        parsedMessage.payment_format = message["payment_format"]
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3, client, message_id, parsedMessage)
 
     def serialize_eof_message(client):

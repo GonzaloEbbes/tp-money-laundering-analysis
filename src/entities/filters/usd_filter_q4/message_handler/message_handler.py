@@ -17,7 +17,7 @@ class MessageHandler:
         parsedMessage = TransactionData()
         parsedMessage.account_origin = message["account_origin"]
         parsedMessage.account_destination = message["account_destination"]
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_SCATTER_GATHER, client, message_id, parsedMessage)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_SCATHER_GATHER_MAPPER, client, message_id, parsedMessage)
 
     def serialize_eof_message(client):
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None, None)
