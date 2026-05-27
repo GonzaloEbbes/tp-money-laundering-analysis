@@ -60,19 +60,19 @@ class ScatherGatherPairJoiner:
     
     def _run_input_exchange_consumer(self):
         try:
-            self.scather_gather_pair_joiner_input_exchange.start_consuming(self.process_scather_gather_mapper_messages)
+            self.scather_gather_pair_joiner_input_exchange.start_consuming(self.process_scather_gather_agg_messages)
         except Exception as e:
             self._handle_runtime_failure(e, "Scather Gather pair joiner consumer crashed")
     
-    def process_scather_gather_mapper_messages(self, message, ack, nack):
+    def process_scather_gather_agg_messages(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
         match message.type:
-            case message_protocol.internal.InternalMessageType.SCATHER_GATHER_PAIR_JOINER_TO_SCATHER_GATHER_JOINER:
+            case message_protocol.internal.InternalMessageType.SCATHER_GATHER_AGGREGATOR_TO_SCATHER_GATHER_PAIR_JOINER:
                 client_id = message.source_client_uuid
                 self._process_transaction(message.data, client_id, message.data_id)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
-                self._process_scather_gather_mapper_eofs(client_id)
+                self._process_scather_gather_agg_eofs(client_id)
         ack()
         
 
@@ -131,7 +131,7 @@ class ScatherGatherPairJoiner:
         value = int.from_bytes(digest, byteorder="big")
         return value % SCATHER_GATHER_JOINER_AMOUNT
 
-    def _process_scather_gather_mapper_eofs(self, client_id):
+    def _process_scather_gather_agg_eofs(self, client_id):
         logging.info(f"Received EOF for client {client_id}")
         self.eof_count_by_client[client_id] = self.eof_count_by_client.get(client_id, 0) + 1
 
@@ -221,14 +221,14 @@ class ScatherGatherPairJoiner:
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    scather_gather_aggregator = ScatherGatherPairJoiner()
+    scather_gather_pair_joiner = ScatherGatherPairJoiner()
 
     def _handle_sigterm(signum, frame):
-        logging.info("SIGTERM received in scather gather aggregator, stopping consumers...")
-        scather_gather_aggregator.notify_sigterm()
+        logging.info("SIGTERM received in scather gather pair joiner, stopping consumers...")
+        scather_gather_pair_joiner.notify_sigterm()
 
     signal.signal(signal.SIGTERM, _handle_sigterm)
-    return scather_gather_aggregator.start()
+    return scather_gather_pair_joiner.start()
 
 
 if __name__ == "__main__":

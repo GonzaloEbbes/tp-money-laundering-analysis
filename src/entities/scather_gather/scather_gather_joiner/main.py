@@ -16,7 +16,7 @@ logging.basicConfig(
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
 SCATHER_GATHER_PAIR_JOINER_AMOUNT = int(os.environ["SCATHER_GATHER_PAIR_JOINER_AMOUNT"])
-SCATHER_GATHER_JOIN_PREFIX = os.environ["SCATHER_GATHER_JOIN_PREFIX"]
+SCATHER_GATHER_JOINER_PREFIX = os.environ["SCATHER_GATHER_JOIN_PREFIX"]
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
 SCATHER_GATHER_JOINER_AMOUNT = int(os.environ["SCATHER_GATHER_JOINER_AMOUNT"])
@@ -30,7 +30,7 @@ class ScatherGatherJoiner:
 
     def __init__(self):
         self.scather_gather_join_input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
-            MOM_HOST, SCATHER_GATHER_JOIN_PREFIX, [f"{SCATHER_GATHER_JOIN_PREFIX}_{ID}"]
+            MOM_HOST, SCATHER_GATHER_JOINER_PREFIX, [f"{SCATHER_GATHER_JOINER_PREFIX}_{ID}"]
         )
         
         self.id = int(ID)
