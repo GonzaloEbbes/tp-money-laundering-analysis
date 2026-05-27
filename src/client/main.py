@@ -16,7 +16,6 @@ DATA_PATH_ACCOUNTS = os.environ.get("DATA_PATH_ACCOUNTS", "/data/accounts.csv")
 EXPECTED_RESULT_EOFS = int(os.environ.get("EXPECTED_RESULT_EOFS", "1"))
 LOG_EACH_RESULT = os.environ.get("LOG_EACH_RESULT", "0") == "1"
 MAX_TRANSACTION_RECORDS = int(os.environ.get("MAX_TRANSACTION_RECORDS", "0"))
-SEND_ACCOUNT_RECORDS = os.environ.get("SEND_ACCOUNT_RECORDS", "1") == "1"
 
 RESULT_TYPE_NAMES = {
     message_protocol.external.MsgType.QUERY_1_RESULT: "QUERY_1_RESULT",
@@ -91,21 +90,20 @@ class Client:
 
     def send_account_records(self, input_file):
         logging.info("Sending account records")
-        if SEND_ACCOUNT_RECORDS:
-            with open(input_file, mode="r", newline="\n", encoding="utf-8-sig") as csvfile:
-                csv_reader = csv.reader(csvfile, delimiter=",", quotechar='"')
-                next(csv_reader, None)
-                for row in csv_reader:
+        with open(input_file, mode="r", newline="\n", encoding="utf-8-sig") as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=",", quotechar='"')
+            next(csv_reader, None)
+            for row in csv_reader:
 
-                    [bank_name, bank_id, account_number, entity_id, entity_name] = row
-                    self._send_and_wait_ack(
-                        message_protocol.external.MsgType.ACCOUNT_RECORD,
-                        bank_name,
-                        int(bank_id),
-                        account_number,
-                        entity_id,
-                        entity_name
-                    )
+                [bank_name, bank_id, account_number, entity_id, entity_name] = row
+                self._send_and_wait_ack(
+                    message_protocol.external.MsgType.ACCOUNT_RECORD,
+                    bank_name,
+                    int(bank_id),
+                    account_number,
+                    entity_id,
+                    entity_name
+                )
         logging.info("Finished sending account records, sending EOF")
         self._send_and_wait_ack(
             message_protocol.external.MsgType.EOF

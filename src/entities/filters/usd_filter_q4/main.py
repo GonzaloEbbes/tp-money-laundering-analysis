@@ -24,7 +24,6 @@ EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
 AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE = os.environ["AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE"]
 SCATHER_GATHER_QUEUE = os.environ["SCATHER_GATHER_QUEUE"]
-ENABLE_SCATTER_GATHER_OUTPUT = os.environ.get("ENABLE_SCATTER_GATHER_OUTPUT", "1") == "1"
 
 
 class USDFilterQ4:
@@ -42,7 +41,7 @@ class USDFilterQ4:
             )
         self.scather_gather_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, SCATHER_GATHER_QUEUE
-            ) if ENABLE_SCATTER_GATHER_OUTPUT else None
+            )
 
         #Exchange de control EOF
         self.usd_filter_eof_exchange_consumer = None
@@ -119,16 +118,14 @@ class USDFilterQ4:
 
         if receiving_currency == "US Dollar" and payment_currency == "US Dollar":
             self.average_per_pay_format_mapper_queue.send(USDFilterMessageHandler.serialize_average_per_pay_format_mapper_message(client_id, data_id, transaction_data))
-            if self.scather_gather_queue is not None:
-                self.scather_gather_queue.send(USDFilterMessageHandler.serialize_scatter_gather_message(client_id, data_id, transaction_data))
+            self.scather_gather_queue.send(USDFilterMessageHandler.serialize_scatter_gather_message(client_id, data_id, transaction_data))
             logging.info(f"Transaction for client {client_id} sent to average per pay format mapper and scatter gather mapper")
 
         
 
     def send_final_eof(self, client_id):
         self.average_per_pay_format_mapper_queue.send(USDFilterMessageHandler.serialize_eof_message(client_id))
-        if self.scather_gather_queue is not None:
-            self.scather_gather_queue.send(USDFilterMessageHandler.serialize_eof_message(client_id))
+        self.scather_gather_queue.send(USDFilterMessageHandler.serialize_eof_message(client_id))
         logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
     
     def _process_datefilter_eof(self, client_id):
@@ -322,4 +319,4 @@ def main():
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

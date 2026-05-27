@@ -16,8 +16,6 @@ INPUT_QUEUE = os.environ["INPUT_QUEUE"]
 BANK_DEDUPLICATOR_QUEUE = os.environ.get("BANK_DEDUPLICATOR_QUEUE", "bank_deduplicator_queue")
 CURRENCY_FILTER_QUEUE = os.environ.get("CURRENCY_FILTER_QUEUE", "currency_filter_queue")
 DATE_FILTER_QUEUE = os.environ.get("DATE_FILTER_QUEUE", "date_filter_queue")
-ENABLE_BANK_PIPELINE = os.environ.get("ENABLE_BANK_PIPELINE", "1") == "1"
-ENABLE_CURRENCY_PIPELINE = os.environ.get("ENABLE_CURRENCY_PIPELINE", "1") == "1"
 
 
 def handle_client_request(client_socket, message_handler_instance, client_list):
@@ -30,28 +28,24 @@ def handle_client_request(client_socket, message_handler_instance, client_list):
         queue.send(serialized_message)
 
     def _handle_account(msg_data):
-        if not ENABLE_BANK_PIPELINE:
-            return
         serialized = message_handler_instance.serialize_account_data(msg_data)
         _send_internal(deduplicator_queue, serialized)
 
     def _handle_transaction(msg_data):
         if message_handler_instance.transaction_is_reinvestment(msg_data):
             return
-        if ENABLE_CURRENCY_PIPELINE:
-            serialized_currency = message_handler_instance.serialize_transaction_currency(msg_data)
-            _send_internal(currency_queue, serialized_currency)
+        serialized_currency = message_handler_instance.serialize_transaction_currency(msg_data)
+        _send_internal(currency_queue, serialized_currency)
         serialized_date = message_handler_instance.serialize_transaction_date(msg_data)
         _send_internal(date_queue, serialized_date)
 
     def _handle_eof(msg_data):
         message_handler_instance.eof_count += 1
-        if message_handler_instance.eof_count == 1 and ENABLE_BANK_PIPELINE:
+        if message_handler_instance.eof_count == 1:
             _send_internal(deduplicator_queue, message_handler_instance.serialize_eof())
         elif message_handler_instance.eof_count == 2:
             eof_bytes = message_handler_instance.serialize_eof()
-            if ENABLE_CURRENCY_PIPELINE:
-                _send_internal(currency_queue, eof_bytes)
+            _send_internal(currency_queue, eof_bytes)
             _send_internal(date_queue, eof_bytes)
 
     def _handle_close(msg_data):
