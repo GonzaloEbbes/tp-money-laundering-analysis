@@ -8,10 +8,10 @@ class MessageHandler:
 
 
     def serialize_scather_gather_mapper_message_fanout(client : str, origen : str, destinos: list[str]):
-        MessageHandler._serialize_scather_gather_mapper_message(client, origen, destinos)
+        return MessageHandler._serialize_scather_gather_mapper_message(client, origen, destinos)
 
     def serialize_scather_gather_mapper_message_fanin(client : str, destino : str, origenes: list[str]):
-        MessageHandler._serialize_scather_gather_mapper_message(client, destino, origenes)
+        return MessageHandler._serialize_scather_gather_mapper_message(client, destino, origenes)
 
 
     def _serialize_scather_gather_mapper_message(client : str, key : str, values: list[str]):

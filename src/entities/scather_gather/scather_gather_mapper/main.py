@@ -1,10 +1,8 @@
 import hashlib
 import os
 import logging
-import re
 import signal
 import threading
-from time import sleep
 
 from common import middleware, message_protocol
 from message_handler import MessageHandler as ScatherGatherMessageHandler
@@ -26,7 +24,7 @@ SCATHER_GATHER_AGGREGATOR_AMOUNT = int(os.environ["SCATHER_GATHER_AGGREGATOR_AMO
 SCATHER_GATHER_AGGREGATOR_PREFIX = os.environ["SCATHER_GATHER_AGGREGATOR_PREFIX"]
 
 
-class AmountFilterQ1:
+class ScatherGatherMapper:
 
     def __init__(self):
         self.usd_filter_q4_queue = middleware.MessageMiddlewareQueueRabbitMQ(
@@ -133,16 +131,23 @@ class AmountFilterQ1:
     def _send_data_to_aggregators(self, client_id):
         #extraigo los datos del cliente,
         with self.partial_dicts_lock:
-            fanout_data = self.partial_fanout_by_client.get(client_id, {})
-            fanin_data = self.partial_fanin_by_client.get(client_id, {})
+            fanout_data = {
+                origen: list(destinos)
+                for origen, destinos in self.partial_fanout_by_client.get(client_id, {}).items()
+            }
+            fanin_data = {
+                destino: list(origenes)
+                for destino, origenes in self.partial_fanin_by_client.get(client_id, {}).items()
+            }
+                
 
         for (origen,destinos) in fanout_data.items():
             aggregation_worker = self._worker_to_send_data_to_aggregator(origen)
-            self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_fanout_message(client_id, origen, destinos))
+            self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_mapper_message_fanout(client_id, origen, destinos))
 
         for (destino,origenes) in fanin_data.items():
             aggregation_worker = self._worker_to_send_data_to_aggregator(destino)
-            self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_fanin_message(client_id, destino, origenes))
+            self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_mapper_message_fanin(client_id, destino, origenes))
 
     def _worker_to_send_data_to_aggregator(self, clave_fanin_fanout):
         key=(clave_fanin_fanout).encode("utf-8")
@@ -245,10 +250,11 @@ class AmountFilterQ1:
 
     def _close_resources(self):
         resources = [self.usd_filter_q4_queue]
+
+        resources.extend(self.scather_gather_aggregator_exchanges)
+
         if self.scather_gather_eof_exchange_consumer is not None:
             resources.append(self.scather_gather_eof_exchange_consumer)
-        if self.gateway_final_query_queue is not None:
-            resources.append(self.gateway_final_query_queue)
         if self.scather_gather_eof_exchange_producer is not None:
             resources.append(self.scather_gather_eof_exchange_producer)
 
@@ -312,10 +318,10 @@ class AmountFilterQ1:
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    amount_filter_q1 = AmountFilterQ1()
+    amount_filter_q1 = ScatherGatherMapper()
 
     def _handle_sigterm(signum, frame):
-        logging.info("SIGTERM received in amount filter q1")
+        logging.info("SIGTERM received in scather gather mapper, stopping consumers...")
         amount_filter_q1.notify_sigterm()
 
     signal.signal(signal.SIGTERM, _handle_sigterm)
