@@ -14,8 +14,6 @@ SERVER_PORT = int(os.environ["SERVER_PORT"])
 DATA_PATH_TRANSACTIONS = os.environ.get("DATA_PATH", "/data/dataset.csv")
 DATA_PATH_ACCOUNTS = os.environ.get("DATA_PATH_ACCOUNTS", "/data/accounts.csv")
 EXPECTED_RESULT_EOFS = int(os.environ.get("EXPECTED_RESULT_EOFS", "1"))
-LOG_EACH_RESULT = os.environ.get("LOG_EACH_RESULT", "0") == "1"
-MAX_TRANSACTION_RECORDS = int(os.environ.get("MAX_TRANSACTION_RECORDS", "0"))
 
 RESULT_TYPE_NAMES = {
     message_protocol.external.MsgType.QUERY_1_RESULT: "QUERY_1_RESULT",
@@ -120,9 +118,6 @@ class Client:
             csv_reader = csv.reader(csvfile, delimiter=",", quotechar='"')
             next(csv_reader, None)
             for row in csv_reader:
-                if MAX_TRANSACTION_RECORDS > 0 and records_sent >= MAX_TRANSACTION_RECORDS:
-                    break
-
                 [timestamp, from_bank, account_origin,
                  to_bank, account_destiny, amount_received,
                  receiving_currency, amount_paid, payment_currency,
@@ -173,8 +168,6 @@ class Client:
                     if tag == message_protocol.external.MsgType.QUERY_5_RESULT:
                         q5_results.append(data)
                         logging.info("Received QUERY_5_RESULT from gateway with data %s", data)
-                    elif LOG_EACH_RESULT:
-                        logging.info("Received %s from gateway with data %s", result_name, data)
                 if self.result_queue is queue.Empty:
                     logging.info(f"Total results received: {result_count}")
                     break
