@@ -423,6 +423,222 @@ services:
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
 
 
+  scather_gather_mapper_0:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_mapper/Dockerfile
+    container_name: scather_gather_mapper_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=0
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
+
+  scather_gather_mapper_1:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_mapper/Dockerfile
+    container_name: scather_gather_mapper_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=1
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
+
+  scather_gather_mapper_2:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_mapper/Dockerfile
+    container_name: scather_gather_mapper_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=2
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
+
+  scather_gather_aggregator_0:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_aggregator/Dockerfile
+    container_name: scather_gather_aggregator_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=0
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+
+  scather_gather_aggregator_1:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_aggregator/Dockerfile
+    container_name: scather_gather_aggregator_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=1
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+
+  scather_gather_aggregator_2:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_aggregator/Dockerfile
+    container_name: scather_gather_aggregator_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=2
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+
+  scather_gather_pair_joiner_0:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_pair_joiner/Dockerfile
+    container_name: scather_gather_pair_joiner_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=0
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+
+  scather_gather_pair_joiner_1:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_pair_joiner/Dockerfile
+    container_name: scather_gather_pair_joiner_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=1
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+
+  scather_gather_pair_joiner_2:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_pair_joiner/Dockerfile
+    container_name: scather_gather_pair_joiner_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=2
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+
+  scather_gather_joiner_0:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_joiner/Dockerfile
+    container_name: scather_gather_joiner_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=0
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+
+  scather_gather_joiner_1:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_joiner/Dockerfile
+    container_name: scather_gather_joiner_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=1
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+
+  scather_gather_joiner_2:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_joiner/Dockerfile
+    container_name: scather_gather_joiner_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=2
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+
   bank_deduplicator_0:
     build:
       context: ./src

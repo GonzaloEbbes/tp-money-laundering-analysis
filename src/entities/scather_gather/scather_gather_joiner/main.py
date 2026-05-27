@@ -150,7 +150,7 @@ class ScatherGatherJoiner:
                 message = ScatherGatherMessageHandler._serialize_scather_gather_final_message(client_id, origen, destino)
                 with self.gateway_final_query_queue_producer_lock:
                     self.gateway_final_query_queue.send(message)
-        
+                logging.info(f"Sent final data for client {client_id} to gateway final query queue for pair ({origen}, {destino}) with middle accounts {middle_accounts}")
         logging.info(f"Sent all final data for client {client_id} to gateway final query queue")
 
     def _process_scather_gather_pair_joiner_eofs(self, client_id):

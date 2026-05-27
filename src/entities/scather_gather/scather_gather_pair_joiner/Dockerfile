@@ -3,6 +3,6 @@ FROM python:3-alpine
 RUN pip3 install pika
 
 COPY common ./common
-COPY entities/filters/scather_gather/scather_gather_aggregator .
+COPY entities/scather_gather/scather_gather_pair_joiner .
 
 ENTRYPOINT ["python3", "main.py"]
