@@ -13,7 +13,11 @@ class MessageMiddlewareCloseError(Exception):
     pass
 
 
-class MessageMiddlewareQueue(ABC):
+class MessageMiddlewareDeleteError(Exception):
+    pass
+
+
+class MessageMiddleware(ABC):
     @abstractmethod
     def start_consuming(self, on_message_callback):
         pass
@@ -31,19 +35,23 @@ class MessageMiddlewareQueue(ABC):
         pass
 
 
-class MessageMiddlewareExchange(ABC):
+class MessageMiddlewareExchange(MessageMiddleware):
     @abstractmethod
-    def start_consuming(self, on_message_callback):
+    def __init__(self, host, exchange_name, route_keys):
         pass
 
-    @abstractmethod
-    def stop_consuming(self):
-        pass
 
+class MessageMiddlewareExchangePublisher(ABC):
     @abstractmethod
-    def send(self, message):
+    def send(self, message, routing_key):
         pass
 
     @abstractmethod
     def close(self):
+        pass
+
+
+class MessageMiddlewareQueue(MessageMiddleware):
+    @abstractmethod
+    def __init__(self, host, queue_name):
         pass
