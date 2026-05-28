@@ -24,8 +24,8 @@ def _connection_parameters(host):
 class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 
 	# Inicializa la conexion con RabbitMQ y el canal de comunicacion.
-	# Declara la cola durable indicada y configura el limite de mensajes
-	# sin ack para evitar crecimiento de memoria bajo carga.
+	# La cola de consumo se declara lazy al iniciar start_consuming.
+	# Configura el limite de mensajes sin ack para evitar crecimiento de memoria bajo carga.
 	# Si ocurre un error durante la inicializacion, libera recursos
 	# parciales y eleva MessageMiddlewareMessageError.
 	# Si ocurre un error al liberar recursos parciales, 
@@ -39,12 +39,12 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 		#Flags
 		self._consuming = False
 		self._consumer_tag = None
+		self._consumer_queue_declared = False
 		logging.getLogger("pika").setLevel(logging.WARNING) 
 		try:
 			self._connection = pika.BlockingConnection(_connection_parameters(host))
 			self._channel = self._connection.channel()
 			self._channel.basic_qos(prefetch_count=MAX_UNACKED_MESSAGES)
-			self._declare_consumer_queue()
 		except Exception as e:
 			self.close()
 			raise MessageMiddlewareMessageError("Internal Error during initialization") from e
@@ -61,6 +61,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 	# Si ocurre un error interno que no puede resolverse eleva MessageMiddlewareMessageError.
 	def start_consuming(self, on_message_callback):
 		try:
+			self._ensure_consumer_queue_declared()
 			self._on_message_callback = on_message_callback
 			self._consumer_tag = self._channel.basic_consume(queue=self._queue_name,
                       on_message_callback=self._adapt_callback,
@@ -76,10 +77,13 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 			self._consuming = False
 			self._consumer_tag = None
 	
-	# Si no existe, crea una cola durable con el nombre indicado en el
-	# constructor. Se usa para consumo y publicacion sobre la cola.
-	def _declare_consumer_queue(self):
+	# Si no existe para esta instancia, crea una cola durable con el nombre
+	# indicado en el constructor. Solo se usa para consumo.
+	def _ensure_consumer_queue_declared(self):
+		if self._consumer_queue_declared:
+			return
 		self._channel.queue_declare(queue=self._queue_name, durable=True)
+		self._consumer_queue_declared = True
 
 	# Funcion adaptadora que convierte el callback de pika al formato del
 	# middleware y expone funciones de ack y nack para el mensaje actual.
@@ -138,6 +142,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 		self._on_message_callback = None
 		self._consuming = False
 		self._consumer_tag = None
+		self._consumer_queue_declared = False
 
 		if errors:
 			detail = "; ".join(str(e) for e in errors)
@@ -147,8 +152,8 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 
 	# Inicializa la conexion con RabbitMQ y el canal de comunicacion.
-	# Declara el exchange directo, crea una cola exclusiva y realiza bind
-	# con todas las routing keys indicadas.
+	# Declara el exchange directo. La cola asociada al consumidor se crea
+	# lazy al iniciar start_consuming.
 	# Configura el limite de mensajes sin ack para controlar memoria.
 	# Si ocurre un error durante la inicializacion, libera recursos
 	# parciales y eleva MessageMiddlewareMessageError.
@@ -166,13 +171,13 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 		#Flags
 		self._consuming = False
 		self._consumer_tag = None
+		self._consumer_queue_declared = False
 
 		try:
 			self._connection = pika.BlockingConnection(_connection_parameters(host))
 			self._channel = self._connection.channel()
 			self._channel.basic_qos(prefetch_count=MAX_UNACKED_MESSAGES)
 			self._channel.exchange_declare(exchange=exchange_name,exchange_type='direct',durable=True)
-			self._declare_and_bind_queue_to_routing_keys()
 		except Exception as e:
 			self.close()
 			raise MessageMiddlewareMessageError("Internal Error during initialization") from e
@@ -189,6 +194,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 	# Si ocurre un error interno que no puede resolverse eleva MessageMiddlewareMessageError.
 	def start_consuming(self, on_message_callback):
 		try:
+			self._declare_and_bind_queue_to_routing_keys()
 			self._on_message_callback = on_message_callback
 			self._consumer_tag = self._channel.basic_consume(queue=self._queue_name,
                       on_message_callback=self._adapt_callback,
@@ -214,6 +220,8 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 	# Crea una cola exclusiva autogenerada y la vincula al exchange con cada
 	# routing key indicada en el constructor.
 	def _declare_and_bind_queue_to_routing_keys(self):
+		if self._consumer_queue_declared:
+			return
 		if self._queue_name is None:
 			result = self._channel.queue_declare(queue='', exclusive=True)
 			self._queue_name = result.method.queue
@@ -225,6 +233,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 				exchange=self._exchange_name,
 				routing_key=routing_key
 			)
+		self._consumer_queue_declared = True
 
 	# Si se estaba consumiendo desde el exchange, detiene la escucha.
 	# Si no se estaba consumiendo, no tiene efecto ni levanta error.
@@ -277,6 +286,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 		self._on_message_callback = None
 		self._consuming = False
 		self._consumer_tag = None
+		self._consumer_queue_declared = False
 		self._queue_name = None
 
 		if errors:
