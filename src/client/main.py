@@ -2,9 +2,12 @@ import logging
 import os
 import socket
 import csv
+import json
 import signal
 import queue
 import threading
+import uuid
+from pathlib import Path
 from common import message_protocol
 
 
@@ -14,6 +17,7 @@ SERVER_PORT = int(os.environ["SERVER_PORT"])
 DATA_PATH_TRANSACTIONS = os.environ.get("DATA_PATH", "/data/dataset.csv")
 DATA_PATH_ACCOUNTS = os.environ.get("DATA_PATH_ACCOUNTS", "/data/accounts.csv")
 EXPECTED_RESULT_EOFS = int(os.environ.get("EXPECTED_RESULT_EOFS", "1"))
+RESULTS_DIR = os.environ.get("RESULTS_DIR", "/output/results")
 
 RESULT_TYPE_NAMES = {
     message_protocol.external.MsgType.QUERY_1_RESULT: "QUERY_1_RESULT",
@@ -23,6 +27,80 @@ RESULT_TYPE_NAMES = {
     message_protocol.external.MsgType.QUERY_5_RESULT: "QUERY_5_RESULT",
 }
 
+RESULT_FILES = {
+    message_protocol.external.MsgType.QUERY_1_RESULT: (
+        "query_1.csv",
+        ["account_origin", "account_destination", "amount_received"],
+    ),
+    message_protocol.external.MsgType.QUERY_2_RESULT: (
+        "query_2.csv",
+        ["bank_name", "account_origin", "amount_received"],
+    ),
+    message_protocol.external.MsgType.QUERY_3_RESULT: (
+        "query_3.csv",
+        ["account_origin", "amount_received"],
+    ),
+    message_protocol.external.MsgType.QUERY_4_RESULT: (
+        "query_4.csv",
+        ["account"],
+    ),
+    message_protocol.external.MsgType.QUERY_5_RESULT: (
+        "query_5.csv",
+        ["cantTrx"],
+    ),
+}
+
+
+class ResultWriter:
+    def __init__(self, base_dir):
+        self.run_id = str(uuid.uuid4())
+        self.output_dir = Path(base_dir) / f"client-{self.run_id}"
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.files = {}
+        self.writers = {}
+
+        for msg_type, (file_name, header) in RESULT_FILES.items():
+            file = (self.output_dir / file_name).open("w", newline="", encoding="utf-8")
+            writer = csv.writer(file)
+            writer.writerow(header)
+            self.files[msg_type] = file
+            self.writers[msg_type] = writer
+
+    def write_result(self, msg_type, data):
+        rows = self._rows_for_result(msg_type, data)
+        writer = self.writers[msg_type]
+        for row in rows:
+            writer.writerow(row)
+        self.files[msg_type].flush()
+
+    def write_summary(self, result_counts_by_type, eof_count, result_count):
+        summary = {
+            "run_id": self.run_id,
+            "eof_count": eof_count,
+            "result_count": result_count,
+            "result_counts_by_type": result_counts_by_type,
+            "files": {
+                RESULT_TYPE_NAMES[msg_type]: file_name
+                for msg_type, (file_name, _) in RESULT_FILES.items()
+            },
+        }
+        (self.output_dir / "summary.json").write_text(
+            json.dumps(summary, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    def close(self):
+        for file in self.files.values():
+            file.close()
+
+    def _rows_for_result(self, msg_type, data):
+        if msg_type == message_protocol.external.MsgType.QUERY_4_RESULT:
+            return [[account] for account in data]
+        if msg_type == message_protocol.external.MsgType.QUERY_5_RESULT:
+            return [[data]]
+        return [list(data)]
+
+
 class Client:
     def __init__(self):
         self.closed = False
@@ -31,6 +109,8 @@ class Client:
         self.result_queue = queue.Queue()
         self._stop_receiver = False
         self._receiver_thread = None
+        self.result_writer = ResultWriter(RESULTS_DIR)
+        logging.info("Client results directory: %s", self.result_writer.output_dir)
 
     def _receiver_loop(self):
         while not self._stop_receiver:
@@ -76,8 +156,12 @@ class Client:
         self._stop_receiver = True
         if self._receiver_thread:
             self._receiver_thread.join(timeout=2)
-        if self.server_socket:
-            self.server_socket.shutdown(socket.SHUT_RDWR)
+        if getattr(self, "server_socket", None):
+            try:
+                self.server_socket.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            self.server_socket.close()
 
     def _send_and_wait_ack(self, msg_type, *args):
         message_protocol.external.send_msg(self.server_socket, msg_type, *args)
@@ -165,6 +249,7 @@ class Client:
                     result_count += 1
                     result_name = RESULT_TYPE_NAMES.get(tag, tag)
                     result_counts_by_type[result_name] = result_counts_by_type.get(result_name, 0) + 1
+                    self.result_writer.write_result(tag, data)
                     if tag == message_protocol.external.MsgType.QUERY_5_RESULT:
                         q5_results.append(data)
                         logging.info("Received QUERY_5_RESULT from gateway with data %s", data)
@@ -175,6 +260,8 @@ class Client:
                 raise socket.error("Timeout waiting for results")
         logging.info("Result counts by type: %s", result_counts_by_type)
         logging.info("Q5 results: %s", q5_results)
+        self.result_writer.write_summary(result_counts_by_type, eof_count, result_count)
+        logging.info("Results written to %s", self.result_writer.output_dir)
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -196,6 +283,7 @@ def main():
     finally:
         if not client.closed:
             client.disconnect()
+        client.result_writer.close()
 
     return 0
 

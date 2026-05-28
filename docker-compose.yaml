@@ -650,7 +650,7 @@ services:
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.0
-      - CONVERSION_PROVIDER=frankfurter
+      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
       - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
@@ -679,7 +679,7 @@ services:
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.1
-      - CONVERSION_PROVIDER=frankfurter
+      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
       - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
@@ -708,7 +708,7 @@ services:
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.2
-      - CONVERSION_PROVIDER=frankfurter
+      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
       - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
@@ -737,7 +737,7 @@ services:
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.3
-      - CONVERSION_PROVIDER=frankfurter
+      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
       - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
@@ -792,6 +792,7 @@ services:
       - currency_converter_3
     volumes:
       - ./data:/data
+      - ./output:/output
     environment:
       - PYTHONUNBUFFERED=1
       - SERVER_HOST=gateway
@@ -800,3 +801,4 @@ services:
       - DATA_PATH=${DATA_PATH:-/data/dataset.csv}
       - DATA_PATH_ACCOUNTS=${DATA_PATH_ACCOUNTS:-/data/accounts.csv}
       - EXPECTED_RESULT_EOFS=${EXPECTED_RESULT_EOFS:-5}
+      - RESULTS_DIR=${RESULTS_DIR:-/output/results}
