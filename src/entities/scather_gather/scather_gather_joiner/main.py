@@ -127,7 +127,7 @@ class ScatherGatherJoiner:
         match message.type:
             case message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE:
                 if self._is_leader():
-                    logging.info(f"Received EOF_LEADER_MESSAGE for client {message.source_client_uuid}")
+                    logging.debug(f"Received EOF_LEADER_MESSAGE for client {message.source_client_uuid}")
                     self._leader_count_eof_for_client(message.source_client_uuid)
                 
         ack()

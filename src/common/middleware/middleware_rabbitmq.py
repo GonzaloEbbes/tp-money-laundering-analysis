@@ -4,6 +4,8 @@ from .middleware import MessageMiddlewareCloseError, MessageMiddlewareDisconnect
 
 # Cantidad maxima de mensajes sin ack entregados al consumidor al mismo tiempo.
 MAX_UNACKED_MESSAGES = 1
+RABBITMQ_HEARTBEAT_SECONDS = 0
+RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS = 300
 
 class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 
@@ -25,7 +27,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 		self._consumer_tag = None
 		logging.getLogger("pika").setLevel(logging.WARNING) 
 		try:
-			self._connection = pika.BlockingConnection(pika.ConnectionParameters(host))
+			self._connection = pika.BlockingConnection(pika.ConnectionParameters(host, heartbeat=RABBITMQ_HEARTBEAT_SECONDS, blocked_connection_timeout=RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS))
 			self._channel = self._connection.channel()
 			self._channel.basic_qos(prefetch_count=MAX_UNACKED_MESSAGES)
 			self._declare_consumer_queue()
@@ -151,7 +153,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 		self._consumer_tag = None
 
 		try:
-			self._connection = pika.BlockingConnection(pika.ConnectionParameters(host))
+			self._connection = pika.BlockingConnection(pika.ConnectionParameters(host, heartbeat=RABBITMQ_HEARTBEAT_SECONDS, blocked_connection_timeout=RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS))
 			self._channel = self._connection.channel()
 			self._channel.basic_qos(prefetch_count=MAX_UNACKED_MESSAGES)
 			self._channel.exchange_declare(exchange=exchange_name,exchange_type='direct',durable=True)

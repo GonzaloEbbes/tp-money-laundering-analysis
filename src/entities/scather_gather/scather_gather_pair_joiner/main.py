@@ -120,6 +120,7 @@ class ScatherGatherPairJoiner:
                     joiner_index = self._worker_to_send_data_to_joiners(origen, destino)
                     with self.scather_gather_joiner_producer_lock:
                         self.scather_gather_joiner_exchanges[joiner_index].send(msg)
+                    logging.info(f"Sent message for client {client_id} with origin {origen}, destination {destino} and middle account {middle_account} to joiner worker {joiner_index}")
 
         logging.info(f"Sent all data for client {client_id} to scather gather joiners")
         

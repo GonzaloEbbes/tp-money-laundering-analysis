@@ -139,15 +139,17 @@ class ScatherGatherMapper:
                 destino: list(origenes)
                 for destino, origenes in self.partial_fanin_by_client.get(client_id, {}).items()
             }
-
+        
         for (origen,destinos) in fanout_data.items():
             aggregation_worker = self._worker_to_send_data_to_aggregator(origen)
             self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_mapper_message_fanout(client_id, origen, destinos))
+            logging.info(f"Sent fanout data for origin {origen} of client {client_id} to aggregator worker {aggregation_worker}")
         del fanout_data
 
         for (destino,origenes) in fanin_data.items():
             aggregation_worker = self._worker_to_send_data_to_aggregator(destino)
             self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_mapper_message_fanin(client_id, destino, origenes))
+            logging.info(f"Sent fanin data for destination {destino} of client {client_id} to aggregator worker {aggregation_worker}")
         del fanin_data
 
     def _worker_to_send_data_to_aggregator(self, clave_fanin_fanout):

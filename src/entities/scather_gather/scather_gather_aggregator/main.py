@@ -20,7 +20,7 @@ SCATHER_GATHER_AGG_PREFIX = os.environ["SCATHER_GATHER_AGG_PREFIX"]
 
 SCATHER_GATHER_PAIR_JOINER_AMOUNT = int(os.environ["SCATHER_GATHER_PAIR_JOINER_AMOUNT"])
 SCATHER_GATHER_PAIR_JOINER_PREFIX = os.environ["SCATHER_GATHER_PAIR_JOINER_PREFIX"]
-MINIMUM_FANIN_FANOUT_THRESHOLD = 5
+FANIN_FANOUT_THRESHOLD = 5
 
 class ScatherGatherAggregator:
 
@@ -97,7 +97,7 @@ class ScatherGatherAggregator:
             origins = self.posible_fanin_by_client.setdefault(client_id, {}).setdefault(destination, set())
             origins.update(new_origins)
         
-            if len(origins) >= MINIMUM_FANIN_FANOUT_THRESHOLD:
+            if len(origins) >= FANIN_FANOUT_THRESHOLD:
                 self._save_in_final_fanin(client_id, destination,origins)
 
     def _process_fanout_transaction(self, client_id, origin, new_destinations):
@@ -105,7 +105,7 @@ class ScatherGatherAggregator:
             destinations = self.posible_fanout_by_client.setdefault(client_id, {}).setdefault(origin, set())
             destinations.update(new_destinations)
         
-            if len(destinations) >= MINIMUM_FANIN_FANOUT_THRESHOLD:
+            if len(destinations) >= FANIN_FANOUT_THRESHOLD:
                 self._save_in_final_fanout(client_id, origin,destinations)
 
     def _save_in_final_fanin(self, client_id, destination, origins):
@@ -136,12 +136,14 @@ class ScatherGatherAggregator:
             for destino_middle in destinos: 
                 joiner_worker = self._worker_to_send_data_to_pair_joiners(destino_middle)
                 self.scather_gather_pair_joiner_exchanges[joiner_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_middle_message_fanout(client_id, origen, destino_middle))
+                logging.info(f"Sent FANOUT message for client {client_id} with origin {origen} and middle destination {destino_middle} to pair joiner worker {joiner_worker}")
         del fanout_data
         
         for (destino,origenes) in fanin_data.items():
             for origen_middle in origenes:
                 joiner_worker = self._worker_to_send_data_to_pair_joiners(origen_middle)
                 self.scather_gather_pair_joiner_exchanges[joiner_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_middle_message_fanin(client_id, destino, origen_middle))
+                logging.info(f"Sent FANIN message for client {client_id} with destination {destino} and middle origin {origen_middle} to pair joiner worker {joiner_worker}")
         del fanin_data
 
 
