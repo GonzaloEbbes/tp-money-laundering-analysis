@@ -7,6 +7,12 @@ import threading
 from time import sleep
 
 from common import middleware, message_protocol
+from common.conversions import (
+    ConversionRateProviderError,
+    conversion_key,
+    conversion_shard,
+    to_frankfurter_currency,
+)
 from message_handler import MessageHandler as PayFormatFilterMessageHandler
 
 logging.basicConfig(
@@ -22,7 +28,10 @@ PAY_FORMAT_FILTER_PREFIX = os.environ["PAY_FORMAT_FILTER_PREFIX"]
 PAY_FORMAT_FILTER_AMOUNT = int(os.environ["PAY_FORMAT_FILTER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
-USD_CURRENCY_CONVERTER_QUEUE = os.environ["USD_CURRENCY_CONVERTER_QUEUE"]
+CONVERSION_EXCHANGE = os.environ["CONVERSION_EXCHANGE"]
+CONVERSION_QUEUE_PREFIX = os.environ.get("CONVERSION_QUEUE_PREFIX", "currency_converter_queue")
+CONVERSION_ROUTING_KEY_PREFIX = os.environ.get("CONVERSION_ROUTING_KEY_PREFIX", "conversion")
+TOTAL_CONVERSION_WORKERS = int(os.environ["TOTAL_CONVERSION_WORKERS"])
 AMOUNT_FILTER_Q5_QUEUE = os.environ["AMOUNT_FILTER_Q5_QUEUE"]
 
 
@@ -35,13 +44,26 @@ class PayFormatFilter:
         
         self.id = int(ID)
 
-        # definicion de working queue exchanges de la instancia posterior
-        self.usd_currency_converter_queue = middleware.MessageMiddlewareQueueRabbitMQ(
-                MOM_HOST, USD_CURRENCY_CONVERTER_QUEUE
+        self.usd_currency_converter_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(
+                MOM_HOST,
+                CONVERSION_EXCHANGE,
+                bindings=[
+                    (f"{CONVERSION_QUEUE_PREFIX}_{shard}", self._conversion_routing_key(shard))
+                    for shard in range(TOTAL_CONVERSION_WORKERS)
+                ],
             )
         self.amount_filter_q5_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, AMOUNT_FILTER_Q5_QUEUE
             )
+        logging.info(
+            "PayFormatFilter wiring: input_queue=%s conversion_exchange=%s conversion_queue_prefix=%s "
+            "conversion_workers=%s amount_filter_q5_queue=%s",
+            INPUT_QUEUE,
+            CONVERSION_EXCHANGE,
+            CONVERSION_QUEUE_PREFIX,
+            TOTAL_CONVERSION_WORKERS,
+            AMOUNT_FILTER_Q5_QUEUE,
+        )
 
         #Exchange de control EOF
         self.pay_format_filter_eof_exchange_consumer = None
@@ -117,16 +139,80 @@ class PayFormatFilter:
         payment_format = transaction_data.get("payment_format")
 
         if payment_format in ["ACH", "Wire"]:
+<<<<<<< HEAD
             self.usd_currency_converter_queue.send(PayFormatFilterMessageHandler.serialize_usd_currency_converter_queue_message(client_id, data_id, transaction_data))
             self.amount_filter_q5_queue.send(PayFormatFilterMessageHandler.serialize_amount_filter_q5_queue_message(client_id, data_id, transaction_data))
             logging.debug(f"Transaction for client {client_id} sent to USD Currency Converter and Amount Filter Q5")
+=======
+            try:
+                currency = to_frankfurter_currency(transaction_data.get("payment_currency"))
+            except ConversionRateProviderError:
+                logging.exception("Could not normalize payment currency. payload=%s", transaction_data)
+                return
+
+            if currency == "USD":
+                self.amount_filter_q5_queue.send(
+                    PayFormatFilterMessageHandler.serialize_amount_filter_q5_queue_message(
+                        client_id,
+                        data_id,
+                        transaction_data,
+                    )
+                )
+                logging.info(f"USD transaction for client {client_id} sent to Amount Filter Q5")
+                return
+
+            try:
+                key = conversion_key(currency, transaction_data.get("timestamp"))
+                shard = conversion_shard(key, TOTAL_CONVERSION_WORKERS)
+            except ConversionRateProviderError:
+                logging.exception("Could not route currency conversion. payload=%s", transaction_data)
+                return
+            routing_key = self._conversion_routing_key(shard)
+            transaction_data = dict(transaction_data)
+            transaction_data["payment_currency"] = currency
+            transaction_data["conversion_key"] = key
+            transaction_data["conversion_shard"] = shard
+            self.usd_currency_converter_exchange.send(
+                PayFormatFilterMessageHandler.serialize_usd_currency_converter_queue_message(
+                    client_id,
+                    data_id,
+                    transaction_data,
+                ),
+                routing_key=routing_key,
+            )
+            logging.info(f"Transaction for client {client_id} sent to USD Currency Converter shard {shard}")
+>>>>>>> origin/main
 
         
 
     def send_final_eof(self, client_id):
-        self.usd_currency_converter_queue.send(PayFormatFilterMessageHandler.serialize_eof_message(client_id))
+        eof_message = PayFormatFilterMessageHandler.serialize_eof_message(client_id)
+        for shard in range(TOTAL_CONVERSION_WORKERS):
+            logging.info(
+                "Q5 route: sending EOF to converter shard client=%s exchange=%s routing_key=%s expected_converter_queue=%s",
+                client_id,
+                CONVERSION_EXCHANGE,
+                self._conversion_routing_key(shard),
+                f"{CONVERSION_QUEUE_PREFIX}_{shard}",
+            )
+            self.usd_currency_converter_exchange.send(
+                eof_message,
+                routing_key=self._conversion_routing_key(shard),
+            )
+        logging.info(
+            "Q5 route: sending EOF directly to amount filter client=%s queue=%s",
+            client_id,
+            AMOUNT_FILTER_Q5_QUEUE,
+        )
         self.amount_filter_q5_queue.send(PayFormatFilterMessageHandler.serialize_eof_message(client_id))
+<<<<<<< HEAD
         logging.debug(f"Sent final EOF for client {client_id} to all downstream queues")
+=======
+        logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
+
+    def _conversion_routing_key(self, shard):
+        return f"{CONVERSION_ROUTING_KEY_PREFIX}.{shard}"
+>>>>>>> origin/main
     
     def _process_datefilter_eof(self, client_id):
         logging.debug(f"Received EOF for client {client_id}")
@@ -241,8 +327,8 @@ class PayFormatFilter:
         resources = [self.date_filter_queue]
         if self.pay_format_filter_eof_exchange_consumer is not None:
             resources.append(self.pay_format_filter_eof_exchange_consumer)
-        if self.usd_currency_converter_queue is not None:
-            resources.append(self.usd_currency_converter_queue)
+        if self.usd_currency_converter_exchange is not None:
+            resources.append(self.usd_currency_converter_exchange)
         if self.amount_filter_q5_queue is not None:
             resources.append(self.amount_filter_q5_queue)
         if self.pay_format_filter_eof_exchange_producer is not None:
@@ -264,28 +350,19 @@ class PayFormatFilter:
         self.stop()
     
     def start(self):
-
-        datefilter_thread = threading.Thread(
-        target=self._run_date_filter_consumer,
-        name="date-filter-consumer-thread",
-        )
-
-
         if PAY_FORMAT_FILTER_AMOUNT > 1:
             control_thread = threading.Thread(
                 target=self._run_control_consumer,
                 name="pay-format    -control-consumer-thread",
             )
 
-        datefilter_started = False
         control_started = False
 
         try:
-            datefilter_thread.start()
-            datefilter_started = True
             if PAY_FORMAT_FILTER_AMOUNT > 1:
                 control_thread.start()
                 control_started = True
+            self._run_date_filter_consumer()
 
         except Exception as e:
             logging.error(e)
@@ -293,8 +370,6 @@ class PayFormatFilter:
             self._close_resources()
             return 2
 
-        if datefilter_started:
-            datefilter_thread.join()
         if control_started:
             control_thread.join()
 
