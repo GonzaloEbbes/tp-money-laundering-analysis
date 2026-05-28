@@ -135,7 +135,6 @@ class PayFormatFilter:
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.info(f"Received DATE_FILTER_TO_PAY_FORMAT_FILTER for client {client_id}")
         payment_format = transaction_data.get("payment_format")
 
         if payment_format in ["ACH", "Wire"]:
@@ -153,7 +152,6 @@ class PayFormatFilter:
                         transaction_data,
                     )
                 )
-                logging.info(f"USD transaction for client {client_id} sent to Amount Filter Q5")
                 return
 
             try:
@@ -175,7 +173,6 @@ class PayFormatFilter:
                 ),
                 routing_key=routing_key,
             )
-            logging.info(f"Transaction for client {client_id} sent to USD Currency Converter shard {shard}")
 
         
 

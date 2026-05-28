@@ -47,7 +47,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=3
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -66,7 +66,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=3
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -85,7 +85,235 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=3
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_4:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=4
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_5:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=5
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_6:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_6
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=6
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_7:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_7
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=7
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_8:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_8
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=8
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_9:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_9
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=9
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_10:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_10
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=10
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_11:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_11
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=11
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_12:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_12
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=12
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_13:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_13
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=13
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+  date_filter_14:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_14
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=14
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=${DATE_FILTER_AMOUNT:-15}
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -107,7 +335,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=3
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -126,7 +354,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=3
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -145,7 +373,223 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=3
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_4:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=4
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_5:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=5
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_6:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_6
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=6
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_7:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_7
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=7
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_8:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_8
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=8
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_9:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_9
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=9
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_10:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_10
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=10
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_11:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_11
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=11
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_12:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_12
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=12
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_13:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_13
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=13
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_14:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_14
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=14
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -759,9 +1203,33 @@ services:
       - date_filter_0
       - date_filter_1
       - date_filter_2
+      - date_filter_3
+      - date_filter_4
+      - date_filter_5
+      - date_filter_6
+      - date_filter_7
+      - date_filter_8
+      - date_filter_9
+      - date_filter_10
+      - date_filter_11
+      - date_filter_12
+      - date_filter_13
+      - date_filter_14
       - usd_filter_q1q2_0
       - usd_filter_q1q2_1
       - usd_filter_q1q2_2
+      - usd_filter_q1q2_3
+      - usd_filter_q1q2_4
+      - usd_filter_q1q2_5
+      - usd_filter_q1q2_6
+      - usd_filter_q1q2_7
+      - usd_filter_q1q2_8
+      - usd_filter_q1q2_9
+      - usd_filter_q1q2_10
+      - usd_filter_q1q2_11
+      - usd_filter_q1q2_12
+      - usd_filter_q1q2_13
+      - usd_filter_q1q2_14
       - usd_filter_q3_0
       - usd_filter_q3_1
       - usd_filter_q3_2
@@ -802,3 +1270,5 @@ services:
       - DATA_PATH_ACCOUNTS=${DATA_PATH_ACCOUNTS:-/data/accounts.csv}
       - EXPECTED_RESULT_EOFS=${EXPECTED_RESULT_EOFS:-5}
       - RESULTS_DIR=${RESULTS_DIR:-/output/results}
+      - RESULTS_WAIT_LOG_INTERVAL=${RESULTS_WAIT_LOG_INTERVAL:-60}
+      - RESULTS_IDLE_TIMEOUT=${RESULTS_IDLE_TIMEOUT:-0}

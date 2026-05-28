@@ -3,6 +3,7 @@ import os
 import logging
 import re
 import signal
+import sys
 import threading
 from time import sleep
 
@@ -121,7 +122,6 @@ class DateFilter:
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.info(f"Received GATEWAY_TO_DATE_FILTER for client {client_id}")
         timestamp = transaction_data.get("timestamp")
 
         if not re.match(r'^\d{4}/\d{2}/\d{2} \d{2}:\d{2}$', timestamp[:16]):
@@ -337,4 +337,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

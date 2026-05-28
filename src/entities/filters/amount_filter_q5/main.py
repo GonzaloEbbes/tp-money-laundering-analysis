@@ -134,17 +134,14 @@ class AmountFilterQ1:
         
 
     def _process_pay_format_message(self, transaction_data, client_id, data_id):
-        logging.info(f"Received PAY_FORMAT_FILTER_TO_AMOUNT_FILTER_Q5 for client {client_id}")
         amount_paid = float(transaction_data.get("amount_paid"))
 
         if amount_paid > 0 and amount_paid < 1:
             with self.cant_trx_lock:
                 self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
-            logging.info(f"Transaction for client {client_id} sent to final gateway queue")
         
 
     def _process_usd_currency_converter_message(self, transaction_data, client_id, data_id): 
-        logging.info(f"Received USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5 for client {client_id}")
         amount_paid = float(transaction_data.get("amount_paid"))
 
         if amount_paid > 0 and amount_paid < 1:

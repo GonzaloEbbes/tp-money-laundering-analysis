@@ -112,14 +112,12 @@ class USDFilterQ4:
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.info(f"Received DATE_FILTER_TO_USD_FILTER_Q4 for client {client_id}")
         receiving_currency = transaction_data.get("receiving_currency")
         payment_currency = transaction_data.get("payment_currency")
 
         if receiving_currency == "US Dollar" and payment_currency == "US Dollar":
             self.average_per_pay_format_mapper_queue.send(USDFilterMessageHandler.serialize_average_per_pay_format_mapper_message(client_id, data_id, transaction_data))
             self.scather_gather_queue.send(USDFilterMessageHandler.serialize_scatter_gather_message(client_id, data_id, transaction_data))
-            logging.info(f"Transaction for client {client_id} sent to average per pay format mapper and scatter gather mapper")
 
         
 

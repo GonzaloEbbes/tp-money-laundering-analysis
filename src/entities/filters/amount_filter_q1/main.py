@@ -110,12 +110,10 @@ class AmountFilterQ1:
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.info(f"Received USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1 for client {client_id}")
         amount_received = float(transaction_data.get("amount_received"))
 
         if amount_received > 0 and amount_received < 50:
             self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data))
-            logging.info(f"Transaction for client {client_id} sent to final gateway queue")
         
 
     def send_final_eof(self, client_id):

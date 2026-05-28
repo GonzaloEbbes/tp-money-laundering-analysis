@@ -116,14 +116,12 @@ class USDFilterQ1Q2:
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.info(f"Received GATEWAY_TO_USD_FILTER_Q1Q2 for client {client_id}")
         payment_currency = transaction_data.get("payment_currency")
         receiving_currency = transaction_data.get("receiving_currency")
         
         if payment_currency == "US Dollar" and receiving_currency == "US Dollar":
             self.amount_filter_q1_queue.send(USDFilterMessageHandler.serialize_amount_filter_q1_message(client_id, data_id, transaction_data))
             self.data_per_bank_shuffler_queue.send(USDFilterMessageHandler.serialize_data_per_bank_shuffler_message(client_id, data_id, transaction_data))
-            logging.info(f"Transaction for client {client_id} sent to amount filter and data per bank shuffler")
         
 
     def send_final_eof(self, client_id):

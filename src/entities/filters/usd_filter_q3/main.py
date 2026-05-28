@@ -108,13 +108,11 @@ class USDFilterQ3:
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.info(f"Received DATE_FILTER_TO_USD_FILTER_Q3 for client {client_id}")
         receiving_currency = transaction_data.get("receiving_currency")
         payment_currency = transaction_data.get("payment_currency")
 
         if receiving_currency == "US Dollar" and payment_currency == "US Dollar":
             self.amount_filter_q3_queue.send(USDFilterMessageHandler.serialize_amount_filter_q3_message(client_id, data_id, transaction_data))
-            logging.info(f"Transaction for client {client_id} sent amount Q3 filter")
         
 
     def send_final_eof(self, client_id):
