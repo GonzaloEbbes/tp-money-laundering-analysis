@@ -3,7 +3,7 @@ from common.entity import PipelineEntity
 
 
 class MapMaxAmountPerBank(PipelineEntity):
-    
+
     def entity_type(self):
         return "map_max_amount_per_bank"
 
@@ -21,7 +21,7 @@ class MapMaxAmountPerBank(PipelineEntity):
                 msg = message.copy()
                 msg["payload"] = result
                 print(f"Sending result for bank {bank}: MaxAmount={max_amount}", flush=True)
-                self.output_queue.send(message_protocol.serialize(msg), 
+                self.output_queue.send(message_protocol.serialize(msg),
                                        routing_key="join_max_amount_per_bank_queue")
             print("Finished sending all max amount results, sending EOF", flush=True)
             return message, "join_max_amount_per_bank_queue"

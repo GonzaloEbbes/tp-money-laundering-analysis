@@ -1,18 +1,18 @@
 import uuid
 
 from common import message_protocol
-from common.message_protocol.internal import InternalMessage, TransactionData
+from common.message_protocol.internal import  ScatherGatherData
 
 
 class MessageHandler:
 
 
-    def serialize_amount_filter_q3_message(client : str, message_id : str, message : any):
-        parsedMessage = TransactionData()
-        parsedMessage.account_origin = message["account_origin"]
-        parsedMessage.amount_received = message["amount_received"]
-        parsedMessage.payment_format = message["payment_format"]
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3, client, message_id, parsedMessage)
+    def serialize_scather_gather_pair_middle_message(client : str, origen:str, destino:str, middle_account:str):
+        message_id = str(uuid.uuid4())
+        parsedMessage = ScatherGatherData()
+        parsedMessage.type = "PAIR_MIDDLE"
+        parsedMessage.value = [origen, destino, middle_account]
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_PAIR_JOINER_TO_SCATHER_GATHER_JOINER, client, message_id, parsedMessage)
 
     def serialize_eof_message(client):
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None, None)
