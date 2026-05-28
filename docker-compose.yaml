@@ -1164,6 +1164,153 @@ services:
     volumes:
       - ./data:/data
 
+  bank_deduplicator_0:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: bank_deduplicator_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=BankDeduplicator
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=bank_deduplicator_queue
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  bank_deduplicator_1:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: bank_deduplicator_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=BankDeduplicator
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=bank_deduplicator_queue
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  bank_deduplicator_2:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: bank_deduplicator_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=BankDeduplicator
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=bank_deduplicator_queue
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  bank_deduplicator_3:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: bank_deduplicator_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=BankDeduplicator
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=bank_deduplicator_queue
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  data_per_bank_redirector:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: data_per_bank_redirector
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=DataPerBankRedirector
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - OUTPUT_QUEUE=map_max_amount_per_bank_queue
+      - TOTAL_REDUCERS=3
+
+  map_max_amount_per_bank_0:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: map_max_amount_per_bank_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=MapMaxAmountPerBank
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=map_max_amount_per_bank_queue_0
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  map_max_amount_per_bank_1:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: map_max_amount_per_bank_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=MapMaxAmountPerBank
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=map_max_amount_per_bank_queue_1
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  map_max_amount_per_bank_2:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: map_max_amount_per_bank_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=MapMaxAmountPerBank
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=map_max_amount_per_bank_queue_2
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  join_max_amount_per_bank:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: join_max_amount_per_bank
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=JoinMaxAmountPerBank
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=join_max_amount_per_bank_queue
+      - OUTPUT_QUEUE=gateway_results_queue
+      - TOTAL_DEDUPLICATORS=1
+      - TOTAL_REDUCERS=3
+
   client:
     build:
       context: ./src

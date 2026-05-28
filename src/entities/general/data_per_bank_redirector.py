@@ -16,7 +16,7 @@ class DataPerBankRedirector(PipelineEntity):
                 for i in range(TOTAL_REDUCERS):
                     msg_copy = message.copy()
                     target_queue = f"map_max_amount_per_bank_queue_{i}"
-                    self.output_queue.send(message_protocol.serialize(msg_copy), 
+                    self.output_queue.send(message_protocol.serialize(msg_copy),
                                            routing_key=target_queue)
                 return None
             return message, "map_max_amount_per_bank_queue"

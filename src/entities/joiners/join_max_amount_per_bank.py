@@ -60,7 +60,7 @@ class JoinMaxAmountPerBank(PipelineEntity):
         for msg in self.pending_messages:
             result_msg, target_queue = self._process_query_2(msg)
             if result_msg and target_queue:
-                self.output_queue.send(message_protocol.serialize(result_msg), 
+                self.output_queue.send(message_protocol.serialize(result_msg),
                                        routing_key=target_queue)
         self.pending_messages.clear()
 
