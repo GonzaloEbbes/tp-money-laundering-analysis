@@ -33,6 +33,7 @@ services:
       - BANK_DEDUPLICATOR_QUEUE=bank_deduplicator_queue
       - CURRENCY_FILTER_QUEUE=currency_filter_queue
       - DATE_FILTER_QUEUE=date_filter_queue
+
   date_filter_0:
     build:
       context: ./src
@@ -47,7 +48,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=3
+      - DATE_FILTER_AMOUNT=12
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -66,7 +67,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=3
+      - DATE_FILTER_AMOUNT=12
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -85,13 +86,191 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=3
+      - DATE_FILTER_AMOUNT=12
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
 
+  date_filter_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
 
+  date_filter_4:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=4
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+
+  date_filter_5:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=5
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+
+  date_filter_6:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_6
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=6
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+
+  date_filter_7:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_7
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=7
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+
+  date_filter_8:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_8
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=8
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+
+  date_filter_9:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_9
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=9
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+
+  date_filter_10:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_10
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=10
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+
+  date_filter_11:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_11
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=11
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
 
   usd_filter_q1q2_0:
     build:
@@ -150,7 +329,6 @@ services:
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
 
-
   amount_filter_q1_0:
     build:
       context: ./src
@@ -204,6 +382,7 @@ services:
       - AMOUNT_FILTER_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+
   usd_filter_q3_0:
     build:
       context: ./src
@@ -256,7 +435,280 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
 
+  usd_filter_q4_0:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=0
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+  usd_filter_q4_1:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=1
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+  usd_filter_q4_2:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=2
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
 
+  usd_filter_q4_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+  usd_filter_q4_4:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=4
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+
+  usd_filter_q4_5:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=5
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+
+  usd_filter_q4_6:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_6
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=6
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+
+  usd_filter_q4_7:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_7
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=7
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+
+  usd_filter_q4_8:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_8
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=8
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+
+  usd_filter_q4_9:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_9
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=9
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+
+  usd_filter_q4_10:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_10
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=10
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+
+  usd_filter_q4_11:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_11
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=11
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+
+  map_average_0:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: map_average_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=MapAverage
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue
+
+  join_average:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: join_average
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=JoinAverage
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue
+      - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - TOTAL_AVERAGE_MAPPERS=1
+
+  amount_filter_q3:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: amount_filter_q3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=DynamicAmountFilter
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - OUTPUT_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
 
   pay_format_filter_0:
     build:
@@ -322,111 +774,6 @@ services:
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
 
-
-  usd_filter_q4_0:
-    build:
-      context: ./src
-      dockerfile: entities/filters/usd_filter_q4/Dockerfile
-    container_name: usd_filter_q4_0
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - ID=0
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
-      - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=3
-      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
-      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
-      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
-  usd_filter_q4_1:
-    build:
-      context: ./src
-      dockerfile: entities/filters/usd_filter_q4/Dockerfile
-    container_name: usd_filter_q4_1
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - ID=1
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
-      - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=3
-      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
-      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
-      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
-  usd_filter_q4_2:
-    build:
-      context: ./src
-      dockerfile: entities/filters/usd_filter_q4/Dockerfile
-    container_name: usd_filter_q4_2
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - ID=2
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
-      - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=3
-      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
-      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
-      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
-
-  map_average_0:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: map_average_0
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=MapAverage
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
-      - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue
-
-  join_average:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: join_average
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=JoinAverage
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue
-      - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
-      - TOTAL_AVERAGE_MAPPERS=1
-
-  amount_filter_q3:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: amount_filter_q3
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=DynamicAmountFilter
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
-      - OUTPUT_QUEUE=gateway_results_queue
-      - EXPECTED_INPUT_EOFS=2
   amount_filter_q5_0:
     build:
       context: ./src
@@ -484,154 +831,222 @@ services:
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
 
-
-  bank_deduplicator_0:
+  scather_gather_mapper_0:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: bank_deduplicator_0
+      dockerfile: entities/scather_gather/scather_gather_mapper/Dockerfile
+    container_name: scather_gather_mapper_0
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=BankDeduplicator
+      - ID=0
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=bank_deduplicator_queue_0
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+      - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
 
-  bank_deduplicator_1:
+  scather_gather_mapper_1:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: bank_deduplicator_1
+      dockerfile: entities/scather_gather/scather_gather_mapper/Dockerfile
+    container_name: scather_gather_mapper_1
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=BankDeduplicator
+      - ID=1
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=bank_deduplicator_queue_1
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+      - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
 
-  bank_deduplicator_2:
+  scather_gather_mapper_2:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: bank_deduplicator_2
+      dockerfile: entities/scather_gather/scather_gather_mapper/Dockerfile
+    container_name: scather_gather_mapper_2
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=BankDeduplicator
+      - ID=2
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=bank_deduplicator_queue_2
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+      - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
 
-  bank_deduplicator_3:
+  scather_gather_aggregator_0:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: bank_deduplicator_3
+      dockerfile: entities/scather_gather/scather_gather_aggregator/Dockerfile
+    container_name: scather_gather_aggregator_0
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=BankDeduplicator
+      - ID=0
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=bank_deduplicator_queue_3
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
 
-  data_per_bank_redirector:
+  scather_gather_aggregator_1:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: data_per_bank_redirector
+      dockerfile: entities/scather_gather/scather_gather_aggregator/Dockerfile
+    container_name: scather_gather_aggregator_1
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=DataPerBankRedirector
+      - ID=1
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=data_per_bank_redirector_queue
-      - OUTPUT_QUEUE=map_max_amount_per_bank_queue
-      - TOTAL_DEDUPLICATORS=4
-      - TOTAL_REDUCERS=3
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
 
-  map_max_amount_per_bank_0:
+  scather_gather_aggregator_2:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: map_max_amount_per_bank_0
+      dockerfile: entities/scather_gather/scather_gather_aggregator/Dockerfile
+    container_name: scather_gather_aggregator_2
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=MapMaxAmountPerBank
+      - ID=2
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=map_max_amount_per_bank_queue_0
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
 
-  map_max_amount_per_bank_1:
+  scather_gather_pair_joiner_0:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: map_max_amount_per_bank_1
+      dockerfile: entities/scather_gather/scather_gather_pair_joiner/Dockerfile
+    container_name: scather_gather_pair_joiner_0
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=MapMaxAmountPerBank
+      - ID=0
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=map_max_amount_per_bank_queue_1
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
 
-  map_max_amount_per_bank_2:
+  scather_gather_pair_joiner_1:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: map_max_amount_per_bank_2
+      dockerfile: entities/scather_gather/scather_gather_pair_joiner/Dockerfile
+    container_name: scather_gather_pair_joiner_1
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=MapMaxAmountPerBank
+      - ID=1
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=map_max_amount_per_bank_queue_2
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
 
-  join_max_amount_per_bank:
+  scather_gather_pair_joiner_2:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: join_max_amount_per_bank
+      dockerfile: entities/scather_gather/scather_gather_pair_joiner/Dockerfile
+    container_name: scather_gather_pair_joiner_2
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=JoinMaxAmountPerBank
+      - ID=2
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=join_max_amount_per_bank_queue
-      - OUTPUT_QUEUE=gateway_results_queue
-      - TOTAL_DEDUPLICATORS=4
-      - TOTAL_REDUCERS=3
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+
+  scather_gather_joiner_0:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_joiner/Dockerfile
+    container_name: scather_gather_joiner_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=0
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+
+  scather_gather_joiner_1:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_joiner/Dockerfile
+    container_name: scather_gather_joiner_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=1
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+
+  scather_gather_joiner_2:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_joiner/Dockerfile
+    container_name: scather_gather_joiner_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=2
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
+      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+
 
   currency_converter_0:
     build:
@@ -749,6 +1164,153 @@ services:
     volumes:
       - ./data:/data
 
+  bank_deduplicator_0:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: bank_deduplicator_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=BankDeduplicator
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=bank_deduplicator_queue
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  bank_deduplicator_1:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: bank_deduplicator_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=BankDeduplicator
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=bank_deduplicator_queue
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  bank_deduplicator_2:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: bank_deduplicator_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=BankDeduplicator
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=bank_deduplicator_queue
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  bank_deduplicator_3:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: bank_deduplicator_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=BankDeduplicator
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=bank_deduplicator_queue
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  data_per_bank_redirector:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: data_per_bank_redirector
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=DataPerBankRedirector
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - OUTPUT_QUEUE=map_max_amount_per_bank_queue
+      - TOTAL_REDUCERS=3
+
+  map_max_amount_per_bank_0:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: map_max_amount_per_bank_0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=MapMaxAmountPerBank
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=map_max_amount_per_bank_queue_0
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  map_max_amount_per_bank_1:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: map_max_amount_per_bank_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=MapMaxAmountPerBank
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=map_max_amount_per_bank_queue_1
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  map_max_amount_per_bank_2:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: map_max_amount_per_bank_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=MapMaxAmountPerBank
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=map_max_amount_per_bank_queue_2
+      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
+
+  join_max_amount_per_bank:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: join_max_amount_per_bank
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=JoinMaxAmountPerBank
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=join_max_amount_per_bank_queue
+      - OUTPUT_QUEUE=gateway_results_queue
+      - TOTAL_DEDUPLICATORS=1
+      - TOTAL_REDUCERS=3
+
   client:
     build:
       context: ./src
@@ -759,15 +1321,27 @@ services:
       - date_filter_0
       - date_filter_1
       - date_filter_2
-      - usd_filter_q1q2_0
-      - usd_filter_q1q2_1
-      - usd_filter_q1q2_2
-      - usd_filter_q3_0
-      - usd_filter_q3_1
-      - usd_filter_q3_2
+      - date_filter_3
+      - date_filter_4
+      - date_filter_5
+      - date_filter_6
+      - date_filter_7
+      - date_filter_8
+      - date_filter_9
+      - date_filter_10
+      - date_filter_11
       - usd_filter_q4_0
       - usd_filter_q4_1
       - usd_filter_q4_2
+      - usd_filter_q4_3
+      - usd_filter_q4_4
+      - usd_filter_q4_5
+      - usd_filter_q4_6
+      - usd_filter_q4_7
+      - usd_filter_q4_8
+      - usd_filter_q4_9
+      - usd_filter_q4_10
+      - usd_filter_q4_11
       - map_average_0
       - join_average
       - amount_filter_q3
