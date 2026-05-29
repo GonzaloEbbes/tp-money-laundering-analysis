@@ -8,5 +8,5 @@ output/
 .env
 .env.*
 
-/data
+/data/*.csv
 /scripts
