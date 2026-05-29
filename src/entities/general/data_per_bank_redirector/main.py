@@ -9,7 +9,7 @@ from message_handler import MessageHandler as DataPerBankRedirectorMessageHandle
 ID = int(os.environ.get("ID", 0))
 TOTAL = int(os.environ.get("DATA_PER_BANK_REDIRECTOR_AMOUNT", 1))
 MOM_HOST = os.environ["MOM_HOST"]
-INPUT_QUEUE = os.environ["INPUT_QUEUE"]   # data_per_bank_shuffler_queue
+INPUT_QUEUE = os.environ["INPUT_QUEUE"]
 EOF_CONTROL_EXCHANGE = os.environ.get("EOF_CONTROL_EXCHANGE", "data_per_bank_control_exchange")
 EXCHANGE_NAME = os.environ.get("EXCHANGE_NAME", "map_max_exchange")
 OUTPUT_ROUTING_KEY_PREFIX = os.environ.get("OUTPUT_ROUTING_KEY_PREFIX", "map_max_partition")
@@ -80,12 +80,10 @@ class DataPerBankRedirector:
                     for i in range(TOTAL_MAPPERS):
                         routing_key = f"{OUTPUT_ROUTING_KEY_PREFIX}_{i}"
                         self.map_exchange.send(eof_msg, routing_key=routing_key)
-                        logging.info(f"Redirector leader {self.id} sent EOF to mapper partition {i}")
                     del self.total_eof[cid]
         else:
             if self.eof_producer:
                 self.eof_producer.send(DataPerBankRedirectorMessageHandler.serialize_eof_leader_message(cid), routing_key=f"dpb_redirector_{self.id}")
-                logging.info(f"Redirector {self.id} sent EOF leader message for client {cid}")
 
         with self._pending_lock:
             if cid in self._pending:

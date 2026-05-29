@@ -37,15 +37,11 @@ class JoinMaxAmountPerBank:
         self.accounts_eof = False
         self.mappers_eof = False
 
-        # Control de escalado
         self.total_instances = JOIN_AMOUNT
         self.eof_consumer = None
         self.eof_producer = None
-
-
         self._is_leader = (self.id == 0)
         if self.total_instances > 1:
-
             all_routing_keys = [f"join_{i}" for i in range(self.total_instances)]
             self.eof_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
                 MOM_HOST, EOF_CONTROL_EXCHANGE, all_routing_keys
@@ -53,6 +49,7 @@ class JoinMaxAmountPerBank:
             self.eof_producer = middleware.MessageMiddlewareExchangePublisherRabbitMQ(
                 MOM_HOST, EOF_CONTROL_EXCHANGE
             )
+
         self.total_eof_leader = {}
         self._eof_lock = threading.Lock()
         self._pending = set()
@@ -63,7 +60,6 @@ class JoinMaxAmountPerBank:
         self._inflight_lock = threading.Lock()
         self._stop = False
 
-    # Métodos de control (igual que antes)
     def _add_inflight(self, cid):
         with self._inflight_lock:
             self._inflight[cid] = self._inflight.get(cid, 0) + 1
@@ -132,10 +128,9 @@ class JoinMaxAmountPerBank:
                 ack()
                 return
 
-            # EOF de mappers
             if msg.type == InternalMessageType.EOF_GENERIC_MESSAGE:
                 self._add_inflight(cid)
-                logging.info(f"Join {self.id} received EOF from mappers for client {cid}")
+                logging.debug(f"Join {self.id} received EOF from mappers for client {cid}")
                 self.mappers_eof = True
                 self._try_flush(cid)
                 self._dec_inflight(cid)
@@ -163,9 +158,6 @@ class JoinMaxAmountPerBank:
                 current = combined.get(from_bank)
                 if current is None or amount > current[0]:
                     combined[from_bank] = (amount, origin)
-        
-        logging.info(f"Join {self.id} combined results for client {cid}: {combined}")
-        logging.info(f"Join {self.id} bank_cache for client {cid}: {self.bank_cache}")
 
         # TODAS las instancias envían los resultados al gateway (duplicados)
         for from_bank, (amount, origin) in combined.items():
@@ -176,7 +168,7 @@ class JoinMaxAmountPerBank:
             self.output_queue.send(JoinMessageHandler.serialize_result(
                 cid, None, bank_name, origin, amount
             ))
-            logging.info(f"Join {self.id} sent result for bank {bank_name} amount {amount}")
+            logging.debug(f"Join {self.id} sent result for bank {bank_name} amount {amount}")
 
         self.pending_results.clear()
 

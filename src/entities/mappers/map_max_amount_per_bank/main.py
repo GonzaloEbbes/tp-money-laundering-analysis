@@ -106,12 +106,11 @@ class MapMaxAmountPerBank:
         try:
             msg = message_protocol.internal.deserialize(raw_msg)
             cid = msg.source_client_uuid
-            logging.info(f"Mapper {self.id} received message of type {msg.type} for client {cid}")
+            logging.debug(f"Mapper {self.id} received message of type {msg.type} for client {cid}")
 
             if msg.type == InternalMessageType.EOF_GENERIC_MESSAGE:
-                logging.info(f"Mapper {self.id} received EOF for client {cid}")
+                logging.debug(f"Mapper {self.id} received EOF for client {cid}")
                 self._add_inflight(cid)
-                # Enviar resultados acumulados al join (solo una vez, aquí)
                 for from_bank, (amount, origin) in self.bank_max.items():
                     partition = stable_hash(from_bank) % JOIN_AMOUNT
                     routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{partition}"
@@ -119,12 +118,10 @@ class MapMaxAmountPerBank:
                         cid, None, from_bank, amount, origin
                     )
                     self.join_exchange.send(result_bytes, routing_key=routing_key)
-                    logging.info(f"Mapper {self.id} sent result for {from_bank}: {amount}")
-                # Notificar a los demás (si no es líder) o auto-contabilizar (si es líder)
+                    logging.debug(f"Mapper {self.id} sent result for {from_bank}: {amount}")
                 if self.eof_producer:
                     self.eof_producer.send(MapperMessageHandler.serialize_eof_message(cid), routing_key=f"map_max_{self.id}")
                 self._dec_inflight(cid)
-                # Verificar si ya no hay inflight y finalizar
                 with self._inflight_lock:
                     inflight = self._inflight.get(cid, 0)
                 if inflight == 0:

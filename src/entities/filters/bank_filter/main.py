@@ -13,7 +13,6 @@ TOTAL = int(os.environ.get("BANK_FILTERS_AMOUNT", 1))
 MOM_HOST = os.environ["MOM_HOST"]
 EXCHANGE_NAME = os.environ.get("BANK_EXCHANGE", "bank_exchange")
 ROUTING_KEY_PREFIX = os.environ.get("BANK_ROUTING_KEY_PREFIX", "bank_partition")
-# Nuevo: exchange de salida hacia los joins
 JOIN_EXCHANGE = os.environ.get("JOIN_EXCHANGE", "query2_join_exchange")
 JOIN_AMOUNT = int(os.environ.get("JOIN_AMOUNT", 1))
 JOIN_ROUTING_KEY_PREFIX = os.environ.get("JOIN_ROUTING_KEY_PREFIX", "join_partition")
@@ -32,7 +31,6 @@ class BankFilter:
             queue_name=None,     
             exclusive=True
         )
-        # Publicador al exchange de join (particionado)
         self.join_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(
             MOM_HOST, JOIN_EXCHANGE
         )
@@ -83,7 +81,7 @@ class BankFilter:
                     self._finalize_client(cid)
 
     def _finalize_client(self, cid):
-        logging.info(f"BankFilter {self.id} finalizing client {cid}")
+        logging.debug(f"BankFilter {self.id} finalizing client {cid}")
         with self._finalized_lock:
             if cid in self._finalized:
                 return
@@ -94,9 +92,9 @@ class BankFilter:
                 if self.total_eof[cid] == self.total:
                     # Enviar EOF de cuentas a todas las particiones del join
                     logging.info(f"BankFilter {self.id} finalizing client {cid}")
-                    logging.info(f"BankFilter {self.id} client {cid} seen banks: {len(self.seen_banks)}")
+                    logging.debug(f"BankFilter {self.id} client {cid} seen banks: {len(self.seen_banks)}")
                     self.seen_banks.clear()
-                    eof_bytes = BankFilterMessageHandler.serialize_eof_join_message(cid)  # data=None
+                    eof_bytes = BankFilterMessageHandler.serialize_eof_join_message(cid)
                     for i in range(JOIN_AMOUNT):
                         routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{i}"
                         self.join_exchange.send(eof_bytes, routing_key=routing_key)
@@ -130,9 +128,11 @@ class BankFilter:
             if msg.type != InternalMessageType.GATEWAY_TO_BANK_FILTER:
                 ack()
                 return
+            
             self._add_inflight(cid)
             bank_id = msg.data.get("bank_id")
             bank_name = msg.data.get("bank_name")
+
             if bank_id and bank_id not in self.seen_banks:
                 self.seen_banks.add(bank_id)
                 partition = stable_hash(bank_id) % JOIN_AMOUNT
