@@ -93,7 +93,7 @@ class CurrencyConverter(PipelineEntity):
         if rate is None:
             rate = self._get_rate(currency, date)
             self.cache[key] = rate
-            LOGGER.info("Conversion cache miss. key=%s rate=%s", key, rate)
+            LOGGER.debug("Conversion cache miss. key=%s rate=%s", key, rate)
 
         converted_payload = dict(payload)
         converted_payload["conversion_key"] = key
