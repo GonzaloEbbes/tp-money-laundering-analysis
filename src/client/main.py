@@ -214,7 +214,7 @@ class Client:
 
     def _log_send_progress(self, label, records_sent):
         if records_sent and records_sent % SEND_PROGRESS_INTERVAL == 0:
-            logging.info("Sent %s %s records", records_sent, label)
+            logging.debug("Sent %s %s records", records_sent, label)
 
     def _send_record_batched(self, pending_acks, msg_type, *args):
         self._send_without_wait_ack(msg_type, *args)
@@ -224,7 +224,7 @@ class Client:
         return pending_acks
 
     def send_account_records(self, input_file):
-        logging.info("Sending account records")
+        logging.debug("Sending account records")
         pending_acks = 0
         records_sent = 0
         with open(input_file, mode="r", newline="\n", encoding="utf-8-sig") as csvfile:

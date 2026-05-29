@@ -174,7 +174,7 @@ class PayFormatFilter:
                 ),
                 routing_key=routing_key,
             )
-            logging.info(f"Transaction for client {client_id} sent to USD Currency Converter shard {shard}")
+            logging.debug(f"Transaction for client {client_id} sent to USD Currency Converter shard {shard}")
 
         
 

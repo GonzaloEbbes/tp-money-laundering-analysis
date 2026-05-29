@@ -133,38 +133,22 @@ class DateFilter:
 
         if anio == "2022" and mes == "09":
             if dia in ["01", "02", "03", "04", "05"]:
-<<<<<<< HEAD
-                with self.producer_lock:
-                    self.usd_filters_q3_queue.send(
-                        DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
-                    )
+
                 with self.producer_lock:
                     self.usd_filters_q4_queue.send(
                         DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
                     )
-            elif dia in ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
+                
                 with self.producer_lock:
                     self.pay_format_filter_queue.send(
                         DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, transaction_data)
                     )
-=======
-                self.usd_filters_q3_queue.send(
-                    DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
-                )
-                message = {
-                    "timestamp": transaction_data["timestamp"],
-                    "amount_paid": transaction_data["amount_paid"],
-                    "payment_currency": transaction_data["payment_currency"],
-                    "payment_format": transaction_data["payment_format"]
-                }
-                self.pay_format_filter_queue.send(
-                    DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, message)
-                )
+
             elif dia in ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
-                self.usd_filters_q4_queue.send(
-                    DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
-                )
->>>>>>> origin/main
+                with self.producer_lock:
+                    self.usd_filters_q3_queue.send(
+                        DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
+                    )
 
     def send_final_eof(self, client_id):
         with self.producer_lock:

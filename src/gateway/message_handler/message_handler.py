@@ -111,7 +111,7 @@ class MessageHandler:
         if internal_message.source_client_uuid != self.client_uuid:
             return None
 
-        logging.info(
+        logging.debug(
             "Client %s received message with data %s",
             internal_message.source_client_uuid,
             internal_message.data,

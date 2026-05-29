@@ -116,7 +116,7 @@ class ScatherGatherJoiner:
         value = transaction_data.get("value")
         
         if type == "PAIR_MIDDLE":
-            logging.info(f"Received PAIR_MIDDLE message for client {client_id}")
+            logging.debug(f"Received PAIR_MIDDLE message for client {client_id}")
             [origen, destino, middle_account] = value
             self._process_pair_middle_transaction(client_id, origen, destino, middle_account)
         else:
@@ -171,7 +171,7 @@ class ScatherGatherJoiner:
             self.total_eof_received_by_client[client_id] = self.total_eof_received_by_client.get(client_id, 0) + 1
             
             if self.total_eof_received_by_client[client_id] == SCATHER_GATHER_JOINER_AMOUNT:
-                logging.info(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
+                logging.debug(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
                 should_send_final_eof = True
                 del self.total_eof_received_by_client[client_id]
         
