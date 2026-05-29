@@ -110,12 +110,12 @@ class AmountFilterQ1:
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.info(f"Received USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1 for client {client_id}")
+        logging.debug(f"Received USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1 for client {client_id}")
         amount_received = float(transaction_data.get("amount_received"))
 
         if amount_received > 0 and amount_received < 50:
             self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data))
-            logging.info(f"Transaction for client {client_id} sent to final gateway queue")
+            logging.debug(f"Transaction for client {client_id} sent to final gateway queue")
         
 
     def send_final_eof(self, client_id):
@@ -123,12 +123,12 @@ class AmountFilterQ1:
         logging.info(f"Sent final EOF for client {client_id} to gateway final query queue")
     
     def _process_usd_filter_q1q2_eof(self, client_id):
-        logging.info(f"Received EOF for client {client_id}")
+        logging.debug(f"Received EOF for client {client_id}")
 
         if AMOUNT_FILTER_AMOUNT > 1:
             with self._eof_producer_lock:
                 self.amount_filter_eof_exchange_producer.send(AmountFilterQ1MessageHandler.serialize_eof_message(client_id))
-            logging.info(f"Sent EOF for client {client_id} to other amount filters")
+            logging.debug(f"Sent EOF for client {client_id} to other amount filters")
 
         self._finalize_client(client_id)
     
@@ -143,7 +143,7 @@ class AmountFilterQ1:
                 should_finalize = self._inflight_messages.get(client_id, 0) == 0
 
         if should_finalize:
-            logging.info(f"Finalizando cliente {client_id} que estaba pendiente")
+            logging.debug(f"Finalizando cliente {client_id} que estaba pendiente")
             self._finalize_client(client_id)
                         
     def _finalize_client(self, client_id):
@@ -151,7 +151,7 @@ class AmountFilterQ1:
         with self._finalized_clients_lock:
             if client_id in self._finalized_clients:
                 return
-            logging.info(f"Finalizando cliente {client_id}")
+            logging.debug(f"Finalizando cliente {client_id}")
             self._finalized_clients.add(client_id)
 
         if self._is_leader():
@@ -167,7 +167,7 @@ class AmountFilterQ1:
     def send_eof_leader_message(self, client_id):
         with self._eof_producer_lock:
             self.amount_filter_eof_exchange_producer.send(AmountFilterQ1MessageHandler.serialize_eof_leader_message(client_id))
-        logging.info(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
+        logging.debug(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
 
     def _add_inflight_message(self, client_id):
         with self._inflight_message_lock:
@@ -182,11 +182,11 @@ class AmountFilterQ1:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
-                logging.info(f"Received EOF_GENERIC_MESSAGE for client {message.source_client_uuid}")
+                logging.debug(f"Received EOF_GENERIC_MESSAGE for client {message.source_client_uuid}")
                 self._process_eof_from_control_exchange(message.source_client_uuid)
             case message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE:
                 if self._is_leader():
-                    logging.info(f"Received EOF_LEADER_MESSAGE for client {message.source_client_uuid}")
+                    logging.debug(f"Received EOF_LEADER_MESSAGE for client {message.source_client_uuid}")
                     self._leader_count_eof_for_client(message.source_client_uuid)
                 
         ack()
@@ -196,7 +196,7 @@ class AmountFilterQ1:
             self.total_eof_received_by_client[client_id] = self.total_eof_received_by_client.get(client_id, 0) + 1
             
             if self.total_eof_received_by_client[client_id] == AMOUNT_FILTER_AMOUNT:
-                logging.info(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
+                logging.debug(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
                 should_send_final_eof = True
                 del self.total_eof_received_by_client[client_id]
         
@@ -206,11 +206,11 @@ class AmountFilterQ1:
     def _process_eof_from_control_exchange(self, client_id):
         with self._inflight_message_lock:
             if self._inflight_messages.get(client_id, 0) > 0:
-                logging.info(f"EOF received for client {client_id} but there are still inflight messages. Marking client as finalized but waiting for inflight messages to finish.")
+                logging.debug(f"EOF received for client {client_id} but there are still inflight messages. Marking client as finalized but waiting for inflight messages to finish.")
                 with self._is_pending_to_finalize_client_lock:
                     self._is_pending_to_finalize_client.add(client_id)
             else:
-                logging.info(f"EOF received for client {client_id} and no inflight messages. Finalizing client.")
+                logging.debug(f"EOF received for client {client_id} and no inflight messages. Finalizing client.")
                 self._finalize_client(client_id)
 
 

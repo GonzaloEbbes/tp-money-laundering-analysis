@@ -125,9 +125,9 @@ RESULT_DATA_EXTRACTORS = {
     message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q3_TO_GATEWAY:
         lambda data: (data.get("account_origin"), data.get("amount_received")),
     
-    # QUERY_4_RESULT espera una tupla de accounts (Puede cambiar)
+    # QUERY_4_RESULT espera una lista de accounts (strings)
     message_protocol.internal.InternalMessageType.SCATHER_GATHER_JOINER_TO_GATEWAY:
-        lambda data: (data.get("accounts"),) if isinstance(data.get("accounts"), (list, tuple)) else ([]),
+        lambda data: (data.get("value") if isinstance(data.get("value"), (list, tuple)) else [],),
     
     # QUERY_5_RESULT espera cantTrx 
     message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q5_TO_GATEWAY:
@@ -184,7 +184,7 @@ def handle_client_response(client_list):
                         )
                 ack()
                 return
-            logging.warning("Received message with no matching client handler: %s", message)
+            logging.debug("Received message with no matching client handler: %s", message)
             nack()
         except socket.error:
             logging.error("RESPONSE | The connection with the server was lost")
