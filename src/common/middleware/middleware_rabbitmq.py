@@ -14,11 +14,14 @@ from .middleware import (
 # Cantidad maxima de mensajes sin ack entregados al consumidor al mismo tiempo.
 MAX_UNACKED_MESSAGES = 1
 RABBITMQ_HEARTBEAT = int(os.environ.get("RABBITMQ_HEARTBEAT", "0"))
+RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS = 300
+
 
 def _connection_parameters(host):
 	return pika.ConnectionParameters(
 		host,
 		heartbeat=RABBITMQ_HEARTBEAT,
+    blocked_connection_timeout=RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS,
 	)
 
 class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):

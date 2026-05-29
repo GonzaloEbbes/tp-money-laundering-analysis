@@ -14,7 +14,7 @@ class InternalMessageType:
     AVERAGE_PER_PAY_FORMAT_AGGREGATOR_TO_AMOUNT_FILTER_Q3 = 10
     USD_FILTER_Q4_TO_SCATHER_GATHER_MAPPER = 11
     SCATHER_GATHER_MAPPER_TO_SCATHER_GATHER_AGGREGATOR = 12
-    SCATHER_GATHER_AGGREGATOR_TO_SCATHER_GATHER_JOINER = 13
+    SCATHER_GATHER_AGGREGATOR_TO_SCATHER_GATHER_PAIR_JOINER = 13
     PAY_FORMAT_FILTER_TO_USD_CURRENCY_CONVERTER = 14
     USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5 = 15
     PAY_FORMAT_FILTER_TO_AMOUNT_FILTER_Q5 = 16
@@ -27,8 +27,30 @@ class InternalMessageType:
     EOF_GENERIC_MESSAGE = 23
     EOF_LEADER_MESSAGE = 24
     GATEWAY_TO_BANK_FILTER = 25
+    SCATHER_GATHER_PAIR_JOINER_TO_SCATHER_GATHER_JOINER = 26
 
+class ScatherGatherData(dict):
+    type : str
+    key : str
+    value : list[str] | str
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        try:
+            del self[name]
+        except KeyError:
+            raise AttributeError(name)
 class TransactionData(dict):
     timestamp : str
     from_bank : str
@@ -108,7 +130,7 @@ class InternalMessage:
 
     type : InternalMessageType
     source_client_uuid : str | None
-    data : TransactionData | AccountData | CantTrxData | None
+    data : TransactionData | AccountData | CantTrxData | ScatherGatherData | None
     
     def __init__(self, type=None, source_client_uuid=None, data_id=None, data=None):
         self.type = type

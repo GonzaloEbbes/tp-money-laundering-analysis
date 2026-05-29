@@ -51,6 +51,7 @@ class DateFilter:
             )
 
         #Exchange de control EOF
+        self.producer_lock = threading.Lock()
         self.date_filter_eof_exchange_consumer = None
         self.date_filter_eof_exchange_producer = None
         
@@ -132,6 +133,21 @@ class DateFilter:
 
         if anio == "2022" and mes == "09":
             if dia in ["01", "02", "03", "04", "05"]:
+<<<<<<< HEAD
+                with self.producer_lock:
+                    self.usd_filters_q3_queue.send(
+                        DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
+                    )
+                with self.producer_lock:
+                    self.usd_filters_q4_queue.send(
+                        DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
+                    )
+            elif dia in ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
+                with self.producer_lock:
+                    self.pay_format_filter_queue.send(
+                        DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, transaction_data)
+                    )
+=======
                 self.usd_filters_q3_queue.send(
                     DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
                 )
@@ -148,20 +164,22 @@ class DateFilter:
                 self.usd_filters_q4_queue.send(
                     DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
                 )
+>>>>>>> origin/main
 
     def send_final_eof(self, client_id):
-        self.usd_filters_q3_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
-        self.usd_filters_q4_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
-        self.pay_format_filter_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
-        logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
+        with self.producer_lock:
+            self.usd_filters_q3_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
+            self.usd_filters_q4_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
+            self.pay_format_filter_queue.send(DateFilterMessageHandler.serialize_eof_message(client_id))
+        logging.debug(f"Sent final EOF for client {client_id} to all downstream queues")
     
     def _process_gateway_eof(self, client_id):
-        logging.info(f"Received EOF for client {client_id}")
+        logging.debug(f"Received EOF for client {client_id}")
 
         if DATE_FILTER_AMOUNT > 1:
             with self._eof_producer_lock:
                 self.date_filter_eof_exchange_producer.send(DateFilterMessageHandler.serialize_eof_message(client_id))
-                logging.info(f"Sent EOF for client {client_id} to other date filters")
+                logging.debug(f"Sent EOF for client {client_id} to other date filters")
 
         self._finalize_client(client_id)
     
@@ -176,7 +194,7 @@ class DateFilter:
                 should_finalize = self._inflight_messages.get(client_id, 0) == 0
 
         if should_finalize:
-            logging.info(f"Finalizando cliente {client_id} que estaba pendiente")
+            logging.debug(f"Finalizando cliente {client_id} que estaba pendiente")
             self._finalize_client(client_id)
                         
     def _finalize_client(self, client_id):
@@ -184,7 +202,7 @@ class DateFilter:
         with self._finalized_clients_lock:
             if client_id in self._finalized_clients:
                 return
-            logging.info(f"Finalizando cliente {client_id}")
+            logging.debug(f"Finalizando cliente {client_id}")
             self._finalized_clients.add(client_id)
 
         if self._is_leader():
@@ -200,7 +218,7 @@ class DateFilter:
     def send_eof_leader_message(self, client_id):
         with self._eof_producer_lock:
             self.date_filter_eof_exchange_producer.send(DateFilterMessageHandler.serialize_eof_leader_message(client_id))
-        logging.info(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
+        logging.debug(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
 
     def _add_inflight_message(self, client_id):
         with self._inflight_message_lock:
@@ -215,11 +233,11 @@ class DateFilter:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
-                logging.info(f"Received EOF_GENERIC_MESSAGE for client {message.source_client_uuid}")
+                logging.debug(f"Received EOF_GENERIC_MESSAGE for client {message.source_client_uuid}")
                 self._process_eof_from_control_exchange(message.source_client_uuid)
             case message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE:
                 if self._is_leader():
-                    logging.info(f"Received EOF_LEADER_MESSAGE for client {message.source_client_uuid}")
+                    logging.debug(f"Received EOF_LEADER_MESSAGE for client {message.source_client_uuid}")
                     self._leader_count_eof_for_client(message.source_client_uuid)
                 
         ack()
@@ -229,7 +247,7 @@ class DateFilter:
             self.total_eof_received_by_client[client_id] = self.total_eof_received_by_client.get(client_id, 0) + 1
             
             if self.total_eof_received_by_client[client_id] == DATE_FILTER_AMOUNT:
-                logging.info(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
+                logging.debug(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
                 should_send_final_eof = True
                 del self.total_eof_received_by_client[client_id]
         
@@ -239,11 +257,11 @@ class DateFilter:
     def _process_eof_from_control_exchange(self, client_id):
         with self._inflight_message_lock:
             if self._inflight_messages.get(client_id, 0) > 0:
-                logging.info(f"EOF received for client {client_id} but there are still inflight messages. Marking client as finalized but waiting for inflight messages to finish.")
+                logging.debug(f"EOF received for client {client_id} but there are still inflight messages. Marking client as finalized but waiting for inflight messages to finish.")
                 with self._is_pending_to_finalize_client_lock:
                     self._is_pending_to_finalize_client.add(client_id)
             else:
-                logging.info(f"EOF received for client {client_id} and no inflight messages. Finalizing client.")
+                logging.debug(f"EOF received for client {client_id} and no inflight messages. Finalizing client.")
                 self._finalize_client(client_id)
 
 
@@ -325,11 +343,11 @@ class DateFilter:
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.info)
     date_filter = DateFilter()
 
     def _handle_sigterm(signum, frame):
-        logging.info("SIGTERM received in date filter")
+        logging.debug("SIGTERM received in date filter")
         date_filter.notify_sigterm()
 
     signal.signal(signal.SIGTERM, _handle_sigterm)
