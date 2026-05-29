@@ -184,7 +184,7 @@ def handle_client_response(client_list):
                         )
                 ack()
                 return
-            logging.warning("Received message with no matching client handler: %s", message)
+            logging.debug("Received message with no matching client handler: %s", message)
             nack()
         except socket.error:
             logging.error("RESPONSE | The connection with the server was lost")

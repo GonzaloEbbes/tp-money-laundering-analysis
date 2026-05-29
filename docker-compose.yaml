@@ -111,7 +111,7 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      
   date_filter_4:
     build:
       context: ./src
@@ -171,7 +171,6 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
   date_filter_7:
     build:
       context: ./src
@@ -286,7 +285,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=3
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -305,7 +304,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=3
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -324,7 +323,223 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=3
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_4:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=4
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_5:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=5
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_6:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_6
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=6
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_7:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_7
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=7
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_8:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_8
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=8
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_9:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_9
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=9
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_10:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_10
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=10
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_11:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_11
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=11
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_12:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_12
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=12
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_13:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_13
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=13
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+  usd_filter_q1q2_14:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_14
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=14
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=${USD_FILTER_Q1Q2_AMOUNT:-15}
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -724,7 +939,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=3
+      - PAY_FORMAT_FILTER_AMOUNT=12
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
@@ -745,7 +960,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=3
+      - PAY_FORMAT_FILTER_AMOUNT=12
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
@@ -766,7 +981,205 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=3
+      - PAY_FORMAT_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+
+  pay_format_filter_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+
+  pay_format_filter_4:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=4
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+
+  pay_format_filter_5:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=5
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+
+  pay_format_filter_6:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_6
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=6
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+
+  pay_format_filter_7:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_7
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=7
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+
+  pay_format_filter_8:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_8
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=8
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+
+  pay_format_filter_9:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_9
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=9
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+
+  pay_format_filter_10:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_10
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=10
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=12
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+
+  pay_format_filter_11:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_11
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=11
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=12
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
@@ -1065,7 +1478,7 @@ services:
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.0
-      - CONVERSION_PROVIDER=frankfurter
+      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
       - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
@@ -1094,7 +1507,7 @@ services:
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.1
-      - CONVERSION_PROVIDER=frankfurter
+      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
       - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
@@ -1123,7 +1536,7 @@ services:
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.2
-      - CONVERSION_PROVIDER=frankfurter
+      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
       - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
@@ -1152,7 +1565,7 @@ services:
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.3
-      - CONVERSION_PROVIDER=frankfurter
+      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
       - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
@@ -1163,153 +1576,6 @@ services:
       - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
     volumes:
       - ./data:/data
-
-  bank_deduplicator_0:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: bank_deduplicator_0
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=BankDeduplicator
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=bank_deduplicator_queue
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
-
-  bank_deduplicator_1:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: bank_deduplicator_1
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=BankDeduplicator
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=bank_deduplicator_queue
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
-
-  bank_deduplicator_2:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: bank_deduplicator_2
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=BankDeduplicator
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=bank_deduplicator_queue
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
-
-  bank_deduplicator_3:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: bank_deduplicator_3
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=BankDeduplicator
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=bank_deduplicator_queue
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
-
-  data_per_bank_redirector:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: data_per_bank_redirector
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=DataPerBankRedirector
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
-      - OUTPUT_QUEUE=map_max_amount_per_bank_queue
-      - TOTAL_REDUCERS=3
-
-  map_max_amount_per_bank_0:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: map_max_amount_per_bank_0
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=MapMaxAmountPerBank
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=map_max_amount_per_bank_queue_0
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
-
-  map_max_amount_per_bank_1:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: map_max_amount_per_bank_1
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=MapMaxAmountPerBank
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=map_max_amount_per_bank_queue_1
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
-
-  map_max_amount_per_bank_2:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: map_max_amount_per_bank_2
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=MapMaxAmountPerBank
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=map_max_amount_per_bank_queue_2
-      - OUTPUT_QUEUE=join_max_amount_per_bank_queue
-
-  join_max_amount_per_bank:
-    build:
-      context: ./src
-      dockerfile: entities/Dockerfile
-    container_name: join_max_amount_per_bank
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=JoinMaxAmountPerBank
-      - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=join_max_amount_per_bank_queue
-      - OUTPUT_QUEUE=gateway_results_queue
-      - TOTAL_DEDUPLICATORS=1
-      - TOTAL_REDUCERS=3
 
   client:
     build:
@@ -1330,6 +1596,24 @@ services:
       - date_filter_9
       - date_filter_10
       - date_filter_11
+      - usd_filter_q1q2_0
+      - usd_filter_q1q2_1
+      - usd_filter_q1q2_2
+      - usd_filter_q1q2_3
+      - usd_filter_q1q2_4
+      - usd_filter_q1q2_5
+      - usd_filter_q1q2_6
+      - usd_filter_q1q2_7
+      - usd_filter_q1q2_8
+      - usd_filter_q1q2_9
+      - usd_filter_q1q2_10
+      - usd_filter_q1q2_11
+      - usd_filter_q1q2_12
+      - usd_filter_q1q2_13
+      - usd_filter_q1q2_14
+      - usd_filter_q3_0
+      - usd_filter_q3_1
+      - usd_filter_q3_2
       - usd_filter_q4_0
       - usd_filter_q4_1
       - usd_filter_q4_2
@@ -1348,24 +1632,18 @@ services:
       - pay_format_filter_0
       - pay_format_filter_1
       - pay_format_filter_2
+      - pay_format_filter_3
+      - pay_format_filter_4
       - amount_filter_q1_0
       - amount_filter_q1_1
       - amount_filter_q1_2
-      - bank_deduplicator_0
-      - bank_deduplicator_1
-      - bank_deduplicator_2
-      - bank_deduplicator_3
-      - data_per_bank_redirector
-      - map_max_amount_per_bank_0
-      - map_max_amount_per_bank_1
-      - map_max_amount_per_bank_2
-      - join_max_amount_per_bank
       - currency_converter_0
       - currency_converter_1
       - currency_converter_2
       - currency_converter_3
     volumes:
       - ./data:/data
+      - ./output:/output
     environment:
       - PYTHONUNBUFFERED=1
       - SERVER_HOST=gateway
@@ -1374,3 +1652,6 @@ services:
       - DATA_PATH=${DATA_PATH:-/data/dataset.csv}
       - DATA_PATH_ACCOUNTS=${DATA_PATH_ACCOUNTS:-/data/accounts.csv}
       - EXPECTED_RESULT_EOFS=${EXPECTED_RESULT_EOFS:-5}
+      - RESULTS_DIR=${RESULTS_DIR:-/output/results}
+      - RESULTS_WAIT_LOG_INTERVAL=${RESULTS_WAIT_LOG_INTERVAL:-60}
+      - RESULTS_IDLE_TIMEOUT=${RESULTS_IDLE_TIMEOUT:-0}

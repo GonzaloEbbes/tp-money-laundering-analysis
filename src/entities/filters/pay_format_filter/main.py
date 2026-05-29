@@ -139,11 +139,6 @@ class PayFormatFilter:
         payment_format = transaction_data.get("payment_format")
 
         if payment_format in ["ACH", "Wire"]:
-<<<<<<< HEAD
-            self.usd_currency_converter_queue.send(PayFormatFilterMessageHandler.serialize_usd_currency_converter_queue_message(client_id, data_id, transaction_data))
-            self.amount_filter_q5_queue.send(PayFormatFilterMessageHandler.serialize_amount_filter_q5_queue_message(client_id, data_id, transaction_data))
-            logging.debug(f"Transaction for client {client_id} sent to USD Currency Converter and Amount Filter Q5")
-=======
             try:
                 currency = to_frankfurter_currency(transaction_data.get("payment_currency"))
             except ConversionRateProviderError:
@@ -158,7 +153,6 @@ class PayFormatFilter:
                         transaction_data,
                     )
                 )
-                logging.info(f"USD transaction for client {client_id} sent to Amount Filter Q5")
                 return
 
             try:
@@ -180,8 +174,7 @@ class PayFormatFilter:
                 ),
                 routing_key=routing_key,
             )
-            logging.info(f"Transaction for client {client_id} sent to USD Currency Converter shard {shard}")
->>>>>>> origin/main
+            logging.debug(f"Transaction for client {client_id} sent to USD Currency Converter shard {shard}")
 
         
 
@@ -205,14 +198,10 @@ class PayFormatFilter:
             AMOUNT_FILTER_Q5_QUEUE,
         )
         self.amount_filter_q5_queue.send(PayFormatFilterMessageHandler.serialize_eof_message(client_id))
-<<<<<<< HEAD
         logging.debug(f"Sent final EOF for client {client_id} to all downstream queues")
-=======
-        logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
 
     def _conversion_routing_key(self, shard):
         return f"{CONVERSION_ROUTING_KEY_PREFIX}.{shard}"
->>>>>>> origin/main
     
     def _process_datefilter_eof(self, client_id):
         logging.debug(f"Received EOF for client {client_id}")

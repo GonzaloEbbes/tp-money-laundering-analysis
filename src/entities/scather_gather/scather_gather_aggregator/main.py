@@ -83,10 +83,10 @@ class ScatherGatherAggregator:
         key = transaction_data.get("key")
         value = transaction_data.get("value")
         if type == "FANIN":
-            logging.info(f"Received FANIN message for client {client_id}")
+            logging.debug(f"Received FANIN message for client {client_id}")
             self._process_fanin_transaction(client_id, key, value)
         elif type == "FANOUT":
-            logging.info(f"Received FANOUT message for client {client_id}")
+            logging.debug(f"Received FANOUT message for client {client_id}")
             self._process_fanout_transaction(client_id, key, value)
         else:
             logging.warning(f"Received unknown transaction type {type} for client {client_id}")
@@ -136,14 +136,14 @@ class ScatherGatherAggregator:
             for destino_middle in destinos: 
                 joiner_worker = self._worker_to_send_data_to_pair_joiners(destino_middle)
                 self.scather_gather_pair_joiner_exchanges[joiner_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_middle_message_fanout(client_id, origen, destino_middle))
-                logging.info(f"Sent FANOUT message for client {client_id} with origin {origen} and middle destination {destino_middle} to pair joiner worker {joiner_worker}")
+                logging.debug(f"Sent FANOUT message for client {client_id} with origin {origen} and middle destination {destino_middle} to pair joiner worker {joiner_worker}")
         del fanout_data
         
         for (destino,origenes) in fanin_data.items():
             for origen_middle in origenes:
                 joiner_worker = self._worker_to_send_data_to_pair_joiners(origen_middle)
                 self.scather_gather_pair_joiner_exchanges[joiner_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_middle_message_fanin(client_id, destino, origen_middle))
-                logging.info(f"Sent FANIN message for client {client_id} with destination {destino} and middle origin {origen_middle} to pair joiner worker {joiner_worker}")
+                logging.debug(f"Sent FANIN message for client {client_id} with destination {destino} and middle origin {origen_middle} to pair joiner worker {joiner_worker}")
         del fanin_data
 
 
