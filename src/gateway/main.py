@@ -3,9 +3,10 @@ import os
 import socket
 import multiprocessing
 import signal
+import zlib
 
 from common import message_protocol
-from common.middleware.middleware_rabbitmq import MessageMiddlewareQueueRabbitMQ
+from common.middleware.middleware_rabbitmq import MessageMiddlewareExchangePublisherRabbitMQ, MessageMiddlewareQueueRabbitMQ
 from message_handler import message_handler
 
 SERVER_HOST = os.environ["SERVER_HOST"]
@@ -13,45 +14,58 @@ SERVER_PORT = int(os.environ["SERVER_PORT"])
 MOM_HOST = os.environ["MOM_HOST"]
 INPUT_QUEUE = os.environ["INPUT_QUEUE"]
 
-BANK_DEDUPLICATOR_QUEUE = os.environ.get("BANK_DEDUPLICATOR_QUEUE", "bank_deduplicator_queue")
+BANK_FILTER_QUEUE = os.environ.get("BANK_FILTER_QUEUE", "bank_filter_queue")
 CURRENCY_FILTER_QUEUE = os.environ.get("CURRENCY_FILTER_QUEUE", "currency_filter_queue")
 DATE_FILTER_QUEUE = os.environ.get("DATE_FILTER_QUEUE", "date_filter_queue")
+TOTAL_BANK_FILTERS = int(os.environ.get("BANK_FILTERS_AMOUNT", 1))
 
+def stable_hash(value):
+    return zlib.crc32(str(value).encode())
 
 def handle_client_request(client_socket, message_handler_instance, client_list):
 
     currency_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, CURRENCY_FILTER_QUEUE)
     date_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, DATE_FILTER_QUEUE)
-    deduplicator_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, BANK_DEDUPLICATOR_QUEUE)
+    bank_exchange = MessageMiddlewareExchangePublisherRabbitMQ(MOM_HOST, "bank_exchange")
 
     def _send_internal(queue, serialized_message):
         queue.send(serialized_message)
 
     def _handle_account(msg_data):
+        logging.debug(f"Received account record: {msg_data}")
         serialized = message_handler_instance.serialize_account_data(msg_data)
-        _send_internal(deduplicator_queue, serialized)
+        bank_id = message_handler_instance.extract_bank_id(msg_data)
+        partition = stable_hash(bank_id) % TOTAL_BANK_FILTERS
+        routing_key = f"bank_partition_{partition}"
+        bank_exchange.send(serialized, routing_key=routing_key)
 
     def _handle_transaction(msg_data):
         if message_handler_instance.transaction_is_reinvestment(msg_data):
             return
+        logging.debug(f"Received transaction record: {msg_data}")
         serialized_currency = message_handler_instance.serialize_transaction_currency(msg_data)
         _send_internal(currency_queue, serialized_currency)
         serialized_date = message_handler_instance.serialize_transaction_date(msg_data)
         _send_internal(date_queue, serialized_date)
 
-    def _handle_eof(msg_data):
+    def _handle_eof(_msg_data):
         message_handler_instance.eof_count += 1
         if message_handler_instance.eof_count == 1:
-            _send_internal(deduplicator_queue, message_handler_instance.serialize_eof())
+            eof_bytes = message_handler_instance.serialize_eof()
+            for i in range(TOTAL_BANK_FILTERS):
+                routing_key = f"bank_partition_{i}"
+                logging.info(f"Gateway sending EOF to partition {i}")
+                bank_exchange.send(eof_bytes, routing_key=routing_key)
         elif message_handler_instance.eof_count == 2:
             eof_bytes = message_handler_instance.serialize_eof()
             _send_internal(currency_queue, eof_bytes)
             _send_internal(date_queue, eof_bytes)
 
     def _handle_close(msg_data):
+        logging.info("Received CLOSE message from client, shutting down connection")
         currency_queue.close()
         date_queue.close()
-        deduplicator_queue.close()
+        bank_exchange.close()
         for idx, (_, sock) in enumerate(client_list):
             if sock == client_socket:
                 client_list.pop(idx)
@@ -85,7 +99,7 @@ def handle_client_request(client_socket, message_handler_instance, client_list):
     finally:
         currency_queue.close()
         date_queue.close()
-        deduplicator_queue.close()
+        bank_exchange.close()
         client_socket.close()
 
 
