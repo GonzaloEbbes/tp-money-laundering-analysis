@@ -2301,8 +2301,8 @@ services:
       - SERVER_HOST=gateway
       - SERVER_PORT=5678
       - MESSAGE=mensaje de prueba
-      - DATA_PATH=${DATA_PATH:-/data/small.csv}
-      - DATA_PATH_ACCOUNTS=${DATA_PATH_ACCOUNTS:-/data/LI-Small_accounts.csv}
+      - DATA_PATH=${DATA_PATH:-/data/dataset.csv}
+      - DATA_PATH_ACCOUNTS=${DATA_PATH_ACCOUNTS:-/data/accounts.csv}
       - EXPECTED_RESULT_EOFS=${EXPECTED_RESULT_EOFS:-5}
       - RESULTS_DIR=${RESULTS_DIR:-/output/results}
       - RESULTS_WAIT_LOG_INTERVAL=${RESULTS_WAIT_LOG_INTERVAL:-60}
