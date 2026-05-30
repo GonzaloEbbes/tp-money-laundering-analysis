@@ -143,7 +143,7 @@ class BankFilter:
             bank_id = msg.data.get("bank_id")
             bank_name = msg.data.get("bank_name")
 
-            if bank_id and bank_id not in self.seen_banks:
+            if bank_id is not None and bank_id not in self.seen_banks:
                 self.seen_banks.add(bank_id)
                 partition = stable_hash(bank_id) % JOIN_AMOUNT
                 routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{partition}"
