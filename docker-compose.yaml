@@ -988,6 +988,69 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+  pay_format_filter_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=6
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+  pay_format_filter_4:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=4
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=6
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+  pay_format_filter_5:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ID=5
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=6
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=4
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
 
   amount_filter_q5_0:
     build:
@@ -1434,6 +1497,9 @@ services:
       - pay_format_filter_0
       - pay_format_filter_1
       - pay_format_filter_2
+      - pay_format_filter_3
+      - pay_format_filter_4
+      - pay_format_filter_5
       - amount_filter_q1_0
       - amount_filter_q1_1
       - amount_filter_q1_2

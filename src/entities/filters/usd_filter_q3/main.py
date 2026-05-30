@@ -62,6 +62,8 @@ class USDFilterQ3:
 
         self._sigterm_received = False
         self._runtime_error = False
+        self._eof_count_by_client = {}
+        self._eof_count_lock = threading.Lock()
 
         if (self._is_leader()):
             self.total_eof_received_by_client = {}
@@ -124,11 +126,44 @@ class USDFilterQ3:
     def _process_datefilter_eof(self, client_id):
         logging.debug(f"Received EOF for client {client_id}")
 
+        # Register that this instance received an EOF for the client and
+        # propagate to other usd filters if configured. Do not finalize
+        # immediately: use _try_finalize_client which verifies inflight == 0
+        # before calling _finalize_client (avoids racing with messages in flight).
+        self._register_eof_for_client(client_id)
+
         if USD_FILTER_AMOUNT > 1:
             with self._eof_producer_lock:
                 self.usd_filter_eof_exchange_producer.send(USDFilterMessageHandler.serialize_eof_message(client_id))
             logging.debug(f"Sent EOF for client {client_id} to other usd filters")
 
+        self._try_finalize_client(client_id)
+
+    def _register_eof_for_client(self, client_id):
+        with self._eof_count_lock:
+            self._eof_count_by_client[client_id] = self._eof_count_by_client.get(client_id, 0) + 1
+        logging.debug(f"Local EOF registered for client {client_id}: {self._eof_count_by_client[client_id]}")
+        return True
+
+    def _has_required_eofs_for_client(self, client_id):
+        with self._eof_count_lock:
+            return self._eof_count_by_client.get(client_id, 0) >= 1
+
+    def _try_finalize_client(self, client_id):
+        # For Q3 each instance expects a single input EOF from the previous layer.
+        if not self._has_required_eofs_for_client(client_id):
+            return
+
+        with self._inflight_message_lock:
+            has_inflight = self._inflight_messages.get(client_id, 0) > 0
+
+        if has_inflight:
+            with self._is_pending_to_finalize_client_lock:
+                self._is_pending_to_finalize_client.add(client_id)
+            logging.debug(f"There are inflight messages for client {client_id}. Marking client as finalized but waiting for inflight messages to finish.")
+            return
+
+        logging.debug(f"Required EOF(s) for client {client_id} and no inflight messages. Finalizing client.")
         self._finalize_client(client_id)
     
     def _check_and_finalize_client_if_pending(self, client_id):
