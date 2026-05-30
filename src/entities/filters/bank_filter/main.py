@@ -9,24 +9,28 @@ from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as BankFilterMessageHandler
 
 ID = int(os.environ["ID"])
-TOTAL = int(os.environ.get("BANK_FILTERS_AMOUNT", 1))
+BANK_FILTERS_AMOUNT = int(os.environ.get("BANK_FILTERS_AMOUNT", 1))
 MOM_HOST = os.environ["MOM_HOST"]
-EXCHANGE_NAME = os.environ.get("BANK_EXCHANGE", "bank_exchange")
-ROUTING_KEY_PREFIX = os.environ.get("BANK_ROUTING_KEY_PREFIX", "bank_partition")
+BANK_EXCHANGE = os.environ.get("BANK_EXCHANGE", "bank_exchange")
+BANK_ROUTING_KEY_PREFIX = os.environ.get("BANK_ROUTING_KEY_PREFIX", "bank_partition")
 JOIN_EXCHANGE = os.environ.get("JOIN_EXCHANGE", "query2_join_exchange")
-JOIN_AMOUNT = int(os.environ.get("JOIN_AMOUNT", 1))
 JOIN_ROUTING_KEY_PREFIX = os.environ.get("JOIN_ROUTING_KEY_PREFIX", "join_partition")
+JOIN_AMOUNT = int(os.environ.get("JOIN_AMOUNT", 1))
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
 def stable_hash(value):
-    return zlib.crc32(str(value).encode())
+    try:
+        norm_val = int(value)
+    except ValueError:
+        norm_val = str(value).strip()
+    return zlib.crc32(str(norm_val).encode())
 
 class BankFilter:
     def __init__(self):
-        self.routing_key = f"{ROUTING_KEY_PREFIX}_{ID}"
+        self.routing_key = f"{BANK_ROUTING_KEY_PREFIX}_{ID}"
         self.input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
             MOM_HOST,
-            EXCHANGE_NAME,
+            BANK_EXCHANGE,
             routing_keys=[self.routing_key],
             queue_name=None,     
             exclusive=True
@@ -36,7 +40,7 @@ class BankFilter:
         )
         self.seen_banks = set()
         self.id = ID
-        self.total = TOTAL
+        self.total = BANK_FILTERS_AMOUNT
         self.eof_consumer = None
         self.eof_producer = None
         self._is_leader = (self.id == 0)
@@ -61,6 +65,9 @@ class BankFilter:
         self._stop = False
         self._stop_lock = threading.Lock()
         self._sigterm = False
+        
+        self._join_exchange_lock = threading.Lock()
+        self._eof_producer_lock = threading.Lock()
 
     def _add_inflight(self, cid):
         with self._inflight_lock:
@@ -92,16 +99,18 @@ class BankFilter:
                 if self.total_eof[cid] == self.total:
                     # Enviar EOF de cuentas a todas las particiones del join
                     logging.info(f"BankFilter {self.id} finalizing client {cid}")
-                    logging.debug(f"BankFilter {self.id} client {cid} seen banks: {len(self.seen_banks)}")
+                    logging.info(f"BankFilter {self.id} client {cid} seen banks: {len(self.seen_banks)}")
                     self.seen_banks.clear()
                     eof_bytes = BankFilterMessageHandler.serialize_eof_join_message(cid)
                     for i in range(JOIN_AMOUNT):
                         routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{i}"
-                        self.join_exchange.send(eof_bytes, routing_key=routing_key)
+                        with self._join_exchange_lock:
+                            self.join_exchange.send(eof_bytes, routing_key=routing_key)
                     del self.total_eof[cid]
         else:
             if self.eof_producer:
-                self.eof_producer.send(BankFilterMessageHandler.serialize_eof_leader_message(cid), routing_key=f"bank_filter_{self.id}")
+                with self._eof_producer_lock:
+                    self.eof_producer.send(BankFilterMessageHandler.serialize_eof_leader_message(cid), routing_key=f"bank_filter_{self.id}")
         with self._pending_lock:
             if cid in self._pending:
                 self._pending.remove(cid)
@@ -114,7 +123,8 @@ class BankFilter:
                 logging.info(f"BankFilter {self.id} received EOF for client {cid}")
                 self._add_inflight(cid)
                 if self.eof_producer:
-                    self.eof_producer.send(BankFilterMessageHandler.serialize_eof_message(cid), routing_key=f"bank_filter_{self.id}")
+                    with self._eof_producer_lock:
+                        self.eof_producer.send(BankFilterMessageHandler.serialize_eof_message(cid), routing_key=f"bank_filter_{self.id}")
                 self._dec_inflight(cid)
                 with self._inflight_lock:
                     inflight = self._inflight.get(cid, 0)
@@ -133,12 +143,13 @@ class BankFilter:
             bank_id = msg.data.get("bank_id")
             bank_name = msg.data.get("bank_name")
 
-            if bank_id and bank_id not in self.seen_banks:
+            if bank_id is not None and bank_id not in self.seen_banks:
                 self.seen_banks.add(bank_id)
                 partition = stable_hash(bank_id) % JOIN_AMOUNT
                 routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{partition}"
                 serialized = BankFilterMessageHandler.serialize_join_message(cid, msg.data_id, bank_id, bank_name)
-                self.join_exchange.send(serialized, routing_key=routing_key)
+                with self._join_exchange_lock:
+                    self.join_exchange.send(serialized, routing_key=routing_key)
             self._dec_inflight(cid)
             self._try_finalize(cid)
             ack()
@@ -167,7 +178,8 @@ class BankFilter:
                     eof_bytes = BankFilterMessageHandler.serialize_eof_join_message(cid)
                     for i in range(JOIN_AMOUNT):
                         routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{i}"
-                        self.join_exchange.send(eof_bytes, routing_key=routing_key)
+                        with self._join_exchange_lock:
+                            self.join_exchange.send(eof_bytes, routing_key=routing_key)
                     del self.total_eof[cid]
         ack()
 
