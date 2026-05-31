@@ -22,25 +22,25 @@ configurations = {
         "join_max_amount_per_bank": 4,
     },
     2: {
-        "date_filter": 12,
-        "usd_filter_q1q2": 12,
-        "amount_filter_q1": 6,
+        "date_filter": 13,
+        "usd_filter_q1q2": 16,
+        "amount_filter_q1": 4,
         "usd_filter_q3": 6,
-        "usd_filter_q4": 6,
-        "pay_format_filter": 6,
-        "amount_filter_q3": 1,
-        "amount_filter_q5": 6,
-        "scather_gather_mapper": 6,
-        "scather_gather_aggregator": 3,
-        "scather_gather_pair_joiner": 3,
-        "scather_gather_joiner": 3,
-        "currency_converter": 4,
-        "average_per_pay_format_mapper": 1,
+        "usd_filter_q4": 13,
+        "pay_format_filter": 13,
+        "amount_filter_q3": 2,
+        "amount_filter_q5": 4,
+        "scather_gather_mapper": 4,
+        "scather_gather_aggregator": 4,
+        "scather_gather_pair_joiner": 4,
+        "scather_gather_joiner": 4,
+        "currency_converter": 5,
+        "average_per_pay_format_mapper": 2,
         "average_per_pay_format_aggregator": 1,
-        "data_per_bank_redirector": 8,
-        "bank_filter": 6,
-        "map_max_amount_per_bank": 12,
-        "join_max_amount_per_bank": 4,
+        "data_per_bank_redirector": 9,
+        "bank_filter": 7,
+        "map_max_amount_per_bank": 11,
+        "join_max_amount_per_bank": 3,
     }
 }
 
@@ -546,7 +546,7 @@ def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_am
         "",
     ]
 
-def set_join_max_amount_per_bank_config(id,total_join_amount_filters):
+def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_amount_filters):
     return [
         f"  join_max_amount_per_bank_{id}:",
         "    build:",
@@ -561,7 +561,7 @@ def set_join_max_amount_per_bank_config(id,total_join_amount_filters):
         "      - PROCESSING_DELAY_SECONDS=0",
         f"      - ID={id}",
         f"      - JOIN_AMOUNT={total_join_amount_filters}",
-        "      - MAP_AMOUNT=12",
+        f"      - MAP_AMOUNT={total_map_amount_filters}",
         "      - MOM_HOST=rabbitmq",
         "      - JOIN_EXCHANGE=query2_join_exchange",
         "      - JOIN_ROUTING_KEY_PREFIX=join_partition",
@@ -616,7 +616,7 @@ def generate_compose(config_id):
     for i in range(config["map_max_amount_per_bank"]):
         yaml_lines += set_map_max_amount_per_bank_config(i, config["map_max_amount_per_bank"],config["join_max_amount_per_bank"])
     for i in range(config["join_max_amount_per_bank"]):
-        yaml_lines += set_join_max_amount_per_bank_config(i, config["join_max_amount_per_bank"])
+        yaml_lines += set_join_max_amount_per_bank_config(i, config["join_max_amount_per_bank"], config["map_max_amount_per_bank"])
     yaml_lines += set_client(config)
 
     with open("docker-compose.yaml", "w", encoding="utf-8") as f:
