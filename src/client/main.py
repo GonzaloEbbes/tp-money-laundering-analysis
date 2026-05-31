@@ -18,7 +18,7 @@ DATA_PATH_TRANSACTIONS = os.environ.get("DATA_PATH", "/data/dataset.csv")
 DATA_PATH_ACCOUNTS = os.environ.get("DATA_PATH_ACCOUNTS", "/data/accounts.csv")
 EXPECTED_RESULT_EOFS = int(os.environ.get("EXPECTED_RESULT_EOFS", "1"))
 RESULTS_DIR = os.environ.get("RESULTS_DIR", "/output/results")
-SEND_BATCH_SIZE = int(os.environ.get("SEND_BATCH_SIZE", "20000"))
+SEND_BATCH_SIZE = int(os.environ.get("SEND_BATCH_SIZE", "40000"))
 SEND_PROGRESS_INTERVAL = int(os.environ.get("SEND_PROGRESS_INTERVAL", "500000"))
 RESULTS_WAIT_LOG_INTERVAL = int(os.environ.get("RESULTS_WAIT_LOG_INTERVAL", "60"))
 RESULTS_IDLE_TIMEOUT = int(os.environ.get("RESULTS_IDLE_TIMEOUT", "0"))
@@ -214,7 +214,7 @@ class Client:
 
     def _log_send_progress(self, label, records_sent):
         if records_sent and records_sent % SEND_PROGRESS_INTERVAL == 0:
-            logging.debug("Sent %s %s records", records_sent, label)
+            logging.info("Sent %s %s records", records_sent, label)
 
     def _send_record_batched(self, pending_acks, msg_type, *args):
         self._send_without_wait_ack(msg_type, *args)
