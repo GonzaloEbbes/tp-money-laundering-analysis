@@ -887,9 +887,53 @@ services:
       - PYTHONUNBUFFERED=1
       - PROCESSING_DELAY_SECONDS=0
       - ENTITY_CLASS=MapAverage
+      - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue
+      - MAP_AVERAGE_PREFIX=map_average
+      - MAP_AVERAGE_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=map_average_eof_control_exchange
+
+  map_average_1:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: map_average_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=MapAverage
+      - ID=1
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue
+      - MAP_AVERAGE_PREFIX=map_average
+      - MAP_AVERAGE_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=map_average_eof_control_exchange
+
+  map_average_2:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: map_average_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=MapAverage
+      - ID=2
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue
+      - MAP_AVERAGE_PREFIX=map_average
+      - MAP_AVERAGE_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=map_average_eof_control_exchange
 
   join_average:
     build:
@@ -906,7 +950,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue
       - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
-      - TOTAL_AVERAGE_MAPPERS=1
+      - TOTAL_AVERAGE_MAPPERS=3
 
   amount_filter_q3:
     build:
@@ -1492,6 +1536,8 @@ services:
       - usd_filter_q4_10
       - usd_filter_q4_11
       - map_average_0
+      - map_average_1
+      - map_average_2
       - join_average
       - amount_filter_q3
       - pay_format_filter_0
