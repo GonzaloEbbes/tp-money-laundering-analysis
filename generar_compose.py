@@ -252,7 +252,7 @@ def set_average_per_pay_format_mapper_config(id,total):
         "",
     ]
 
-def set_average_pay_format_aggregator_config(id,total_mappers):
+def set_average_pay_format_aggregator_config(id,total_mappers,total_amount_filter_q3):
     return [
         f"  average_per_pay_format_aggregator_{id}:",
         "    build:",
@@ -270,6 +270,9 @@ def set_average_pay_format_aggregator_config(id,total_mappers):
         "      - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue",
         "      - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
         f"      - TOTAL_AVERAGE_MAPPERS={total_mappers}",
+        "      - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3",
+        f"      - AMOUNT_FILTER_Q3_AMOUNT={total_amount_filter_q3}",
+        "      - AMOUNT_FILTER_Q3_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange",
         "",
     ]
 
@@ -290,7 +293,11 @@ def set_amount_filter_q3_config(id,total):
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
         "      - OUTPUT_QUEUE=gateway_results_queue",
-        "      - EXPECTED_INPUT_EOFS=2",
+        "      - EXPECTED_INPUT_EOFS=1",
+        f"      - ID={id}",
+        "      - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3",
+        f"      - AMOUNT_FILTER_Q3_AMOUNT={total}",
+        "      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange",
         "",
     ]
 
@@ -592,7 +599,7 @@ def generate_compose(config_id):
     for i in range(config["average_per_pay_format_mapper"]):
         yaml_lines += set_average_per_pay_format_mapper_config(i, config["average_per_pay_format_mapper"])
     for i in range(config["average_per_pay_format_aggregator"]):
-        yaml_lines += set_average_pay_format_aggregator_config(i, config["average_per_pay_format_mapper"])
+        yaml_lines += set_average_pay_format_aggregator_config(i, config["average_per_pay_format_mapper"], config["amount_filter_q3"])
     for i in range(config["amount_filter_q3"]):
         yaml_lines += set_amount_filter_q3_config(i, config["amount_filter_q3"])
     for i in range(config["pay_format_filter"]):
