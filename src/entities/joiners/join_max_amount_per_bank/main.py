@@ -57,7 +57,7 @@ class JoinMaxAmountPerBank:
         self._inflight = {}
         self._inflight_lock = threading.Lock()
         self._stop = False
-        
+        self._stop_lock = threading.Lock()
         self._output_queue_lock = threading.Lock()
         self._eof_producer_lock = threading.Lock()
 
@@ -117,7 +117,7 @@ class JoinMaxAmountPerBank:
                 else:
                     bank_id = msg.data.get("bank_id")
                     bank_name = msg.data.get("bank_name")
-                    if bank_id:
+                    if bank_id is not None and bank_name is not None:
                         self.bank_cache[bank_id] = bank_name
                 self._dec_inflight(cid)
                 self._try_finalize(cid)
@@ -174,7 +174,7 @@ class JoinMaxAmountPerBank:
                 continue
             with self._output_queue_lock:
                 self.output_queue.send(JoinMessageHandler.serialize_result(
-                    cid, None, bank_name, origin, amount
+                    cid, msg.data_id, bank_name, origin, amount
                 ))
 
         if cid in self.pending_results:
@@ -192,6 +192,10 @@ class JoinMaxAmountPerBank:
         if self.eof_consumer:
             threading.Thread(target=self._control_loop, daemon=True).start()
         self.input_exchange.start_consuming(self.process_message)
+        self.input_exchange.close()
+        self.output_queue.close()
+        if self.eof_consumer:
+            self.eof_consumer.close()
 
     def _control_loop(self):
         try:
@@ -212,13 +216,20 @@ class JoinMaxAmountPerBank:
         ack()
 
     def stop(self):
-        if not self._stop:
+        if not self._stop_lock:
+            if self._stop:
+                return
             self._stop = True
-            self.input_exchange.stop_consuming()
-            if self.eof_consumer:
-                self.eof_consumer.stop_consuming()
-            self.input_exchange.close()
-            self.output_queue.close()
+       
+        self.input_exchange._connection.add_callback_threadsafe(
+            self.input_exchange.stop_consuming
+        )
+        
+        if self.eof_consumer:
+            self.eof_consumer._connection.add_callback_threadsafe(
+                self.eof_consumer.stop_consuming
+            )
+            
 
 def main():
     logging.basicConfig(level=logging.INFO)

@@ -139,7 +139,7 @@ class DataPerBankRedirector:
 
             self._add_inflight(cid)
             from_bank = msg.data.get("from_bank")
-            if from_bank:
+            if from_bank is not None:
                 partition = stable_hash(from_bank) % TOTAL_MAPPERS
                 logging.debug(f"Redirector {self.id} calculated partition {partition} for bank {from_bank}")
                 routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{partition}"
