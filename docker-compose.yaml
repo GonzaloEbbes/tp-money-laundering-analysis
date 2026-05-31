@@ -968,6 +968,10 @@ services:
       - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
       - OUTPUT_QUEUE=gateway_results_queue
       - EXPECTED_INPUT_EOFS=2
+      - ID=0
+      - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3
+      - AMOUNT_FILTER_Q3_AMOUNT=1
+      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
 
   pay_format_filter_0:
     build:
