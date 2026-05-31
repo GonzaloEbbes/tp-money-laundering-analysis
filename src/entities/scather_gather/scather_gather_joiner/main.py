@@ -143,6 +143,7 @@ class ScatherGatherJoiner:
             final_data = {
                 (origen, destino): middle_accounts
                 for (origen, destino), middle_accounts in self.scather_gather_accounts.get(client_id, {}).items()
+                if origen != destino
             }
 
         for (origen, destino), middle_accounts in final_data.items():

@@ -1,17 +1,52 @@
 
-SCALE_CONFIG = {
-    "currency_filter": 4,
-    "amount_filter": 2,
-    "bank_deduplicator": 4,         
-    "data_per_bank_redirector": 1,
-    "map_max_amount_per_bank": 3,
-    "join_max_amount_per_bank": 1,
-    "currency_converter": 4,
-    "date_filter": 2,
+configurations = {
+    1: {
+        "date_filter": 12,
+        "usd_filter_q1q2": 15,
+        "amount_filter_q1": 3,
+        "usd_filter_q3": 3,
+        "usd_filter_q4": 12,
+        "pay_format_filter": 12,
+        "amount_filter_q3": 1,
+        "amount_filter_q5": 3,
+        "scather_gather_mapper": 3,
+        "scather_gather_aggregator": 3,
+        "scather_gather_pair_joiner": 3,
+        "scather_gather_joiner": 3,
+        "currency_converter": 4,
+        "average_per_pay_format_mapper": 1,
+        "average_per_pay_format_aggregator": 1,
+        "data_per_bank_redirector": 8,
+        "bank_filter": 6,
+        "map_max_amount_per_bank": 12,
+        "join_max_amount_per_bank": 4,
+    },
+    2: {
+        "date_filter": 13,
+        "usd_filter_q1q2": 16,
+        "amount_filter_q1": 4,
+        "usd_filter_q3": 6,
+        "usd_filter_q4": 13,
+        "pay_format_filter": 13,
+        "amount_filter_q3": 2,
+        "amount_filter_q5": 4,
+        "scather_gather_mapper": 4,
+        "scather_gather_aggregator": 4,
+        "scather_gather_pair_joiner": 4,
+        "scather_gather_joiner": 4,
+        "currency_converter": 5,
+        "average_per_pay_format_mapper": 2,
+        "average_per_pay_format_aggregator": 1,
+        "data_per_bank_redirector": 9,
+        "bank_filter": 7,
+        "map_max_amount_per_bank": 11,
+        "join_max_amount_per_bank": 3,
+    }
 }
 
-def generate_compose():
-    yaml_lines = [
+# pone aquellas lineas que son iguales siempre
+def set_common_config():
+    return [
         "services:",
         "  rabbitmq:",
         "    build:",
@@ -30,6 +65,10 @@ def generate_compose():
         "      - 5672:5672",
         "      - 15672:15672",
         "",
+    ]
+
+def set_gateway_config(bank_filters_amount):
+    return [
         "  gateway:",
         "    build:",
         "      context: ./src",
@@ -43,174 +82,562 @@ def generate_compose():
         "      - SERVER_HOST=gateway",
         "      - SERVER_PORT=5678",
         "      - MOM_HOST=rabbitmq",
-        "      - OUTPUT_QUEUE=transfer_data_controller_queue",
         "      - INPUT_QUEUE=gateway_results_queue",
-        ""
+        "      - BANK_DEDUPLICATOR_QUEUE=bank_deduplicator_queue",
+        "      - CURRENCY_FILTER_QUEUE=currency_filter_queue",
+        "      - DATE_FILTER_QUEUE=date_filter_queue",
+        f"      - BANK_FILTERS_AMOUNT={bank_filters_amount}",
+        "      - BANK_EXCHANGE=bank_exchange",
+        "      - BANK_ROUTING_KEY_PREFIX=bank_partition",
+        "",
     ]
 
-    all_workers_created = []
+def set_date_filter_config(id,total):
+    return [
+        f"  date_filter_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/filters/date_filter/Dockerfile",
+        f"    container_name: date_filter_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=date_filter_queue",
+        "      - DATE_FILTER_PREFIX=date_filter",
+        f"      - DATE_FILTER_AMOUNT={total}",
+        "      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange",
+        "      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue",
+        "      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue",
+        "      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue",
+        "",
+    ]
 
+def set_usd_filter_q1q2_config(id,total):
+    return [ 
+        f"  usd_filter_q1q2_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile",
+        f"    container_name: usd_filter_q1q2_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=currency_filter_queue",
+        "      - USD_FILTER_PREFIX=usd_filter_q1q2",
+        f"      - USD_FILTER_AMOUNT={total}",
+        "      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange",
+        "      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue",
+        "      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue",
+        "",
+    ]
 
-    def add_worker(
-        name,
-        entity_class,
-        input_queue,
-        output_queue=None,
-        extra_env=None,
-        queue_index=None,
-        scale=1,
-        shard_input=False,
-        volumes=None,
-    ):
-        """
-        Agrega uno o varios contenedores para un worker.
-        Si scale > 1, se añaden múltiples instancias con el mismo nombre base.
-        output_queue puede ser string o None.
-        """
-        for i in range(scale):
-            container_name = f"{name}_{i}" if scale > 1 else name
-            if shard_input:
-                in_queue = f"{input_queue}_{i}"
-            else:
-                in_queue = f"{input_queue}_{queue_index}" if queue_index is not None else input_queue
-            all_workers_created.append(container_name)
+def set_amount_filter_q1_config(id,total):
+    return [
+        f"  amount_filter_q1_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/filters/amount_filter_q1/Dockerfile",
+        f"    container_name: amount_filter_q1_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue",
+        "      - AMOUNT_FILTER_PREFIX=amount_filter_q1",
+        f"      - AMOUNT_FILTER_AMOUNT={total}",
+        "      - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange",
+        "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "",
+    ]
 
-            yaml_lines.extend([
-                f"  {container_name}:",
-                "    build:",
-                "      context: ./src",
-                "      dockerfile: entities/Dockerfile",
-                f"    container_name: {container_name}",
-                "    depends_on:",
-                "      rabbitmq:",
-                "        condition: service_healthy",
-                "    environment:",
-                "      - PYTHONUNBUFFERED=1",
-                "      - PROCESSING_DELAY_SECONDS=0",
-                f"      - ENTITY_CLASS={entity_class}",
-                "      - MOM_HOST=rabbitmq",
-                f"      - INPUT_QUEUE={in_queue}",
-            ])
-            if output_queue:
-                yaml_lines.append(f"      - OUTPUT_QUEUE={output_queue}")
-            if extra_env:
-                env_vars = extra_env(i) if callable(extra_env) else extra_env
-                if isinstance(env_vars, dict):
-                    env_vars = [f"{key}={value}" for key, value in env_vars.items()]
-                for env_var in env_vars:
-                    yaml_lines.append(f"      - {env_var}")
-            if volumes:
-                yaml_lines.append("    volumes:")
-                for volume in volumes:
-                    yaml_lines.append(f"      - {volume}")
-            yaml_lines.append("")
+def set_usd_filter_q3_config(id,total):
+    return [
+        f"  usd_filter_q3_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/filters/usd_filter_q3/Dockerfile",
+        f"    container_name: usd_filter_q3_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue",
+        "      - USD_FILTER_PREFIX=usd_filter_q3",
+        f"      - USD_FILTER_AMOUNT={total}",
+        "      - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange",
+        "      - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
+        "",
+    ]
 
-    add_worker(
-        "currency_filter",
-        "CurrencyFilter",
-        "currency_filter_queue",
-        output_queue=None,
-        scale=SCALE_CONFIG["currency_filter"]
-    )
-    
-    add_worker(
-        "amount_filter", 
-        "AmountFilter", 
-        "amount_filter_queue", 
-        output_queue="gateway_results_queue", 
-        scale=SCALE_CONFIG["amount_filter"]
-    )
+def set_usd_filter_q4_config(id,total):
+    return [
+        f"  usd_filter_q4_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/filters/usd_filter_q4/Dockerfile",
+        f"    container_name: usd_filter_q4_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue",
+        "      - USD_FILTER_PREFIX=usd_filter_q4",
+        f"      - USD_FILTER_AMOUNT={total}",
+        "      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange",
+        "      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue",
+        "      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue",
+        "",
+    ]
 
-    add_worker(
-        "data_per_bank_redirector",
-        "DataPerBankRedirector",
-        "data_per_bank_redirector_queue",
-        output_queue="map_max_amount_per_bank_queue",
-        scale=SCALE_CONFIG["data_per_bank_redirector"]
-    )
+def set_pay_format_filter_config(id,total,total_usd_currency_converters):
+    return [
+        f"  pay_format_filter_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/filters/pay_format_filter/Dockerfile",
+        f"    container_name: pay_format_filter_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue",
+        "      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter",
+        f"      - PAY_FORMAT_FILTER_AMOUNT={total}",
+        "      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange",
+        "      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange",
+        "      - CONVERSION_QUEUE_PREFIX=currency_converter_queue",
+        "      - CONVERSION_ROUTING_KEY_PREFIX=conversion",
+        f"      - TOTAL_CONVERSION_WORKERS={total_usd_currency_converters}",
+        "      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue",
+        "",
+    ]
 
-    add_worker(
-        "map_max_amount_per_bank",
-        "MapMaxAmountPerBank",
-        "map_max_amount_per_bank_queue",
-        output_queue="join_max_amount_per_bank_queue",
-        scale=SCALE_CONFIG["map_max_amount_per_bank"]
-    )
+def set_average_per_pay_format_mapper_config(id,total):
+    return [
+        f"  average_per_pay_format_mapper_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/Dockerfile",
+        f"    container_name: average_per_pay_format_mapper_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        "      - PROCESSING_DELAY_SECONDS=0",
+        "      - ENTITY_CLASS=MapAverage",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue",
+        "      - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue",
+        "",
+    ]
 
-    add_worker(
-        "join_max_amount_per_bank",
-        "JoinMaxAmountPerBank",
-        "join_max_amount_per_bank_queue",
-        output_queue="gateway_results_queue",
-        scale=SCALE_CONFIG["join_max_amount_per_bank"]
-    )
+def set_average_pay_format_aggregator_config(id,total_mappers):
+    return [
+        f"  average_per_pay_format_aggregator_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/Dockerfile",
+        f"    container_name: average_per_pay_format_aggregator_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        "      - PROCESSING_DELAY_SECONDS=0",
+        "      - ENTITY_CLASS=JoinAverage",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue",
+        "      - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
+        f"      - TOTAL_AVERAGE_MAPPERS={total_mappers}",
+        "",
+    ]
 
-    add_worker(
-        "bank_deduplicator",
-        "BankDeduplicator",
-        "bank_deduplicator_queue",
-        output_queue="join_max_amount_per_bank_queue",
-        scale=SCALE_CONFIG["bank_deduplicator"]
-    )
+def set_amount_filter_q3_config(id,total):
+    return [
+        f"  amount_filter_q3_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/Dockerfile",
+        f"    container_name: amount_filter_q3_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        "      - PROCESSING_DELAY_SECONDS=0",
+        "      - ENTITY_CLASS=DynamicAmountFilter",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
+        "      - OUTPUT_QUEUE=gateway_results_queue",
+        "      - EXPECTED_INPUT_EOFS=2",
+        "",
+    ]
 
-    date_filter_extra = {
-        "DATE_FILTER_PREFIX": "date_filter",
-        "DATE_FILTER_AMOUNT": SCALE_CONFIG["date_filter"],
-        "EOF_CONTROL_EXCHANGE": "date_filter_eof_exchange"
-    }
-    add_worker("date_filter", "DateFilter", "date_filter_queue", output_queue=None, extra_env=date_filter_extra, scale=SCALE_CONFIG["date_filter"])
+def set_amount_filter_q5_config(id,total,total_usd_currency_converters):
+    return [
+        f"  amount_filter_q5_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/filters/amount_filter_q5/Dockerfile",
+        f"    container_name: amount_filter_q5_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue",
+        "      - AMOUNT_FILTER_PREFIX=amount_filter_q5",
+        f"      - AMOUNT_FILTER_AMOUNT={total}",
+        f"      - EXPECTED_INPUT_EOFS={total_usd_currency_converters+1}",
+        "      - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange",
+        "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "",
+    ]
 
-    add_worker(
-        "currency_converter",
-        "CurrencyConverter",
-        "currency_converter_queue",
-        "pay_format_filter_to_amount_filter_q5_queue",
-        scale=SCALE_CONFIG["currency_converter"],
-        shard_input=True,
-        extra_env=lambda i: [
-            "CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange",
-            "CONVERSION_QUEUE_PREFIX=currency_converter_queue",
-            f"CONVERSION_ROUTING_KEY=conversion.{i}",
-            "CONVERSION_PROVIDER=frankfurter",
-            "STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json",
-            "CONVERSION_AMOUNT_FIELD=amount_paid",
-            "CONVERSION_CURRENCY_FIELD=payment_currency",
-            "CONVERSION_DATE_FIELD=timestamp",
-            "CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid",
-            "FRANKFURTER_MAX_RETRIES=2",
-            "FRANKFURTER_RETRY_DELAY_SECONDS=1",
-            "FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60",
-        ],
-        volumes=["./data:/data"],
-    )
+def set_scather_gather_mapper_config(id,total_mappers,total_aggregators):
+    return [
+        f"  scather_gather_mapper_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/scather_gather/scather_gather_mapper/Dockerfile",
+        f"    container_name: scather_gather_mapper_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue",
+        "      - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper",
+        f"      - SCATHER_GATHER_MAPPER_AMOUNT={total_mappers}",
+        "      - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange",
+        f"      - SCATHER_GATHER_AGGREGATOR_AMOUNT={total_aggregators}",
+        "      - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator",
+        "",
+    ]
 
-    yaml_lines.extend([
+def set_scather_gather_aggregator_config(id,total_mappers,total_pair_joiners):
+    return [
+        f"  scather_gather_aggregator_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/scather_gather/scather_gather_aggregator/Dockerfile",
+        f"    container_name: scather_gather_aggregator_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        f"      - SCATHER_GATHER_MAPPER_AMOUNT={total_mappers}",
+        "      - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator",
+        f"      - SCATHER_GATHER_PAIR_JOINER_AMOUNT={total_pair_joiners}",
+        "      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner",
+        "",
+    ]
+
+def set_scather_gather_pair_joiner_config(id,total_aggregators,total_joiners):
+    return [
+        f"  scather_gather_pair_joiner_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/scather_gather/scather_gather_pair_joiner/Dockerfile",
+        f"    container_name: scather_gather_pair_joiner_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        f"      - SCATHER_GATHER_AGGREGATOR_AMOUNT={total_aggregators}",
+        "      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner",
+        f"      - SCATHER_GATHER_JOINER_AMOUNT={total_joiners}",
+        "      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner",
+        "",
+    ]
+
+def set_scather_gather_joiner_config(id,total_pair_joiners,total_joiners):
+    return [
+        f"  scather_gather_joiner_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/scather_gather/scather_gather_joiner/Dockerfile",
+        f"    container_name: scather_gather_joiner_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        f"      - ID={id}",
+        "      - MOM_HOST=rabbitmq",
+        f"      - SCATHER_GATHER_PAIR_JOINER_AMOUNT={total_pair_joiners}",
+        "      - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner",
+        "      - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange",
+        f"      - SCATHER_GATHER_JOINER_AMOUNT={total_joiners}",
+        "      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner",
+        "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "",
+    ]
+
+def set_currency_converter_config(id,total):
+    return [
+        f"  currency_converter_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/Dockerfile",
+        f"    container_name: currency_converter_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        "      - PROCESSING_DELAY_SECONDS=0",
+        "      - ENTITY_CLASS=CurrencyConverter",
+        "      - MOM_HOST=rabbitmq",
+        f"      - INPUT_QUEUE=currency_converter_queue_{id}",
+        "      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue",
+        "      - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange",
+        f"      - CONVERSION_ROUTING_KEY=conversion.{id}",
+        "      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}",
+        "      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json",
+        "      - CONVERSION_AMOUNT_FIELD=amount_paid",
+        "      - CONVERSION_CURRENCY_FIELD=payment_currency",
+        "      - CONVERSION_DATE_FIELD=timestamp",
+        "      - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid",
+        "      - FRANKFURTER_MAX_RETRIES=2",
+        "      - FRANKFURTER_RETRY_DELAY_SECONDS=1",
+        "      - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60",
+        "    volumes:",
+        "      - ./data:/data",
+        "",
+    ]
+
+def set_client(config):
+    cliente = []
+    cliente += [
         "  client:",
         "    build:",
         "      context: ./src",
         "      dockerfile: client/Dockerfile",
         "    container_name: client",
         "    depends_on:",
-        "      - gateway"
-    ])
-
-    for worker in all_workers_created:
-        yaml_lines.append(f"      - {worker}")
-
-    yaml_lines.extend([
+        "      - gateway",
+    ]
+    for service in config.keys():
+        for i in range(config[service]):
+            cliente += [f"      - {service}_{i}"]
+            
+    cliente += [
         "    volumes:",
         "      - ./data:/data",
+        "      - ./output:/output",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
         "      - SERVER_HOST=gateway",
         "      - SERVER_PORT=5678",
-        "      - DATA_PATH=/data/dataset.csv",
-        "      - DATA_PATH_ACCOUNTS=/data/accounts.csv",
-        ""
-    ])
+        "      - MESSAGE=mensaje de prueba",
+        "      - DATA_PATH=${DATA_PATH:-/data/dataset.csv}",
+        "      - DATA_PATH_ACCOUNTS=${DATA_PATH_ACCOUNTS:-/data/accounts.csv}",
+        "      - EXPECTED_RESULT_EOFS=${EXPECTED_RESULT_EOFS:-5}",
+        "      - RESULTS_DIR=${RESULTS_DIR:-/output/results}",
+        "      - RESULTS_WAIT_LOG_INTERVAL=${RESULTS_WAIT_LOG_INTERVAL:-60}",
+        "      - RESULTS_IDLE_TIMEOUT=${RESULTS_IDLE_TIMEOUT:-0}",
+        "",
+    ]
+    return cliente
+
+def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers):
+    return [
+        f"  data_per_bank_redirector_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/general/data_per_bank_redirector/Dockerfile",
+        f"    container_name: data_per_bank_redirector_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        "      - PROCESSING_DELAY_SECONDS=0",
+        f"      - ID={id}",
+        f"      - DATA_PER_BANK_REDIRECTOR_AMOUNT={total_redirectors}",
+        f"      - TOTAL_MAPPERS={total_mappers}",
+        "      - MOM_HOST=rabbitmq",
+        "      - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue",
+        "      - EXCHANGE_NAME=map_max_exchange",
+        "      - OUTPUT_ROUTING_KEY_PREFIX=map_partition",
+        "      - EOF_CONTROL_EXCHANGE=dpb_control_exchange",
+        "",
+    ]
+
+def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank):
+    return [
+        f"  bank_filter_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/filters/bank_filter/Dockerfile",
+        f"    container_name: bank_filter_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        "      - PROCESSING_DELAY_SECONDS=0",
+        f"      - ID={id}",
+        f"      - BANK_FILTERS_AMOUNT={total_bank_filters}",
+        "      - MOM_HOST=rabbitmq",
+        "      - BANK_EXCHANGE=bank_exchange",
+        "      - BANK_ROUTING_KEY_PREFIX=bank_partition",
+        "      - JOIN_EXCHANGE=query2_join_exchange",
+        f"      - JOIN_AMOUNT={total_join_max_amount_per_bank}",
+        "      - JOIN_ROUTING_KEY_PREFIX=join_partition",
+        "      - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange",
+        "",
+    ]
+
+def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_amount_per_bank):
+    return [
+        f"  map_max_amount_per_bank_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile",
+        f"    container_name: map_max_amount_per_bank_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        "      - PROCESSING_DELAY_SECONDS=0",
+        f"      - ID={id}",
+        f"      - MAP_AMOUNT={total_map_amount_filters}",
+        "      - MOM_HOST=rabbitmq",
+        "      - MAP_MAX_EXCHANGE=map_max_exchange",
+        "      - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition",
+        "      - JOIN_EXCHANGE=query2_join_exchange",
+        f"      - JOIN_AMOUNT={total_join_amount_per_bank}",
+        "      - JOIN_ROUTING_KEY_PREFIX=join_partition",
+        "      - EOF_CONTROL_EXCHANGE=map_control_exchange",
+        "",
+    ]
+
+def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_amount_filters):
+    return [
+        f"  join_max_amount_per_bank_{id}:",
+        "    build:",
+        "      context: ./src",
+        "      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile",
+        f"    container_name: join_max_amount_per_bank_{id}",
+        "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
+        "    environment:",
+        "      - PYTHONUNBUFFERED=1",
+        "      - PROCESSING_DELAY_SECONDS=0",
+        f"      - ID={id}",
+        f"      - JOIN_AMOUNT={total_join_amount_filters}",
+        f"      - MAP_AMOUNT={total_map_amount_filters}",
+        "      - MOM_HOST=rabbitmq",
+        "      - JOIN_EXCHANGE=query2_join_exchange",
+        "      - JOIN_ROUTING_KEY_PREFIX=join_partition",
+        "      - OUTPUT_QUEUE=gateway_results_queue",
+        "      - EOF_CONTROL_EXCHANGE=join_control_exchange",
+        "",
+    ]
+
+def generate_compose(config_id):
+    if config_id not in configurations:
+        raise ValueError("Configuración no encontrada")
+
+    config = configurations[config_id]
+    yaml_lines = []
+    yaml_lines += set_common_config()
+    yaml_lines += set_gateway_config(config["bank_filter"])
+
+    for i in range(config["date_filter"]):
+        yaml_lines += set_date_filter_config(i, config["date_filter"])
+    for i in range(config["usd_filter_q1q2"]):
+        yaml_lines += set_usd_filter_q1q2_config(i, config["usd_filter_q1q2"])
+    for i in range(config["amount_filter_q1"]):
+        yaml_lines += set_amount_filter_q1_config(i, config["amount_filter_q1"])
+    for i in range(config["usd_filter_q3"]):
+        yaml_lines += set_usd_filter_q3_config(i, config["usd_filter_q3"])
+    for i in range(config["usd_filter_q4"]):
+        yaml_lines += set_usd_filter_q4_config(i, config["usd_filter_q4"])
+    for i in range(config["average_per_pay_format_mapper"]):
+        yaml_lines += set_average_per_pay_format_mapper_config(i, config["average_per_pay_format_mapper"])
+    for i in range(config["average_per_pay_format_aggregator"]):
+        yaml_lines += set_average_pay_format_aggregator_config(i, config["average_per_pay_format_mapper"])
+    for i in range(config["amount_filter_q3"]):
+        yaml_lines += set_amount_filter_q3_config(i, config["amount_filter_q3"])
+    for i in range(config["pay_format_filter"]):
+        yaml_lines += set_pay_format_filter_config(i, config["pay_format_filter"], config["currency_converter"])
+    for i in range(config["amount_filter_q5"]):
+        yaml_lines += set_amount_filter_q5_config(i, config["amount_filter_q5"], config["currency_converter"])
+    for i in range(config["scather_gather_mapper"]):
+        yaml_lines += set_scather_gather_mapper_config(i, config["scather_gather_mapper"], config["scather_gather_aggregator"])
+    for i in range(config["scather_gather_aggregator"]):
+        yaml_lines += set_scather_gather_aggregator_config(i, config["scather_gather_mapper"], config["scather_gather_pair_joiner"])
+    for i in range(config["scather_gather_pair_joiner"]):
+        yaml_lines += set_scather_gather_pair_joiner_config(i, config["scather_gather_aggregator"], config["scather_gather_joiner"])
+    for i in range(config["scather_gather_joiner"]):
+        yaml_lines += set_scather_gather_joiner_config(i, config["scather_gather_pair_joiner"], config["scather_gather_joiner"])
+    for i in range(config["currency_converter"]):
+        yaml_lines += set_currency_converter_config(i, config["currency_converter"])
+    for i in range(config["data_per_bank_redirector"]):
+        yaml_lines += set_data_per_bank_redirector_config(i, config["data_per_bank_redirector"], config["map_max_amount_per_bank"])
+    for i in range(config["bank_filter"]):
+        yaml_lines += set_bank_filter_config(i, config["bank_filter"], config["join_max_amount_per_bank"])
+    for i in range(config["map_max_amount_per_bank"]):
+        yaml_lines += set_map_max_amount_per_bank_config(i, config["map_max_amount_per_bank"],config["join_max_amount_per_bank"])
+    for i in range(config["join_max_amount_per_bank"]):
+        yaml_lines += set_join_max_amount_per_bank_config(i, config["join_max_amount_per_bank"], config["map_max_amount_per_bank"])
+    yaml_lines += set_client(config)
 
     with open("docker-compose.yaml", "w", encoding="utf-8") as f:
         f.write("\n".join(yaml_lines))
 
 if __name__ == "__main__":
-    generate_compose()
+    import sys
+
+    # Uso: python3 generar_compose.py [config_id]
+    if len(sys.argv) > 2:
+        print("Usage: python3 generar_compose.py [config_id]")
+        sys.exit(1)
+
+    if len(sys.argv) == 2:
+        try:
+            config_id = int(sys.argv[1])
+        except ValueError:
+            print(f"Invalid config id: {sys.argv[1]}")
+            print("Usage: python3 generar_compose.py [config_id]")
+            sys.exit(1)
+    else:
+        config_id = 1
+
+    generate_compose(config_id)

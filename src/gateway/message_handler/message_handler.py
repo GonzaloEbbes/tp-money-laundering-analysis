@@ -39,6 +39,10 @@ class MessageHandler:
          _, payment_format) = msg_data
         return payment_format.lower() == "reinvestment"
     
+    def extract_bank_id(self, msg_data):
+        _bank_name, bank_id, _, _, _ = msg_data
+        return bank_id
+    
     def serialize_transaction_currency(self, msg_data):
         (_timestamp, from_bank, account_origin, _, account_destination,
          amount_received, receiving_currency, _amount_paid,
