@@ -27,6 +27,8 @@ class DynamicAmountFilter(PipelineEntity):
         self.clients_with_averages = set()
         self.finalized_clients = set()
         self.leader_eof_counts_by_client = defaultdict(int)
+        self._state_lock = threading.RLock()
+        self._leader_eof_lock = threading.Lock()
         self._stop_lock = threading.Lock()
         self._stopping = False
 
@@ -71,83 +73,100 @@ class DynamicAmountFilter(PipelineEntity):
         return None
 
     def _process_average_message(self, client_id, message, propagate):
-        if self._is_finalized(client_id):
-            logging.error("Received averages after EOF for client=%s", client_id)
-            return
+        with self._state_lock:
+            if client_id in self.finalized_clients:
+                logging.error("Received averages after EOF for client=%s", client_id)
+                return
 
-        averages = (message.data or {}).get("averages", {})
-        self.averages_by_client[client_id] = averages
-        self.clients_with_averages.add(client_id)
+            averages = (message.data or {}).get("averages", {})
+            self.averages_by_client[client_id] = averages
+            self.clients_with_averages.add(client_id)
+
         self._propagate_control_message(message, propagate)
         self._flush_pending_transactions(client_id)
         self._try_finalize_client(client_id)
 
     def _process_transaction(self, client_id, data_id, transaction):
-        if self._is_finalized(client_id):
-            logging.error("Received Q3 transaction after EOF for client=%s data_id=%s", client_id, data_id)
-            return
+        with self._state_lock:
+            if client_id in self.finalized_clients:
+                logging.error("Received Q3 transaction after EOF for client=%s data_id=%s", client_id, data_id)
+                return
 
-        if client_id not in self.averages_by_client:
-            self.pending_transactions_by_client[client_id].append((data_id, transaction))
-            return
+            averages = self.averages_by_client.get(client_id)
+            if averages is None:
+                self.pending_transactions_by_client[client_id].append((data_id, transaction))
+                return
 
-        self._emit_if_above_average(client_id, data_id, transaction)
+        self._emit_if_above_average(client_id, data_id, transaction, averages)
 
     def _flush_pending_transactions(self, client_id):
-        if client_id not in self.averages_by_client:
-            return
+        with self._state_lock:
+            averages = self.averages_by_client.get(client_id)
+            if averages is None:
+                return
 
-        pending = self.pending_transactions_by_client.pop(client_id, [])
+            pending = self.pending_transactions_by_client.pop(client_id, [])
         for data_id, transaction in pending:
-            self._emit_if_above_average(client_id, data_id, transaction)
+            self._emit_if_above_average(client_id, data_id, transaction, averages)
 
     def _process_eof(self, client_id):
         self._process_input_eof(client_id, propagate=True)
 
     def _process_input_eof(self, client_id, propagate):
-        if self._is_finalized(client_id):
-            logging.debug("Ignoring duplicate EOF for finalized client=%s", client_id)
-            return
+        with self._state_lock:
+            if client_id in self.finalized_clients:
+                logging.debug("Ignoring duplicate EOF for finalized client=%s", client_id)
+                return
 
-        self.eof_counts_by_client[client_id] += 1
+            self.eof_counts_by_client[client_id] += 1
+            eof_count = self.eof_counts_by_client[client_id]
         self._propagate_control_eof(client_id, propagate)
         logging.debug(
             "Received EOF for client=%s (%s/%s)",
             client_id,
-            self.eof_counts_by_client[client_id],
+            eof_count,
             EXPECTED_INPUT_EOFS,
         )
         self._try_finalize_client(client_id)
 
     def _try_finalize_client(self, client_id):
-        if self._is_finalized(client_id):
-            return
+        with self._state_lock:
+            if client_id in self.finalized_clients:
+                return
 
-        if self.eof_counts_by_client[client_id] < EXPECTED_INPUT_EOFS:
-            return
+            if self.eof_counts_by_client[client_id] < EXPECTED_INPUT_EOFS:
+                return
 
-        if client_id not in self.clients_with_averages:
-            logging.debug("EOFs received for client=%s but averages are still pending", client_id)
-            return
+            if client_id not in self.clients_with_averages:
+                logging.debug("EOFs received for client=%s but averages are still pending", client_id)
+                return
 
         self._finalize_client(client_id)
 
     def _finalize_client(self, client_id):
-        if self._is_finalized(client_id):
-            return
+        with self._state_lock:
+            if client_id in self.finalized_clients:
+                return
 
-        self.finalized_clients.add(client_id)
-        self._flush_pending_transactions(client_id)
+            self.finalized_clients.add(client_id)
+            averages = self.averages_by_client.pop(client_id, {})
+            pending = self.pending_transactions_by_client.pop(client_id, [])
+            self.eof_counts_by_client.pop(client_id, None)
+            self.clients_with_averages.discard(client_id)
+
+        for data_id, transaction in pending:
+            self._emit_if_above_average(client_id, data_id, transaction, averages)
+
         if AMOUNT_FILTER_Q3_AMOUNT <= 1:
             self._send_eof(client_id)
         elif self._is_leader():
             self._leader_count_eof_for_client(client_id)
         else:
             self._send_eof_leader_message(client_id)
-        self._clear_client(client_id)
 
     def _is_finalized(self, client_id):
-        return client_id in self.finalized_clients
+        with self._state_lock:
+            return client_id in self.finalized_clients
 
     def _is_leader(self):
         return self.id == 0
@@ -193,13 +212,18 @@ class DynamicAmountFilter(PipelineEntity):
             self.eof_control_exchange_producer.send(serialized_message)
 
     def _leader_count_eof_for_client(self, client_id):
-        self.leader_eof_counts_by_client[client_id] += 1
-        if self.leader_eof_counts_by_client[client_id] == AMOUNT_FILTER_Q3_AMOUNT:
-            logging.debug(
-                "Leader received EOF from all amount filters for client=%s. Sending downstream EOF.",
-                client_id,
-            )
-            self.leader_eof_counts_by_client.pop(client_id, None)
+        should_send_final_eof = False
+        with self._leader_eof_lock:
+            self.leader_eof_counts_by_client[client_id] += 1
+            if self.leader_eof_counts_by_client[client_id] == AMOUNT_FILTER_Q3_AMOUNT:
+                logging.debug(
+                    "Leader received EOF from all amount filters for client=%s. Sending downstream EOF.",
+                    client_id,
+                )
+                should_send_final_eof = True
+                self.leader_eof_counts_by_client.pop(client_id, None)
+
+        if should_send_final_eof:
             self._send_eof(client_id)
 
     def process_eof_control_message(self, raw_message, ack, nack):
@@ -218,9 +242,9 @@ class DynamicAmountFilter(PipelineEntity):
             logging.exception("dynamic_amount_filter failed while processing EOF control message")
             nack()
 
-    def _emit_if_above_average(self, client_id, data_id, transaction):
+    def _emit_if_above_average(self, client_id, data_id, transaction, averages=None):
         payment_format = transaction.get("payment_format")
-        averages = self.averages_by_client.get(client_id, {})
+        averages = averages if averages is not None else self.averages_by_client.get(client_id, {})
         average_data = averages.get(payment_format)
         if not average_data:
             return
@@ -259,10 +283,11 @@ class DynamicAmountFilter(PipelineEntity):
         )
 
     def _clear_client(self, client_id):
-        self.averages_by_client.pop(client_id, None)
-        self.pending_transactions_by_client.pop(client_id, None)
-        self.eof_counts_by_client.pop(client_id, None)
-        self.clients_with_averages.discard(client_id)
+        with self._state_lock:
+            self.averages_by_client.pop(client_id, None)
+            self.pending_transactions_by_client.pop(client_id, None)
+            self.eof_counts_by_client.pop(client_id, None)
+            self.clients_with_averages.discard(client_id)
         return None
 
     def _run_input_consumer(self):
