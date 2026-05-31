@@ -975,7 +975,7 @@ services:
       - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
       - TOTAL_AVERAGE_MAPPERS=3
       - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3
-      - AMOUNT_FILTER_Q3_AMOUNT=1
+      - AMOUNT_FILTER_Q3_AMOUNT=3
       - AMOUNT_FILTER_Q3_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
 
   amount_filter_q3_0:
@@ -996,7 +996,49 @@ services:
       - EXPECTED_INPUT_EOFS=1
       - ID=0
       - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3
-      - AMOUNT_FILTER_Q3_AMOUNT=1
+      - AMOUNT_FILTER_Q3_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
+
+  amount_filter_q3_1:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: amount_filter_q3_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=DynamicAmountFilter
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - OUTPUT_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - ID=1
+      - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3
+      - AMOUNT_FILTER_Q3_AMOUNT=3
+      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
+
+  amount_filter_q3_2:
+    build:
+      context: ./src
+      dockerfile: entities/Dockerfile
+    container_name: amount_filter_q3_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PROCESSING_DELAY_SECONDS=0
+      - ENTITY_CLASS=DynamicAmountFilter
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - OUTPUT_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - ID=2
+      - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3
+      - AMOUNT_FILTER_Q3_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
 
   pay_format_filter_0:
@@ -2187,26 +2229,23 @@ services:
       - usd_filter_q4_9
       - usd_filter_q4_10
       - usd_filter_q4_11
-      - map_average_0
       - map_average_1
       - map_average_2
-      - join_average
-      - amount_filter_q3
+      - average_per_pay_format_aggregator_0
+      - amount_filter_q3_0
+      - amount_filter_q3_1
+      - amount_filter_q3_2
       - pay_format_filter_0
       - pay_format_filter_1
       - pay_format_filter_2
       - pay_format_filter_3
       - pay_format_filter_4
       - pay_format_filter_5
-      - amount_filter_q1_0
-      - amount_filter_q1_1
-      - amount_filter_q1_2
       - currency_converter_0
       - currency_converter_1
       - currency_converter_2
       - currency_converter_3
       - average_per_pay_format_mapper_0
-      - average_per_pay_format_aggregator_0
       - data_per_bank_redirector_0
       - data_per_bank_redirector_1
       - data_per_bank_redirector_2
