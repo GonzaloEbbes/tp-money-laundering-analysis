@@ -67,7 +67,7 @@ def set_common_config():
         "",
     ]
 
-def set_gateway_config():
+def set_gateway_config(bank_filters_amount):
     return [
         "  gateway:",
         "    build:",
@@ -86,7 +86,7 @@ def set_gateway_config():
         "      - BANK_DEDUPLICATOR_QUEUE=bank_deduplicator_queue",
         "      - CURRENCY_FILTER_QUEUE=currency_filter_queue",
         "      - DATE_FILTER_QUEUE=date_filter_queue",
-        "      - BANK_FILTERS_AMOUNT=6",
+        f"      - BANK_FILTERS_AMOUNT={bank_filters_amount}",
         "      - BANK_EXCHANGE=bank_exchange",
         "      - BANK_ROUTING_KEY_PREFIX=bank_partition",
         "",
@@ -577,7 +577,7 @@ def generate_compose(config_id):
     config = configurations[config_id]
     yaml_lines = []
     yaml_lines += set_common_config()
-    yaml_lines += set_gateway_config()
+    yaml_lines += set_gateway_config(config["bank_filter"])
 
     for i in range(config["date_filter"]):
         yaml_lines += set_date_filter_config(i, config["date_filter"])
