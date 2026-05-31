@@ -12,7 +12,7 @@ from .middleware import (
 )
 
 # Cantidad maxima de mensajes sin ack entregados al consumidor al mismo tiempo.
-MAX_UNACKED_MESSAGES = 1
+MAX_UNACKED_MESSAGES = 20
 RABBITMQ_HEARTBEAT = int(os.environ.get("RABBITMQ_HEARTBEAT", "0"))
 RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS = 300
 
