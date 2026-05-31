@@ -951,6 +951,9 @@ services:
       - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue
       - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
       - TOTAL_AVERAGE_MAPPERS=3
+      - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3
+      - AMOUNT_FILTER_Q3_AMOUNT=1
+      - AMOUNT_FILTER_Q3_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
 
   amount_filter_q3:
     build:
@@ -967,7 +970,7 @@ services:
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
       - OUTPUT_QUEUE=gateway_results_queue
-      - EXPECTED_INPUT_EOFS=2
+      - EXPECTED_INPUT_EOFS=1
       - ID=0
       - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3
       - AMOUNT_FILTER_Q3_AMOUNT=1

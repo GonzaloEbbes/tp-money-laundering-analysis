@@ -6,7 +6,7 @@ from collections import defaultdict
 from common import message_protocol, middleware
 from common.entity import PipelineEntity
 
-EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", "2"))
+EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", "1"))
 AMOUNT_FILTER_Q3_ID = int(os.environ.get("ID", "0"))
 AMOUNT_FILTER_Q3_PREFIX = os.environ.get("AMOUNT_FILTER_Q3_PREFIX", "amount_filter_q3")
 AMOUNT_FILTER_Q3_AMOUNT = int(os.environ.get("AMOUNT_FILTER_Q3_AMOUNT", "1"))
@@ -32,7 +32,13 @@ class DynamicAmountFilter(PipelineEntity):
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_control_exchange_consumer = None
+        self.eof_control_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
+            mom_host,
+            EOF_CONTROL_EXCHANGE,
+            [f"{AMOUNT_FILTER_Q3_PREFIX}_{self.id}"],
+            queue_name=f"{AMOUNT_FILTER_Q3_PREFIX}_{self.id}_control_queue",
+            exclusive=False,
+        )
         self.eof_control_exchange_producer = None
         if AMOUNT_FILTER_Q3_AMOUNT > 1:
             other_filters = [
@@ -40,11 +46,6 @@ class DynamicAmountFilter(PipelineEntity):
                 for i in range(AMOUNT_FILTER_Q3_AMOUNT)
                 if i != self.id
             ]
-            self.eof_control_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
-                mom_host,
-                EOF_CONTROL_EXCHANGE,
-                [f"{AMOUNT_FILTER_Q3_PREFIX}_{self.id}"],
-            )
             self._eof_producer_lock = threading.Lock()
             self.eof_control_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
                 mom_host,
@@ -59,7 +60,7 @@ class DynamicAmountFilter(PipelineEntity):
         client_id = message.source_client_uuid
 
         if message.type == message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_AGGREGATOR_TO_AMOUNT_FILTER_Q3:
-            self._process_average_message(client_id, message, propagate=True)
+            self._process_average_message(client_id, message)
             return None
 
         if message.type == message_protocol.internal.InternalMessageType.USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3:
@@ -72,7 +73,7 @@ class DynamicAmountFilter(PipelineEntity):
 
         return None
 
-    def _process_average_message(self, client_id, message, propagate):
+    def _process_average_message(self, client_id, message):
         with self._state_lock:
             if client_id in self.finalized_clients:
                 logging.error("Received averages after EOF for client=%s", client_id)
@@ -82,7 +83,6 @@ class DynamicAmountFilter(PipelineEntity):
             self.averages_by_client[client_id] = averages
             self.clients_with_averages.add(client_id)
 
-        self._propagate_control_message(message, propagate)
         self._flush_pending_transactions(client_id)
         self._try_finalize_client(client_id)
 
@@ -110,7 +110,7 @@ class DynamicAmountFilter(PipelineEntity):
             self._emit_if_above_average(client_id, data_id, transaction, averages)
 
     def _process_eof(self, client_id):
-        self._process_input_eof(client_id, propagate=True)
+        self._process_input_eof(client_id, propagate=AMOUNT_FILTER_Q3_AMOUNT > 1)
 
     def _process_input_eof(self, client_id, propagate):
         with self._state_lock:
@@ -184,19 +184,6 @@ class DynamicAmountFilter(PipelineEntity):
             )
         )
 
-    def _propagate_control_message(self, message, propagate):
-        if not propagate or AMOUNT_FILTER_Q3_AMOUNT <= 1:
-            return
-
-        self._send_control_message(
-            message_protocol.internal.serialize(
-                message.type,
-                message.source_client_uuid,
-                message.data_id,
-                message.data,
-            )
-        )
-
     def _send_eof_leader_message(self, client_id):
         self._send_control_message(
             message_protocol.internal.serialize(
@@ -236,7 +223,7 @@ class DynamicAmountFilter(PipelineEntity):
                 if self._is_leader():
                     self._leader_count_eof_for_client(client_id)
             elif message.type == message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_AGGREGATOR_TO_AMOUNT_FILTER_Q3:
-                self._process_average_message(client_id, message, propagate=False)
+                self._process_average_message(client_id, message)
             ack()
         except Exception:
             logging.exception("dynamic_amount_filter failed while processing EOF control message")
@@ -343,11 +330,10 @@ class DynamicAmountFilter(PipelineEntity):
         )
 
         control_thread = None
-        if AMOUNT_FILTER_Q3_AMOUNT > 1:
-            control_thread = threading.Thread(
-                target=self._run_control_consumer,
-                name="dynamic-amount-filter-control-consumer-thread",
-            )
+        control_thread = threading.Thread(
+            target=self._run_control_consumer,
+            name="dynamic-amount-filter-control-consumer-thread",
+        )
 
         try:
             input_thread.start()
