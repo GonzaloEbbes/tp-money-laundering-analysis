@@ -81,10 +81,10 @@ class ScatherGatherPairJoiner:
         key = transaction_data.get("key")
         value = transaction_data.get("value")
         if type == "FANIN_MIDDLE":
-            logging.info(f"Received FANIN MIDDLE message for client {client_id}")
+            logging.debug(f"Received FANIN MIDDLE message for client {client_id}")
             self._process_fanin_transaction_in_middle_structure(client_id, key, value)
         elif type == "FANOUT_MIDDLE":
-            logging.info(f"Received FANOUT MIDDLE message for client {client_id}")
+            logging.debug(f"Received FANOUT MIDDLE message for client {client_id}")
             self._process_fanout_transaction_in_middle_structure(client_id, key, value)
         else:
             logging.warning(f"Received unknown transaction type {type} for client {client_id}")

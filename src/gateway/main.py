@@ -14,19 +14,24 @@ SERVER_PORT = int(os.environ["SERVER_PORT"])
 MOM_HOST = os.environ["MOM_HOST"]
 INPUT_QUEUE = os.environ["INPUT_QUEUE"]
 
-BANK_FILTER_QUEUE = os.environ.get("BANK_FILTER_QUEUE", "bank_filter_queue")
+BANK_EXCHANGE = os.environ.get("BANK_EXCHANGE", "bank_exchange")
+BANK_ROUTING_KEY_PREFIX = os.environ.get("BANK_ROUTING_KEY_PREFIX", "bank_partition")
 CURRENCY_FILTER_QUEUE = os.environ.get("CURRENCY_FILTER_QUEUE", "currency_filter_queue")
 DATE_FILTER_QUEUE = os.environ.get("DATE_FILTER_QUEUE", "date_filter_queue")
 TOTAL_BANK_FILTERS = int(os.environ.get("BANK_FILTERS_AMOUNT", 1))
 
 def stable_hash(value):
-    return zlib.crc32(str(value).encode())
+    try:
+        norm_val = int(value)
+    except ValueError:
+        norm_val = str(value).strip()
+    return zlib.crc32(str(norm_val).encode())
 
 def handle_client_request(client_socket, message_handler_instance, client_list):
 
     currency_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, CURRENCY_FILTER_QUEUE)
     date_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, DATE_FILTER_QUEUE)
-    bank_exchange = MessageMiddlewareExchangePublisherRabbitMQ(MOM_HOST, "bank_exchange")
+    bank_exchange = MessageMiddlewareExchangePublisherRabbitMQ(MOM_HOST, BANK_EXCHANGE)
 
     def _send_internal(queue, serialized_message):
         queue.send(serialized_message)
@@ -36,7 +41,7 @@ def handle_client_request(client_socket, message_handler_instance, client_list):
         serialized = message_handler_instance.serialize_account_data(msg_data)
         bank_id = message_handler_instance.extract_bank_id(msg_data)
         partition = stable_hash(bank_id) % TOTAL_BANK_FILTERS
-        routing_key = f"bank_partition_{partition}"
+        routing_key = f"{BANK_ROUTING_KEY_PREFIX}_{partition}"
         bank_exchange.send(serialized, routing_key=routing_key)
 
     def _handle_transaction(msg_data):
@@ -53,7 +58,7 @@ def handle_client_request(client_socket, message_handler_instance, client_list):
         if message_handler_instance.eof_count == 1:
             eof_bytes = message_handler_instance.serialize_eof()
             for i in range(TOTAL_BANK_FILTERS):
-                routing_key = f"bank_partition_{i}"
+                routing_key = f"{BANK_ROUTING_KEY_PREFIX}_{i}"
                 logging.info(f"Gateway sending EOF to partition {i}")
                 bank_exchange.send(eof_bytes, routing_key=routing_key)
         elif message_handler_instance.eof_count == 2:
@@ -184,7 +189,7 @@ def handle_client_response(client_list):
                         )
                 ack()
                 return
-            logging.warning("Received message with no matching client handler: %s", message)
+            logging.debug("Received message with no matching client handler: %s", message)
             nack()
         except socket.error:
             logging.error("RESPONSE | The connection with the server was lost")

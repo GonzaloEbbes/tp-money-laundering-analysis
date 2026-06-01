@@ -113,7 +113,6 @@ class USDFilterQ4:
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.debug(f"Received DATE_FILTER_TO_USD_FILTER_Q4 for client {client_id}")
         receiving_currency = transaction_data.get("receiving_currency")
         payment_currency = transaction_data.get("payment_currency")
 

@@ -97,7 +97,7 @@ class AmountFilterQ1:
     
     def _run_pay_format_filter_and_currency_converter_consumer(self):
         try:
-            logging.info(
+            logging.debug(
                 "AmountFilterQ5 consuming combined Q5 queue=%s",
                 PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE,
             )
@@ -134,17 +134,14 @@ class AmountFilterQ1:
         
 
     def _process_pay_format_message(self, transaction_data, client_id, data_id):
-        logging.info(f"Received PAY_FORMAT_FILTER_TO_AMOUNT_FILTER_Q5 for client {client_id}")
         amount_paid = float(transaction_data.get("amount_paid"))
 
         if amount_paid > 0 and amount_paid < 1:
             with self.cant_trx_lock:
                 self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
-            logging.info(f"Transaction for client {client_id} sent to final gateway queue")
         
 
     def _process_usd_currency_converter_message(self, transaction_data, client_id, data_id): 
-        logging.info(f"Received USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5 for client {client_id}")
         amount_paid = float(transaction_data.get("amount_paid"))
 
         if amount_paid > 0 and amount_paid < 1:
@@ -181,7 +178,6 @@ class AmountFilterQ1:
             is_pending = client_id in self._is_pending_to_finalize_client
 
         if is_pending:
-            logging.info(f"Chequeando si el cliente {client_id} puede ser finalizado. No tiene mensajes inflight y estaba pendiente de finalización.")
             self._try_finalize_client(client_id)
                         
     
@@ -260,7 +256,7 @@ class AmountFilterQ1:
             self.total_eof_leader_received_by_client[client_id] = self.total_eof_leader_received_by_client.get(client_id, 0) + 1
             
             if self.total_eof_leader_received_by_client[client_id] == AMOUNT_FILTER_AMOUNT:
-                logging.info(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
+                logging.debug(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
                 should_send_final_eof = True
                 del self.total_eof_leader_received_by_client[client_id]
         

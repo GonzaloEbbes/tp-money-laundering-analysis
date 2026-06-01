@@ -1,18 +1,39 @@
+import logging
 import os
 import uuid
 from collections import defaultdict
 
-from common import message_protocol
+from common import message_protocol, middleware
 from common.entity import PipelineEntity
 
 TOTAL_AVERAGE_MAPPERS = int(os.environ.get("TOTAL_AVERAGE_MAPPERS", 1))
+AMOUNT_FILTER_Q3_PREFIX = os.environ.get("AMOUNT_FILTER_Q3_PREFIX", "amount_filter_q3")
+AMOUNT_FILTER_Q3_AMOUNT = int(os.environ.get("AMOUNT_FILTER_Q3_AMOUNT", "1"))
+AMOUNT_FILTER_Q3_CONTROL_EXCHANGE = os.environ.get(
+    "AMOUNT_FILTER_Q3_CONTROL_EXCHANGE",
+    f"{AMOUNT_FILTER_Q3_PREFIX}_eof_control_exchange",
+)
 
 
 class JoinAverage(PipelineEntity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        mom_host = kwargs.get("mom_host") if "mom_host" in kwargs else args[0]
         self.averages = defaultdict(lambda: defaultdict(lambda: {"sum_total": 0.0, "count": 0}))
         self.eof_counts = defaultdict(int)
+        amount_filter_routing_keys = [
+            f"{AMOUNT_FILTER_Q3_PREFIX}_{i}"
+            for i in range(AMOUNT_FILTER_Q3_AMOUNT)
+        ]
+        amount_filter_bindings = [
+            (f"{routing_key}_control_queue", routing_key)
+            for routing_key in amount_filter_routing_keys
+        ]
+        self.amount_filter_q3_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(
+            mom_host,
+            AMOUNT_FILTER_Q3_CONTROL_EXCHANGE,
+            amount_filter_bindings,
+        )
 
     def entity_type(self):
         return "join_average"
@@ -27,6 +48,7 @@ class JoinAverage(PipelineEntity):
         client_id = message.source_client_uuid
 
         if message.type == message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
+            logging.debug("Received EOF from mapper for client=%s", client_id)
             self.eof_counts[client_id] += 1
             if self.eof_counts[client_id] < TOTAL_AVERAGE_MAPPERS:
                 return None
@@ -35,27 +57,24 @@ class JoinAverage(PipelineEntity):
             result_payload = message_protocol.internal.TransactionData({
                 "averages": averages,
             })
-            self.output_queue.send(
-                message_protocol.internal.serialize(
-                    message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_AGGREGATOR_TO_AMOUNT_FILTER_Q3,
-                    client_id,
-                    str(uuid.uuid4()),
-                    result_payload,
-                )
+            average_message = message_protocol.internal.serialize(
+                message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_AGGREGATOR_TO_AMOUNT_FILTER_Q3,
+                client_id,
+                str(uuid.uuid4()),
+                result_payload,
             )
+            for i in range(AMOUNT_FILTER_Q3_AMOUNT):
+                logging.debug("Sending averages for client=%s to amount_filter_q3_%s", client_id, i)
+                logging.debug("Message payload: %s", averages)
+                self.amount_filter_q3_exchange.send(
+                    average_message,
+                    f"{AMOUNT_FILTER_Q3_PREFIX}_{i}",
+                )
 
             self.averages.pop(client_id, None)
             self.eof_counts.pop(client_id, None)
-            self.output_queue.send(
-                message_protocol.internal.serialize(
-                    message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE,
-                    client_id,
-                    message.data_id,
-                    None,
-                )
-            )
             return None
-
+        logging.debug("Received averages from mapper for client=%s", client_id)
         payload = message.data or {}
         payment_format = payload.get("PaymentFormat")
         if not payment_format:
@@ -85,3 +104,7 @@ class JoinAverage(PipelineEntity):
                 "average": sum_total / count,
             }
         return result
+
+    def close(self):
+        super().close()
+        self.amount_filter_q3_exchange.close()

@@ -2,26 +2,35 @@ import os
 import logging
 import signal
 import threading
+import zlib
 from common import middleware, message_protocol
 from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as DataPerBankRedirectorMessageHandler
 
 ID = int(os.environ.get("ID", 0))
-TOTAL = int(os.environ.get("DATA_PER_BANK_REDIRECTOR_AMOUNT", 1))
+DATA_PER_BANK_REDIRECTOR_AMOUNT = int(os.environ.get("DATA_PER_BANK_REDIRECTOR_AMOUNT", 1))
 MOM_HOST = os.environ["MOM_HOST"]
-INPUT_QUEUE = os.environ["INPUT_QUEUE"]   # data_per_bank_shuffler_queue
+INPUT_QUEUE = os.environ["INPUT_QUEUE"]
 EOF_CONTROL_EXCHANGE = os.environ.get("EOF_CONTROL_EXCHANGE", "data_per_bank_control_exchange")
-EXCHANGE_NAME = os.environ.get("EXCHANGE_NAME", "map_max_exchange")
-OUTPUT_ROUTING_KEY_PREFIX = os.environ.get("OUTPUT_ROUTING_KEY_PREFIX", "map_max_partition")
+MAP_MAX_EXCHANGE = os.environ.get("MAP_MAX_EXCHANGE", "map_max_exchange")
+MAP_MAX_ROUTING_KEY_PREFIX = os.environ.get("MAP_MAX_ROUTING_KEY_PREFIX", "map_max_partition")
 TOTAL_MAPPERS = int(os.environ.get("TOTAL_MAPPERS", 1))
+
+
+def stable_hash(value):
+    try:
+        norm_val = int(value)
+    except ValueError:
+        norm_val = str(value).strip()
+    return zlib.crc32(str(norm_val).encode())
 
 class DataPerBankRedirector:
     def __init__(self):
         self.input_queue = middleware.MessageMiddlewareQueueRabbitMQ(MOM_HOST, INPUT_QUEUE)
-        self.map_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(MOM_HOST, EXCHANGE_NAME)
+        self.map_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(MOM_HOST, MAP_MAX_EXCHANGE)
 
         self.id = ID
-        self.total = TOTAL
+        self.total = DATA_PER_BANK_REDIRECTOR_AMOUNT
         self.eof_consumer = None
         self.eof_producer = None
         self._is_leader = (self.id == 0)
@@ -46,6 +55,8 @@ class DataPerBankRedirector:
         self._stop = False
         self._stop_lock = threading.Lock()
         self._sigterm = False
+        self._map_exchange_lock = threading.Lock()
+        self._eof_producer_lock = threading.Lock()
 
     def _add_inflight(self, cid):
         with self._inflight_lock:
@@ -78,14 +89,14 @@ class DataPerBankRedirector:
                 if self.total_eof[cid] == self.total:
                     eof_msg = DataPerBankRedirectorMessageHandler.serialize_eof_message(cid)
                     for i in range(TOTAL_MAPPERS):
-                        routing_key = f"{OUTPUT_ROUTING_KEY_PREFIX}_{i}"
-                        self.map_exchange.send(eof_msg, routing_key=routing_key)
-                        logging.info(f"Redirector leader {self.id} sent EOF to mapper partition {i}")
+                        routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{i}"
+                        with self._map_exchange_lock:
+                            self.map_exchange.send(eof_msg, routing_key=routing_key)
                     del self.total_eof[cid]
         else:
             if self.eof_producer:
-                self.eof_producer.send(DataPerBankRedirectorMessageHandler.serialize_eof_leader_message(cid), routing_key=f"dpb_redirector_{self.id}")
-                logging.info(f"Redirector {self.id} sent EOF leader message for client {cid}")
+                with self._eof_producer_lock:
+                    self.eof_producer.send(DataPerBankRedirectorMessageHandler.serialize_eof_leader_message(cid), routing_key=f"dpb_redirector_{self.id}")
 
         with self._pending_lock:
             if cid in self._pending:
@@ -109,7 +120,8 @@ class DataPerBankRedirector:
                 logging.info(f"Redirector {self.id} received EOF for client {cid}")
                 self._add_inflight(cid)
                 if self.eof_producer:
-                    self.eof_producer.send(DataPerBankRedirectorMessageHandler.serialize_eof_message(cid), routing_key=f"dpb_redirector_{self.id}")
+                    with self._eof_producer_lock:
+                        self.eof_producer.send(DataPerBankRedirectorMessageHandler.serialize_eof_message(cid), routing_key=f"dpb_redirector_{self.id}")
                 self._dec_inflight(cid)
                 with self._inflight_lock:
                     inflight = self._inflight.get(cid, 0)
@@ -127,15 +139,16 @@ class DataPerBankRedirector:
 
             self._add_inflight(cid)
             from_bank = msg.data.get("from_bank")
-            if from_bank:
-                partition = hash(str(from_bank)) % TOTAL_MAPPERS
+            if from_bank is not None:
+                partition = stable_hash(from_bank) % TOTAL_MAPPERS
                 logging.debug(f"Redirector {self.id} calculated partition {partition} for bank {from_bank}")
-                routing_key = f"{OUTPUT_ROUTING_KEY_PREFIX}_{partition}"
+                routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{partition}"
                 account_origin = msg.data.get("account_origin")
                 amount_received = msg.data.get("amount_received")
                 logging.debug(f"Redirector {self.id} redirecting message for client {cid} to mapper partition {partition}")
                 msg = DataPerBankRedirectorMessageHandler.serialize_redirect(cid, msg.data_id, from_bank, account_origin, amount_received)
-                self.map_exchange.send(msg, routing_key=routing_key)
+                with self._map_exchange_lock:
+                    self.map_exchange.send(msg, routing_key=routing_key)
             self._dec_inflight(cid)
             self._try_finalize(cid)
             ack()
@@ -160,8 +173,9 @@ class DataPerBankRedirector:
                 if self.total_eof[cid] == self.total:
                     eof_msg = DataPerBankRedirectorMessageHandler.serialize_eof_message(cid)
                     for i in range(TOTAL_MAPPERS):
-                        routing_key = f"{OUTPUT_ROUTING_KEY_PREFIX}_{i}"
-                        self.map_exchange.send(eof_msg, routing_key=routing_key)
+                        routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{i}"
+                        with self._map_exchange_lock:
+                            self.map_exchange.send(eof_msg, routing_key=routing_key)
                         logging.info(f"Redirector leader {self.id} sent final EOF to mapper partition {i}")
                     del self.total_eof[cid]
         ack()
