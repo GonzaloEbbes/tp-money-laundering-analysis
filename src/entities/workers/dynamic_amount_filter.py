@@ -30,6 +30,9 @@ class DynamicAmountFilter(PipelineEntity):
         self._state_lock = threading.RLock()
         self._leader_eof_lock = threading.Lock()
         self._stop_lock = threading.Lock()
+        self._inflight_messages = {}
+        self._inflight_message_lock = threading.Lock()
+        self._control_eof_received_by_client = set()
         self._stopping = False
 
         self.eof_control_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
@@ -64,7 +67,12 @@ class DynamicAmountFilter(PipelineEntity):
             return None
 
         if message.type == message_protocol.internal.InternalMessageType.USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3:
-            self._process_transaction(client_id, message.data_id, message.data or {})
+            self._add_inflight_message(client_id)
+            try:
+                self._process_transaction(client_id, message.data_id, message.data or {})
+            finally:
+                self._decrease_inflight_message(client_id)
+                self._try_finalize_client(client_id)
             return None
 
         if message.type == message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
@@ -72,13 +80,24 @@ class DynamicAmountFilter(PipelineEntity):
             return None
 
         return None
+                        
+
+    def _add_inflight_message(self, client_id):
+        with self._inflight_message_lock:
+            self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) + 1
+    
+    def _decrease_inflight_message(self, client_id):
+        with self._inflight_message_lock:
+            if client_id in self._inflight_messages:
+                self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) - 1
+
 
     def _process_average_message(self, client_id, message):
         with self._state_lock:
             if client_id in self.finalized_clients:
                 logging.error("Received averages after EOF for client=%s", client_id)
                 return
-
+            logging.debug("Received averages for client=%s", client_id)
             averages = (message.data or {}).get("averages", {})
             self.averages_by_client[client_id] = averages
             self.clients_with_averages.add(client_id)
@@ -134,11 +153,19 @@ class DynamicAmountFilter(PipelineEntity):
             if client_id in self.finalized_clients:
                 return
 
-            if self.eof_counts_by_client[client_id] < EXPECTED_INPUT_EOFS:
+            has_input_eof = self.eof_counts_by_client[client_id] >= EXPECTED_INPUT_EOFS
+            has_control_eof = client_id in self._control_eof_received_by_client
+
+            if not has_input_eof and not has_control_eof:
                 return
 
             if client_id not in self.clients_with_averages:
-                logging.debug("EOFs received for client=%s but averages are still pending", client_id)
+                logging.debug("EOF received for client=%s but averages are still pending", client_id)
+                return
+
+        with self._inflight_message_lock:
+            if self._inflight_messages.get(client_id, 0) > 0:
+                logging.debug("EOF received for client=%s but inflight messages are still pending", client_id)
                 return
 
         self._finalize_client(client_id)
@@ -153,6 +180,10 @@ class DynamicAmountFilter(PipelineEntity):
             pending = self.pending_transactions_by_client.pop(client_id, [])
             self.eof_counts_by_client.pop(client_id, None)
             self.clients_with_averages.discard(client_id)
+            self._control_eof_received_by_client.discard(client_id)
+
+        with self._inflight_message_lock:
+            self._inflight_messages.pop(client_id, None)
 
         for data_id, transaction in pending:
             self._emit_if_above_average(client_id, data_id, transaction, averages)
@@ -218,7 +249,7 @@ class DynamicAmountFilter(PipelineEntity):
             message = message_protocol.deserialize(raw_message)
             client_id = message.source_client_uuid
             if message.type == message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
-                self._process_input_eof(client_id, propagate=False)
+                self._process_eof_from_control_exchange(client_id)
             elif message.type == message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE:
                 if self._is_leader():
                     self._leader_count_eof_for_client(client_id)
@@ -228,6 +259,14 @@ class DynamicAmountFilter(PipelineEntity):
         except Exception:
             logging.exception("dynamic_amount_filter failed while processing EOF control message")
             nack()
+
+    def _process_eof_from_control_exchange(self, client_id):
+        with self._state_lock:
+            if client_id in self.finalized_clients:
+                return
+            self._control_eof_received_by_client.add(client_id)
+
+        self._try_finalize_client(client_id)
 
     def _emit_if_above_average(self, client_id, data_id, transaction, averages=None):
         payment_format = transaction.get("payment_format")
@@ -315,7 +354,7 @@ class DynamicAmountFilter(PipelineEntity):
                 logging.error("Error closing dynamic_amount_filter resource: %s", e)
 
     def start(self):
-        logging.info(
+        logging.debug(
             "Starting %s. id=%s amount=%s input_queue=%s output_queue=%s",
             self.entity_type(),
             self.id,

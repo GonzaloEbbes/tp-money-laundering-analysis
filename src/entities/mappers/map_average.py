@@ -259,7 +259,7 @@ class MapAverage(PipelineEntity):
                 logging.error("Error closing map_average resource: %s", e)
 
     def start(self):
-        logging.info(
+        logging.debug(
             "Starting %s. id=%s amount=%s input_queue=%s output_queue=%s",
             self.entity_type(),
             self.id,

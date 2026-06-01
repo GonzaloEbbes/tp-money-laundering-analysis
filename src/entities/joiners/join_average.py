@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from collections import defaultdict
@@ -47,6 +48,7 @@ class JoinAverage(PipelineEntity):
         client_id = message.source_client_uuid
 
         if message.type == message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
+            logging.debug("Received EOF from mapper for client=%s", client_id)
             self.eof_counts[client_id] += 1
             if self.eof_counts[client_id] < TOTAL_AVERAGE_MAPPERS:
                 return None
@@ -62,6 +64,8 @@ class JoinAverage(PipelineEntity):
                 result_payload,
             )
             for i in range(AMOUNT_FILTER_Q3_AMOUNT):
+                logging.debug("Sending averages for client=%s to amount_filter_q3_%s", client_id, i)
+                logging.debug("Message payload: %s", averages)
                 self.amount_filter_q3_exchange.send(
                     average_message,
                     f"{AMOUNT_FILTER_Q3_PREFIX}_{i}",
@@ -70,7 +74,7 @@ class JoinAverage(PipelineEntity):
             self.averages.pop(client_id, None)
             self.eof_counts.pop(client_id, None)
             return None
-
+        logging.debug("Received averages from mapper for client=%s", client_id)
         payload = message.data or {}
         payment_format = payload.get("PaymentFormat")
         if not payment_format:
