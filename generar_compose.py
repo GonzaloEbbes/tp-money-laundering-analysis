@@ -28,14 +28,14 @@ configurations = {
         "usd_filter_q3": 6,
         "usd_filter_q4": 13,
         "pay_format_filter": 13,
-        "amount_filter_q3": 2,
+        "amount_filter_q3": 5,
         "amount_filter_q5": 4,
         "scather_gather_mapper": 4,
         "scather_gather_aggregator": 4,
         "scather_gather_pair_joiner": 4,
         "scather_gather_joiner": 4,
         "currency_converter": 5,
-        "average_per_pay_format_mapper": 2,
+        "average_per_pay_format_mapper": 1,
         "average_per_pay_format_aggregator": 1,
         "data_per_bank_redirector": 9,
         "bank_filter": 7,
@@ -252,7 +252,7 @@ def set_average_per_pay_format_mapper_config(id,total):
         "",
     ]
 
-def set_average_pay_format_aggregator_config(id,total_mappers,total_amount_filter_q3):
+def set_average_pay_format_aggregator_config(id,total_mappers):
     return [
         f"  average_per_pay_format_aggregator_{id}:",
         "    build:",
@@ -270,9 +270,7 @@ def set_average_pay_format_aggregator_config(id,total_mappers,total_amount_filte
         "      - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue",
         "      - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
         f"      - TOTAL_AVERAGE_MAPPERS={total_mappers}",
-        "      - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3",
-        f"      - AMOUNT_FILTER_Q3_AMOUNT={total_amount_filter_q3}",
-        "      - AMOUNT_FILTER_Q3_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange",
+        "      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_aggregator_to_amount_filter_q3_exchange",
         "",
     ]
 
@@ -281,23 +279,21 @@ def set_amount_filter_q3_config(id,total):
         f"  amount_filter_q3_{id}:",
         "    build:",
         "      context: ./src",
-        "      dockerfile: entities/Dockerfile",
+        "      dockerfile: entities/filters/amount_filter_q3/Dockerfile",
         f"    container_name: amount_filter_q3_{id}",
         "    depends_on:",
         "      rabbitmq:",
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
-        "      - PROCESSING_DELAY_SECONDS=0",
-        "      - ENTITY_CLASS=DynamicAmountFilter",
+        f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
-        "      - OUTPUT_QUEUE=gateway_results_queue",
-        "      - EXPECTED_INPUT_EOFS=1",
-        f"      - ID={id}",
-        "      - AMOUNT_FILTER_Q3_PREFIX=amount_filter_q3",
-        f"      - AMOUNT_FILTER_Q3_AMOUNT={total}",
+        "      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_aggregator_to_amount_filter_q3_exchange",
+        "      - AMOUNT_FILTER_PREFIX=amount_filter_q3",
+        f"      - AMOUNT_FILTER_AMOUNT={total}",
         "      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange",
+        "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
         "",
     ]
 
@@ -437,7 +433,7 @@ def set_currency_converter_config(id,total):
         "      - CONVERSION_CURRENCY_FIELD=payment_currency",
         "      - CONVERSION_DATE_FIELD=timestamp",
         "      - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid",
-        "      - FRANKFURTER_MAX_RETRIES=2",
+        "      - FRANKFURTER_MAX_RETRIES=10",
         "      - FRANKFURTER_RETRY_DELAY_SECONDS=1",
         "      - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60",
         "    volumes:",
@@ -599,7 +595,7 @@ def generate_compose(config_id):
     for i in range(config["average_per_pay_format_mapper"]):
         yaml_lines += set_average_per_pay_format_mapper_config(i, config["average_per_pay_format_mapper"])
     for i in range(config["average_per_pay_format_aggregator"]):
-        yaml_lines += set_average_pay_format_aggregator_config(i, config["average_per_pay_format_mapper"], config["amount_filter_q3"])
+        yaml_lines += set_average_pay_format_aggregator_config(i, config["average_per_pay_format_mapper"])
     for i in range(config["amount_filter_q3"]):
         yaml_lines += set_amount_filter_q3_config(i, config["amount_filter_q3"])
     for i in range(config["pay_format_filter"]):
