@@ -1,7 +1,15 @@
 import logging
-import os
 
 import pika
+
+from common.middleware.batch_controller import (
+	_DestinationBatchPublisher,
+	_deliver_to_user_callback_transparently,
+)
+from common.middleware.rabbitmq_config import (
+	RABBITMQ_SETTINGS,
+	rabbitmq_connection_parameters,
+)
 from .middleware import (
 	MessageMiddlewareCloseError,
 	MessageMiddlewareDisconnectedError,
@@ -10,19 +18,6 @@ from .middleware import (
 	MessageMiddlewareExchange,
 	MessageMiddlewareExchangePublisher,
 )
-
-# Cantidad maxima de mensajes sin ack entregados al consumidor al mismo tiempo.
-MAX_UNACKED_MESSAGES = 1
-RABBITMQ_HEARTBEAT = int(os.environ.get("RABBITMQ_HEARTBEAT", "0"))
-RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS = 300
-
-
-def _connection_parameters(host):
-	return pika.ConnectionParameters(
-		host,
-		heartbeat=RABBITMQ_HEARTBEAT,
-    blocked_connection_timeout=RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS,
-	)
 
 class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 
@@ -38,6 +33,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 		self._channel = None
 		self._queue_name = queue_name
 		self._on_message_callback = None
+		self._batched_publisher = None
 
 		#Flags
 		self._consuming = False
@@ -45,9 +41,10 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 		self._consumer_queue_declared = False
 		logging.getLogger("pika").setLevel(logging.WARNING) 
 		try:
-			self._connection = pika.BlockingConnection(_connection_parameters(host))
+			self._connection = pika.BlockingConnection(rabbitmq_connection_parameters(host))
 			self._channel = self._connection.channel()
-			self._channel.basic_qos(prefetch_count=MAX_UNACKED_MESSAGES)
+			self._channel.basic_qos(prefetch_count=RABBITMQ_SETTINGS.max_unacked_messages)
+			self._batched_publisher = _DestinationBatchPublisher(host, exchange_name='', declare_exchange=False)
 		except Exception as e:
 			self.close()
 			raise MessageMiddlewareMessageError("Internal Error during initialization") from e
@@ -91,9 +88,13 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 	# Funcion adaptadora que convierte el callback de pika al formato del
 	# middleware y expone funciones de ack y nack para el mensaje actual.
 	def _adapt_callback(self, ch, method, properties, body):
-		def ack(): ch.basic_ack(delivery_tag=method.delivery_tag)
-		def nack(): ch.basic_nack(delivery_tag=method.delivery_tag)
-		self._on_message_callback(body, ack, nack)
+		_deliver_to_user_callback_transparently(
+			ch,
+			method,
+			properties,
+			body,
+			self._on_message_callback,
+		)
 
 	# Si se estaba consumiendo desde la cola, detiene la escucha.
 	# Si no se estaba consumiendo, no tiene efecto ni levanta error.
@@ -114,7 +115,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 	# Si ocurre un error interno que no puede resolverse eleva MessageMiddlewareMessageError.
 	def send(self, message):
 		try:
-			self._channel.basic_publish(exchange='',routing_key=self._queue_name,body=message)
+			self._batched_publisher.enqueue(self._queue_name, message)
 		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
 			raise MessageMiddlewareDisconnectedError("Connection Error during send") from e
 		except Exception as e:
@@ -125,7 +126,11 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 	# Si ocurre un error de cierre en algun recurso eleva MessageMiddlewareCloseError.
 	def close(self):
 		errors = []
-
+		if self._batched_publisher is not None:
+			try:
+				self._batched_publisher.close()
+			except Exception as e:
+				errors.append(e)
 		if self._channel is not None:
 			try:
 				if self._channel.is_open:
@@ -140,6 +145,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 			except Exception as e:
 				errors.append(e)
 
+		self._batched_publisher = None
 		self._channel = None
 		self._connection = None
 		self._on_message_callback = None
@@ -170,6 +176,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 		self._queue_name = queue_name
 		self._exclusive = exclusive
 		self._on_message_callback = None
+		self._batched_publisher = None
 
 		#Flags
 		self._consuming = False
@@ -177,10 +184,11 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 		self._consumer_queue_declared = False
 
 		try:
-			self._connection = pika.BlockingConnection(_connection_parameters(host))
+			self._connection = pika.BlockingConnection(rabbitmq_connection_parameters(host))
 			self._channel = self._connection.channel()
-			self._channel.basic_qos(prefetch_count=MAX_UNACKED_MESSAGES)
+			self._channel.basic_qos(prefetch_count=RABBITMQ_SETTINGS.max_unacked_messages)
 			self._channel.exchange_declare(exchange=exchange_name,exchange_type='direct',durable=True)
+			self._batched_publisher = _DestinationBatchPublisher(host, exchange_name=exchange_name, declare_exchange=True)
 		except Exception as e:
 			self.close()
 			raise MessageMiddlewareMessageError("Internal Error during initialization") from e
@@ -216,9 +224,13 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 	# Funcion adaptadora que convierte el callback de pika al formato del
 	# middleware y expone funciones de ack y nack para el mensaje actual.
 	def _adapt_callback(self, ch, method, properties, body):
-		def ack(): ch.basic_ack(delivery_tag=method.delivery_tag)
-		def nack(): ch.basic_nack(delivery_tag=method.delivery_tag)
-		self._on_message_callback(body, ack, nack)
+		_deliver_to_user_callback_transparently(
+			ch,
+			method,
+			properties,
+			body,
+			self._on_message_callback,
+		)
 
 	# Crea una cola exclusiva autogenerada y la vincula al exchange con cada
 	# routing key indicada en el constructor.
@@ -258,7 +270,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 	def send(self, message):
 		try:
 			for routing_key in self._routing_keys:
-				self._channel.basic_publish(exchange=self._exchange_name,routing_key=routing_key,body=message)
+				self._batched_publisher.enqueue(routing_key, message)
 		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
 			raise MessageMiddlewareDisconnectedError("Connection Error during send") from e
 		except Exception as e:
@@ -269,6 +281,12 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 	# Si ocurre un error de cierre en algun recurso eleva MessageMiddlewareCloseError.
 	def close(self):
 		errors = []
+
+		if self._batched_publisher is not None:
+			try:
+				self._batched_publisher.close()
+			except Exception as e:
+				errors.append(e)
 
 		if self._channel is not None:
 			try:
@@ -284,6 +302,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			except Exception as e:
 				errors.append(e)
 
+		self._batched_publisher = None
 		self._channel = None
 		self._connection = None
 		self._on_message_callback = None
@@ -303,15 +322,17 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 		self._channel = None
 		self._exchange_name = exchange_name
 		self._bindings = list(bindings or [])
+		self._batched_publisher = None
 
 		try:
-			self._connection = pika.BlockingConnection(_connection_parameters(host))
+			self._connection = pika.BlockingConnection(rabbitmq_connection_parameters(host))
 			self._channel = self._connection.channel()
 			self._channel.exchange_declare(
 				exchange=exchange_name,
 				exchange_type='direct',
 				durable=True,
 			)
+
 			for queue_name, routing_key in self._bindings:
 				self._channel.queue_declare(queue=queue_name, durable=True)
 				self._channel.queue_bind(
@@ -319,17 +340,20 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 					exchange=exchange_name,
 					routing_key=routing_key,
 				)
+
+			self._batched_publisher = _DestinationBatchPublisher(
+				host,
+				exchange_name=exchange_name,
+				declare_exchange=True,
+			)
+
 		except Exception as e:
 			self.close()
 			raise MessageMiddlewareMessageError("Internal Error during initialization") from e
 
 	def send(self, message, routing_key):
 		try:
-			self._channel.basic_publish(
-				exchange=self._exchange_name,
-				routing_key=routing_key,
-				body=message,
-			)
+			self._batched_publisher.enqueue(routing_key, message)
 		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
 			raise MessageMiddlewareDisconnectedError("Connection Error during send") from e
 		except Exception as e:
@@ -337,6 +361,12 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 
 	def close(self):
 		errors = []
+
+		if self._batched_publisher is not None:
+			try:
+				self._batched_publisher.close()
+			except Exception as e:
+				errors.append(e)
 
 		if self._channel is not None:
 			try:
@@ -352,6 +382,7 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 			except Exception as e:
 				errors.append(e)
 
+		self._batched_publisher = None
 		self._channel = None
 		self._connection = None
 
