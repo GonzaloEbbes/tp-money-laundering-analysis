@@ -54,7 +54,6 @@ def set_rabbitmq():
         "      dockerfile: Dockerfile",
         "    container_name: rabbitmq",
         "    environment:",
-        "      - RABBITMQ_LOG_LEVELS=error",
         "      - RABBITMQ_MAX_UNACKED_MESSAGES=1",
         "      - RABBITMQ_HEARTBEAT=0",
         "      - RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS=300",
@@ -74,7 +73,7 @@ def set_rabbitmq():
         "",
     ]
 
-def set_gateway_config(bank_filters_amount):
+def set_gateway_config(bank_filters_amount, log_level):
     return [
         "  gateway:",
         "    build:",
@@ -88,6 +87,7 @@ def set_gateway_config(bank_filters_amount):
         "      - PYTHONUNBUFFERED=1",
         "      - SERVER_HOST=gateway",
         "      - SERVER_PORT=5678",
+        f"      - LOG_LEVEL={log_level}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=gateway_results_queue",
         "      - BANK_DEDUPLICATOR_QUEUE=bank_deduplicator_queue",
@@ -99,7 +99,7 @@ def set_gateway_config(bank_filters_amount):
         "",
     ]
 
-def set_date_filter_config(id,total):
+def set_date_filter_config(id,total, log_level):
     return [
         f"  date_filter_{id}:",
         "    build:",
@@ -111,6 +111,7 @@ def set_date_filter_config(id,total):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=date_filter_queue",
@@ -123,7 +124,7 @@ def set_date_filter_config(id,total):
         "",
     ]
 
-def set_usd_filter_q1q2_config(id,total):
+def set_usd_filter_q1q2_config(id,total, log_level):
     return [ 
         f"  usd_filter_q1q2_{id}:",
         "    build:",
@@ -135,6 +136,7 @@ def set_usd_filter_q1q2_config(id,total):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=currency_filter_queue",
@@ -146,7 +148,7 @@ def set_usd_filter_q1q2_config(id,total):
         "",
     ]
 
-def set_amount_filter_q1_config(id,total):
+def set_amount_filter_q1_config(id,total, log_level):
     return [
         f"  amount_filter_q1_{id}:",
         "    build:",
@@ -158,6 +160,7 @@ def set_amount_filter_q1_config(id,total):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue",
@@ -168,7 +171,7 @@ def set_amount_filter_q1_config(id,total):
         "",
     ]
 
-def set_usd_filter_q3_config(id,total):
+def set_usd_filter_q3_config(id,total, log_level):
     return [
         f"  usd_filter_q3_{id}:",
         "    build:",
@@ -180,6 +183,7 @@ def set_usd_filter_q3_config(id,total):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue",
@@ -190,7 +194,7 @@ def set_usd_filter_q3_config(id,total):
         "",
     ]
 
-def set_usd_filter_q4_config(id,total):
+def set_usd_filter_q4_config(id,total, log_level):
     return [
         f"  usd_filter_q4_{id}:",
         "    build:",
@@ -202,6 +206,7 @@ def set_usd_filter_q4_config(id,total):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue",
@@ -213,7 +218,7 @@ def set_usd_filter_q4_config(id,total):
         "",
     ]
 
-def set_pay_format_filter_config(id,total,total_usd_currency_converters):
+def set_pay_format_filter_config(id,total,total_usd_currency_converters, log_level):
     return [
         f"  pay_format_filter_{id}:",
         "    build:",
@@ -225,6 +230,7 @@ def set_pay_format_filter_config(id,total,total_usd_currency_converters):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue",
@@ -239,7 +245,7 @@ def set_pay_format_filter_config(id,total,total_usd_currency_converters):
         "",
     ]
 
-def set_average_per_pay_format_mapper_config(id,total):
+def set_average_per_pay_format_mapper_config(id,total, log_level):
     return [
         f"  average_per_pay_format_mapper_{id}:",
         "    build:",
@@ -251,6 +257,7 @@ def set_average_per_pay_format_mapper_config(id,total):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         "      - PROCESSING_DELAY_SECONDS=0",
         "      - ENTITY_CLASS=MapAverage",
         "      - MOM_HOST=rabbitmq",
@@ -259,7 +266,7 @@ def set_average_per_pay_format_mapper_config(id,total):
         "",
     ]
 
-def set_average_pay_format_aggregator_config(id,total_mappers):
+def set_average_pay_format_aggregator_config(id,total_mappers, log_level):
     return [
         f"  average_per_pay_format_aggregator_{id}:",
         "    build:",
@@ -271,6 +278,7 @@ def set_average_pay_format_aggregator_config(id,total_mappers):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         "      - PROCESSING_DELAY_SECONDS=0",
         "      - ENTITY_CLASS=JoinAverage",
         "      - MOM_HOST=rabbitmq",
@@ -281,7 +289,7 @@ def set_average_pay_format_aggregator_config(id,total_mappers):
         "",
     ]
 
-def set_amount_filter_q3_config(id,total):
+def set_amount_filter_q3_config(id,total, log_level):
     return [
         f"  amount_filter_q3_{id}:",
         "    build:",
@@ -293,6 +301,7 @@ def set_amount_filter_q3_config(id,total):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
@@ -304,7 +313,7 @@ def set_amount_filter_q3_config(id,total):
         "",
     ]
 
-def set_amount_filter_q5_config(id,total,total_usd_currency_converters):
+def set_amount_filter_q5_config(id,total,total_usd_currency_converters, log_level):
     return [
         f"  amount_filter_q5_{id}:",
         "    build:",
@@ -316,6 +325,7 @@ def set_amount_filter_q5_config(id,total,total_usd_currency_converters):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue",
@@ -327,7 +337,7 @@ def set_amount_filter_q5_config(id,total,total_usd_currency_converters):
         "",
     ]
 
-def set_scather_gather_mapper_config(id,total_mappers,total_aggregators):
+def set_scather_gather_mapper_config(id,total_mappers,total_aggregators, log_level):
     return [
         f"  scather_gather_mapper_{id}:",
         "    build:",
@@ -339,6 +349,7 @@ def set_scather_gather_mapper_config(id,total_mappers,total_aggregators):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue",
@@ -350,7 +361,7 @@ def set_scather_gather_mapper_config(id,total_mappers,total_aggregators):
         "",
     ]
 
-def set_scather_gather_aggregator_config(id,total_mappers,total_pair_joiners):
+def set_scather_gather_aggregator_config(id,total_mappers,total_pair_joiners, log_level):
     return [
         f"  scather_gather_aggregator_{id}:",
         "    build:",
@@ -362,6 +373,7 @@ def set_scather_gather_aggregator_config(id,total_mappers,total_pair_joiners):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         f"      - SCATHER_GATHER_MAPPER_AMOUNT={total_mappers}",
@@ -371,7 +383,7 @@ def set_scather_gather_aggregator_config(id,total_mappers,total_pair_joiners):
         "",
     ]
 
-def set_scather_gather_pair_joiner_config(id,total_aggregators,total_joiners):
+def set_scather_gather_pair_joiner_config(id,total_aggregators,total_joiners, log_level):
     return [
         f"  scather_gather_pair_joiner_{id}:",
         "    build:",
@@ -383,6 +395,7 @@ def set_scather_gather_pair_joiner_config(id,total_aggregators,total_joiners):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         f"      - SCATHER_GATHER_AGGREGATOR_AMOUNT={total_aggregators}",
@@ -392,7 +405,7 @@ def set_scather_gather_pair_joiner_config(id,total_aggregators,total_joiners):
         "",
     ]
 
-def set_scather_gather_joiner_config(id,total_pair_joiners,total_joiners):
+def set_scather_gather_joiner_config(id,total_pair_joiners,total_joiners, log_level):
     return [
         f"  scather_gather_joiner_{id}:",
         "    build:",
@@ -404,6 +417,7 @@ def set_scather_gather_joiner_config(id,total_pair_joiners,total_joiners):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         f"      - SCATHER_GATHER_PAIR_JOINER_AMOUNT={total_pair_joiners}",
@@ -415,7 +429,7 @@ def set_scather_gather_joiner_config(id,total_pair_joiners,total_joiners):
         "",
     ]
 
-def set_currency_converter_config(id,total):
+def set_currency_converter_config(id,total, log_level):
     return [
         f"  currency_converter_{id}:",
         "    build:",
@@ -427,6 +441,7 @@ def set_currency_converter_config(id,total):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         "      - PROCESSING_DELAY_SECONDS=0",
         "      - ENTITY_CLASS=CurrencyConverter",
         "      - MOM_HOST=rabbitmq",
@@ -448,7 +463,7 @@ def set_currency_converter_config(id,total):
         "",
     ]
 
-def set_client(config):
+def set_client(config, log_level):
     cliente = []
     cliente += [
         "  client:",
@@ -469,6 +484,7 @@ def set_client(config):
         "      - ./output:/output",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         "      - SERVER_HOST=gateway",
         "      - SERVER_PORT=5678",
         "      - MESSAGE=mensaje de prueba",
@@ -482,7 +498,7 @@ def set_client(config):
     ]
     return cliente
 
-def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers):
+def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers, log_level):
     return [
         f"  data_per_bank_redirector_{id}:",
         "    build:",
@@ -494,6 +510,7 @@ def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers):
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         "      - PROCESSING_DELAY_SECONDS=0",
         f"      - ID={id}",
         f"      - DATA_PER_BANK_REDIRECTOR_AMOUNT={total_redirectors}",
@@ -506,7 +523,7 @@ def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers):
         "",
     ]
 
-def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank):
+def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank, log_level):
     return [
         f"  bank_filter_{id}:",
         "    build:",
@@ -518,6 +535,7 @@ def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank)
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         "      - PROCESSING_DELAY_SECONDS=0",
         f"      - ID={id}",
         f"      - BANK_FILTERS_AMOUNT={total_bank_filters}",
@@ -531,7 +549,7 @@ def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank)
         "",
     ]
 
-def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_amount_per_bank):
+def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_amount_per_bank, log_level):
     return [
         f"  map_max_amount_per_bank_{id}:",
         "    build:",
@@ -543,6 +561,7 @@ def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_am
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         "      - PROCESSING_DELAY_SECONDS=0",
         f"      - ID={id}",
         f"      - MAP_AMOUNT={total_map_amount_filters}",
@@ -556,7 +575,7 @@ def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_am
         "",
     ]
 
-def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_amount_filters):
+def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_amount_filters, log_level):
     return [
         f"  join_max_amount_per_bank_{id}:",
         "    build:",
@@ -568,6 +587,7 @@ def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_a
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
+        f"      - LOG_LEVEL={log_level}",
         "      - PROCESSING_DELAY_SECONDS=0",
         f"      - ID={id}",
         f"      - JOIN_AMOUNT={total_join_amount_filters}",
@@ -580,54 +600,54 @@ def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_a
         "",
     ]
 
-def generate_compose(config_id):
-    if config_id not in configurations:
+def generate_compose(config_id,log_level):
+    if config_id not in configurations or log_level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
         raise ValueError("Configuración no encontrada")
 
     config = configurations[config_id]
     yaml_lines = []
     yaml_lines += set_rabbitmq()
-    yaml_lines += set_gateway_config(config["bank_filter"])
+    yaml_lines += set_gateway_config(config["bank_filter"], log_level)
 
     for i in range(config["date_filter"]):
-        yaml_lines += set_date_filter_config(i, config["date_filter"])
+        yaml_lines += set_date_filter_config(i, config["date_filter"], log_level)
     for i in range(config["usd_filter_q1q2"]):
-        yaml_lines += set_usd_filter_q1q2_config(i, config["usd_filter_q1q2"])
+        yaml_lines += set_usd_filter_q1q2_config(i, config["usd_filter_q1q2"], log_level)
     for i in range(config["amount_filter_q1"]):
-        yaml_lines += set_amount_filter_q1_config(i, config["amount_filter_q1"])
+        yaml_lines += set_amount_filter_q1_config(i, config["amount_filter_q1"], log_level)
     for i in range(config["usd_filter_q3"]):
-        yaml_lines += set_usd_filter_q3_config(i, config["usd_filter_q3"])
+        yaml_lines += set_usd_filter_q3_config(i, config["usd_filter_q3"], log_level)
     for i in range(config["usd_filter_q4"]):
-        yaml_lines += set_usd_filter_q4_config(i, config["usd_filter_q4"])
+        yaml_lines += set_usd_filter_q4_config(i, config["usd_filter_q4"], log_level)
     for i in range(config["average_per_pay_format_mapper"]):
-        yaml_lines += set_average_per_pay_format_mapper_config(i, config["average_per_pay_format_mapper"])
+        yaml_lines += set_average_per_pay_format_mapper_config(i, config["average_per_pay_format_mapper"], log_level)
     for i in range(config["average_per_pay_format_aggregator"]):
-        yaml_lines += set_average_pay_format_aggregator_config(i, config["average_per_pay_format_mapper"])
+        yaml_lines += set_average_pay_format_aggregator_config(i, config["average_per_pay_format_mapper"], log_level)
     for i in range(config["amount_filter_q3"]):
-        yaml_lines += set_amount_filter_q3_config(i, config["amount_filter_q3"])
+        yaml_lines += set_amount_filter_q3_config(i, config["amount_filter_q3"], log_level)
     for i in range(config["pay_format_filter"]):
-        yaml_lines += set_pay_format_filter_config(i, config["pay_format_filter"], config["currency_converter"])
+        yaml_lines += set_pay_format_filter_config(i, config["pay_format_filter"], config["currency_converter"], log_level)
     for i in range(config["amount_filter_q5"]):
-        yaml_lines += set_amount_filter_q5_config(i, config["amount_filter_q5"], config["currency_converter"])
+        yaml_lines += set_amount_filter_q5_config(i, config["amount_filter_q5"], config["currency_converter"], log_level)
     for i in range(config["scather_gather_mapper"]):
-        yaml_lines += set_scather_gather_mapper_config(i, config["scather_gather_mapper"], config["scather_gather_aggregator"])
+        yaml_lines += set_scather_gather_mapper_config(i, config["scather_gather_mapper"], config["scather_gather_aggregator"], log_level)
     for i in range(config["scather_gather_aggregator"]):
-        yaml_lines += set_scather_gather_aggregator_config(i, config["scather_gather_mapper"], config["scather_gather_pair_joiner"])
+        yaml_lines += set_scather_gather_aggregator_config(i, config["scather_gather_mapper"], config["scather_gather_pair_joiner"], log_level)
     for i in range(config["scather_gather_pair_joiner"]):
-        yaml_lines += set_scather_gather_pair_joiner_config(i, config["scather_gather_aggregator"], config["scather_gather_joiner"])
+        yaml_lines += set_scather_gather_pair_joiner_config(i, config["scather_gather_aggregator"], config["scather_gather_joiner"], log_level)
     for i in range(config["scather_gather_joiner"]):
-        yaml_lines += set_scather_gather_joiner_config(i, config["scather_gather_pair_joiner"], config["scather_gather_joiner"])
+        yaml_lines += set_scather_gather_joiner_config(i, config["scather_gather_pair_joiner"], config["scather_gather_joiner"], log_level)
     for i in range(config["currency_converter"]):
-        yaml_lines += set_currency_converter_config(i, config["currency_converter"])
+        yaml_lines += set_currency_converter_config(i, config["currency_converter"], log_level)
     for i in range(config["data_per_bank_redirector"]):
-        yaml_lines += set_data_per_bank_redirector_config(i, config["data_per_bank_redirector"], config["map_max_amount_per_bank"])
+        yaml_lines += set_data_per_bank_redirector_config(i, config["data_per_bank_redirector"], config["map_max_amount_per_bank"], log_level)
     for i in range(config["bank_filter"]):
-        yaml_lines += set_bank_filter_config(i, config["bank_filter"], config["join_max_amount_per_bank"])
+        yaml_lines += set_bank_filter_config(i, config["bank_filter"], config["join_max_amount_per_bank"], log_level)
     for i in range(config["map_max_amount_per_bank"]):
-        yaml_lines += set_map_max_amount_per_bank_config(i, config["map_max_amount_per_bank"],config["join_max_amount_per_bank"])
+        yaml_lines += set_map_max_amount_per_bank_config(i, config["map_max_amount_per_bank"],config["join_max_amount_per_bank"], log_level)
     for i in range(config["join_max_amount_per_bank"]):
-        yaml_lines += set_join_max_amount_per_bank_config(i, config["join_max_amount_per_bank"], config["map_max_amount_per_bank"])
-    yaml_lines += set_client(config)
+        yaml_lines += set_join_max_amount_per_bank_config(i, config["join_max_amount_per_bank"], config["map_max_amount_per_bank"], log_level)
+    yaml_lines += set_client(config, log_level)
 
     with open("docker-compose.yaml", "w", encoding="utf-8") as f:
         f.write("\n".join(yaml_lines))
@@ -635,19 +655,21 @@ def generate_compose(config_id):
 if __name__ == "__main__":
     import sys
 
-    # Uso: python3 generar_compose.py [config_id]
-    if len(sys.argv) > 2:
-        print("Usage: python3 generar_compose.py [config_id]")
+    # Uso: python3 generar_compose.py [config_id] [log_level]
+    if len(sys.argv) > 4:
+        print("Usage: python3 generar_compose.py [config_id] [log_level]")
         sys.exit(1)
 
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 3:
         try:
             config_id = int(sys.argv[1])
+            log_level = sys.argv[2].upper()
         except ValueError:
-            print(f"Invalid config id: {sys.argv[1]}")
-            print("Usage: python3 generar_compose.py [config_id]")
+            print(f"Invalid config id: {sys.argv[1]} or log level: {sys.argv[2]}")
+            print("Usage: python3 generar_compose.py [config_id] [log_level]")
             sys.exit(1)
     else:
         config_id = 1
+        log_level = "INFO"
 
-    generate_compose(config_id)
+    generate_compose(config_id,log_level)

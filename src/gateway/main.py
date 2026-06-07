@@ -6,6 +6,7 @@ import signal
 import zlib
 
 from common import message_protocol
+from common.logging.logging_config import configure_logging_from_env
 from common.middleware.middleware_rabbitmq import MessageMiddlewareExchangePublisherRabbitMQ, MessageMiddlewareQueueRabbitMQ
 from message_handler import message_handler
 
@@ -212,7 +213,7 @@ def handle_sigterm(server_socket, client_list, sigterm_received):
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_logging_from_env()
 
     with multiprocessing.Manager() as manager:
         client_list = manager.list()

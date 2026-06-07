@@ -8,13 +8,9 @@ import threading
 from time import sleep
 
 from common import middleware, message_protocol
+from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as DateFilterMessageHandler
 
-logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s.%(msecs)03d - %(message)s',
-            datefmt='%H:%M:%S'
-        )
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
@@ -327,7 +323,7 @@ class DateFilter:
 
 
 def main():
-    logging.basicConfig(level=logging.info)
+    configure_logging_from_env()
     date_filter = DateFilter()
 
     def _handle_sigterm(signum, frame):

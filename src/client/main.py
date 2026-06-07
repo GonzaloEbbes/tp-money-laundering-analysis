@@ -7,8 +7,10 @@ import signal
 import queue
 import threading
 import uuid
+from datetime import datetime
 from pathlib import Path
 from common import message_protocol
+from common.logging.logging_config import configure_logging_from_env
 
 
 
@@ -79,8 +81,11 @@ class ResultWriter:
         self.files[msg_type].flush()
 
     def write_summary(self, result_counts_by_type, eof_count, result_count):
+        now = datetime.now()
+        timestamp = f"{now.hour:02d}:{now.minute:02d}:{now.second:02d}.{now.microsecond // 1000:03d}"
         summary = {
             "run_id": self.run_id,
+            "timestamp": timestamp,
             "eof_count": eof_count,
             "result_count": result_count,
             "result_counts_by_type": result_counts_by_type,
@@ -338,7 +343,7 @@ class Client:
         logging.info("Results written to %s", self.result_writer.output_dir)
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_logging_from_env()
     client = Client()
     try:
         client.connect(SERVER_HOST, SERVER_PORT)

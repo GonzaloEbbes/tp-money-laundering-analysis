@@ -4,13 +4,8 @@ import signal
 import threading
 
 from common import middleware, message_protocol
+from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as AmountFilterQ3MessageHandler
-
-logging.basicConfig(
-            level=logging.DEBUG,
-            format='%(asctime)s.%(msecs)03d - %(message)s',
-            datefmt='%H:%M:%S'
-        )
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
@@ -127,7 +122,6 @@ class AmountFilterQ3:
         ack()
 
     def _process_average_message(self, average_data, client_id):
-        print("Processing data information: ", average_data)
         average_per_pay_format = average_data.get("averages", {})
         for payment_format, data in average_per_pay_format.items():
             with self.averages_by_client_lock:
@@ -187,11 +181,8 @@ class AmountFilterQ3:
         
     def _filter_data_with_averages(self, client_id, data_id, transaction_data):
         amount_received = float(transaction_data.get("amount_received", 0))
-        print("Filtering transaction with amount: ", amount_received)
         with self.averages_by_client_lock:
-            print("Averages by client: ", self.averages_by_client)
             average_centesimal_to_compare = self.averages_by_client.get(client_id, {}).get(transaction_data.get("payment_format"), 0)
-            print("average_to_compare", average_centesimal_to_compare, "for payment format: ", transaction_data.get("payment_format"))
         if amount_received > 0 and amount_received < average_centesimal_to_compare :
             with self.producer_lock:
                 self.gateway_final_query_queue.send(AmountFilterQ3MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data))
@@ -409,7 +400,7 @@ class AmountFilterQ3:
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    configure_logging_from_env()
     amount_filter_q3 = AmountFilterQ3()
 
     def _handle_sigterm(signum, frame):
