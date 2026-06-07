@@ -45,7 +45,7 @@ configurations = {
 }
 
 # pone aquellas lineas que son iguales siempre
-def set_common_config():
+def set_rabbitmq():
     return [
         "services:",
         "  rabbitmq:",
@@ -55,6 +55,13 @@ def set_common_config():
         "    container_name: rabbitmq",
         "    environment:",
         "      - RABBITMQ_LOG_LEVELS=error",
+        "      - RABBITMQ_MAX_UNACKED_MESSAGES=1",
+        "      - RABBITMQ_HEARTBEAT=0",
+        "      - RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS=300",
+        "      - RABBITMQ_BATCH_MAX_MESSAGES=100000",
+        "      - RABBITMQ_BATCH_MAX_SECONDS=2",
+        "      - RABBITMQ_BATCH_HEADER=x-middleware-batch",
+        "      - RABBITMQ_BATCH_HEADER_VALUE=v1",
         "    healthcheck:",
         "      interval: 5s",
         "      retries: 10",
@@ -579,7 +586,7 @@ def generate_compose(config_id):
 
     config = configurations[config_id]
     yaml_lines = []
-    yaml_lines += set_common_config()
+    yaml_lines += set_rabbitmq()
     yaml_lines += set_gateway_config(config["bank_filter"])
 
     for i in range(config["date_filter"]):
