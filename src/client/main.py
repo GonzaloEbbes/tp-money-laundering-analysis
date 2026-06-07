@@ -113,6 +113,7 @@ class Client:
         self.ack_queue = queue.Queue()
         self.eof_queue = queue.Queue()
         self._stop_receiver = False
+        self._expecting_server_close = False
         self._receiver_thread = None
         self.result_writer = ResultWriter(RESULTS_DIR)
         self._results_lock = threading.Lock()
@@ -149,12 +150,15 @@ class Client:
                     self.eof_queue.put(eof_count)
                 else:
                     logging.warning(f"Unexpected message type: {msg_type}")
-            except socket.error:
-                if not self.closed:
-                    logging.error("Connection lost in receiver thread")
+            except socket.error as e:
+                if not (self.closed or self._stop_receiver or self._expecting_server_close):
+                    logging.error("Connection lost in receiver thread: %s", e)
                 break
             except Exception as e:
-                logging.error(f"Receiver error: {e}")
+                if self.closed or self._stop_receiver or self._expecting_server_close:
+                    logging.debug("Receiver stopped after expected socket close: %s", e)
+                else:
+                    logging.error("Receiver error: %s", e)
                 break
 
     def _record_result(self, msg_type, data):
@@ -184,14 +188,21 @@ class Client:
 
     def disconnect(self):
         self._stop_receiver = True
-        if self._receiver_thread:
-            self._receiver_thread.join(timeout=2)
+
         if getattr(self, "server_socket", None):
             try:
                 self.server_socket.shutdown(socket.SHUT_RDWR)
             except OSError:
                 pass
-            self.server_socket.close()
+
+        if self._receiver_thread:
+            self._receiver_thread.join(timeout=2)
+
+        if getattr(self, "server_socket", None):
+            try:
+                self.server_socket.close()
+            except OSError:
+                pass
 
     def _send_and_wait_ack(self, msg_type, *args):
         message_protocol.external.send_msg(self.server_socket, msg_type, *args)
@@ -252,7 +263,9 @@ class Client:
 
     def send_close(self):
         logging.info("Sending close message")
+        self._expecting_server_close = True
         self._send_and_wait_ack(message_protocol.external.MsgType.CLOSE)
+        self._stop_receiver = True
 
     def send_transaction_records(self, input_file):
         logging.info("Sending transaction records")
