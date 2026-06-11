@@ -121,15 +121,15 @@ MAP_OUTPUT_TYPES = {
 RESULT_DATA_EXTRACTORS = {
     # QUERY_1_RESULT espera (account_origin, account_destination, amount_received)
     message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q1_TO_GATEWAY: 
-        lambda data: (data.get("account_origin"), data.get("account_destination"), data.get("amount_received")),
+        lambda data: (data.get("account_origin"), data.get("account_destination"), float(data.get("amount_received", 0))),
     
     # QUERY_2_RESULT espera (bank_name, account_origin, amount_received)
     message_protocol.internal.InternalMessageType.DATE_PER_BANK_REDUCER_TO_GATEWAY:
-        lambda data: (data.get("bank_name"), data.get("account_origin"), data.get("amount_received")),
+        lambda data: (data.get("bank_name"), data.get("account_origin"), float(data.get("amount_received", 0))),
     
     # QUERY_3_RESULT espera (account_origin, amount_received)
     message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q3_TO_GATEWAY:
-        lambda data: (data.get("account_origin"), data.get("amount_received")),
+        lambda data: (data.get("account_origin"), float(data.get("amount_received", 0))),
     
     # QUERY_4_RESULT espera una lista de accounts (strings)
     message_protocol.internal.InternalMessageType.SCATHER_GATHER_JOINER_TO_GATEWAY:
@@ -142,28 +142,33 @@ RESULT_DATA_EXTRACTORS = {
 
 def handle_client_response(client_list):
     input_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, INPUT_QUEUE)
+    should_stop = False
 
     def _consume_result(message, ack, nack):
-        client_index = 0
+        nonlocal should_stop
         response_msg_type = None
         try:
-            for [message_handler_instance, client_socket] in client_list:
+            # Create a snapshot of client_list to avoid race conditions
+            clients_snapshot = list(client_list)
+            
+            if not clients_snapshot:
+                logging.debug("No clients connected, nacking message")
+                nack()
+                return
+
+            for client_index, [message_handler_instance, client_socket] in enumerate(clients_snapshot):
                 deserialized_message = (
                     message_handler_instance.deserialize_result_message(message)
                 )
 
                 if deserialized_message is None:
-                    client_index += 1
                     continue
 
                 msg_type = deserialized_message.type
 
                 if int(msg_type) not in MAP_OUTPUT_TYPES:
                     logging.warning("Received message with unknown type: %s", msg_type)
-                    client_index += 1
                     continue
-
-                
 
                 response_msg_type = MAP_OUTPUT_TYPES[deserialized_message.type]
                 if response_msg_type == message_protocol.external.MsgType.EOF:
@@ -190,19 +195,25 @@ def handle_client_response(client_list):
                         )
                 ack()
                 return
+            
             logging.debug("Received message with no matching client handler: %s", message)
             nack()
-        except socket.error:
-            logging.error("RESPONSE | The connection with the server was lost")
-            client_list.pop(client_index)
+        except socket.error as e:
+            logging.error("RESPONSE | The connection with the server was lost: %s", e)
+            # Don't try to remove from client_list here - the client request handler will cleanup
             ack()
         except Exception as e:
             logging.error("RESPONSE | Error processing message: %s", e)
             nack()
-            input_queue.stop_consuming()
+            # Signal to stop but don't call stop_consuming from within callback
+            should_stop = True
 
-    input_queue.start_consuming(_consume_result)
-    input_queue.close()
+    try:
+        input_queue.start_consuming(_consume_result)
+    except Exception as e:
+        logging.error("Consumer stopped with error: %s", e)
+    finally:
+        input_queue.close()
 
 
 def handle_sigterm(server_socket, client_list, sigterm_received):

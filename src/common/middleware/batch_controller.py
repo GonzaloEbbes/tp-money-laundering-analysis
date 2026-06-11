@@ -137,6 +137,7 @@ class _DestinationBatchPublisher:
 			raise self._publisher_error
 
 	def _run(self):
+		import logging
 		connection = None
 		channel = None
 		buffers_by_destination = defaultdict(list)
@@ -161,11 +162,17 @@ class _DestinationBatchPublisher:
 				try:
 					item = self._input_queue.get(timeout=timeout)
 				except queue.Empty:
-					self._flush_expired_destinations(
-						channel,
-						buffers_by_destination,
-						first_message_time_by_destination,
-					)
+					try:
+						self._flush_expired_destinations(
+							channel,
+							buffers_by_destination,
+							first_message_time_by_destination,
+						)
+					except Exception as e:
+						logging.error(f"Error flushing expired destinations: {e}")
+						self._publisher_error = e
+						self._ready_event.set()
+						raise
 					continue
 
 				if item is None:
@@ -181,27 +188,46 @@ class _DestinationBatchPublisher:
 				)
 
 				if len(buffers_by_destination[destination]) >= RABBITMQ_SETTINGS.batch_max_messages:
-					self._flush_destination(
+					try:
+						self._flush_destination(
+							channel,
+							destination,
+							buffers_by_destination,
+							first_message_time_by_destination,
+						)
+					except Exception as e:
+						logging.error(f"Error flushing destination {destination}: {e}")
+						self._publisher_error = e
+						self._ready_event.set()
+						raise
+
+				try:
+					self._flush_expired_destinations(
 						channel,
-						destination,
 						buffers_by_destination,
 						first_message_time_by_destination,
 					)
+				except Exception as e:
+					logging.error(f"Error flushing expired destinations: {e}")
+					self._publisher_error = e
+					self._ready_event.set()
+					raise
 
-				self._flush_expired_destinations(
+			try:
+				self._flush_all_destinations(
 					channel,
 					buffers_by_destination,
 					first_message_time_by_destination,
 				)
-
-			self._flush_all_destinations(
-				channel,
-				buffers_by_destination,
-				first_message_time_by_destination,
-			)
+			except Exception as e:
+				logging.error(f"Error flushing all destinations: {e}")
+				self._publisher_error = e
+				self._ready_event.set()
+				raise
 
 		except Exception as e:
-			self._publisher_error = e
+			if self._publisher_error is None:
+				self._publisher_error = e
 			self._ready_event.set()
 
 		finally:
@@ -264,7 +290,10 @@ class _DestinationBatchPublisher:
 			return
 
 		body = _encode_batch(messages)
-		properties = pika.BasicProperties(headers={RABBITMQ_SETTINGS.batch_header: RABBITMQ_SETTINGS.batch_header_value})
+		properties = pika.BasicProperties(
+			headers={RABBITMQ_SETTINGS.batch_header: RABBITMQ_SETTINGS.batch_header_value},
+			delivery_mode=2  # Make messages persistent
+		)
 		channel.basic_publish(
 			exchange=self._exchange_name,
 			routing_key=destination,

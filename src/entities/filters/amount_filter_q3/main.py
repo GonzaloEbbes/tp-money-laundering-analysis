@@ -6,6 +6,7 @@ import threading
 from common import middleware, message_protocol
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as AmountFilterQ3MessageHandler
+from csv_file_manager import CSVFileManager
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
@@ -39,8 +40,8 @@ class AmountFilterQ3:
         self.amount_filter_eof_exchange_consumer = None
         self.amount_filter_eof_exchange_producer = None
 
-        self.pending_filters_lock = threading.Lock()
-        self.pending_filters_by_client : dict[str, any] = {}
+        # CSV File Manager for persisting pending transactions
+        self.csv_file_manager = CSVFileManager()
         self.producer_lock = threading.Lock()
 
         self._eof_producer_lock = threading.Lock()
@@ -133,10 +134,10 @@ class AmountFilterQ3:
         with self.all_averages_received_for_client_lock: #actualizo que ya tengo todas las medias para el cliente, 
             self.all_averages_received_for_client[client_id] = True
         
-        # proceso los pendientes que pueda tener para ese cliente, si es que ya tengo todas las medias.
-        with self.pending_filters_lock:
-            for pending_transaction, data_id in self.pending_filters_by_client.pop(client_id, []):
-                self._filter_data_with_averages(client_id, data_id, pending_transaction)
+        # Procesar los pendientes que tenga guardados en el CSV para ese cliente
+        pending_transactions = self.csv_file_manager.read_all_transactions(client_id)
+        for pending_transaction, data_id in pending_transactions:
+            self._filter_data_with_averages(client_id, data_id, pending_transaction)
         
         with self._eof_counter_lock: #actualizo eofs
             self._eof_counter_by_client[client_id] = self._eof_counter_by_client.get(client_id, 0) + 1
@@ -173,9 +174,8 @@ class AmountFilterQ3:
         logging.debug(f"Received USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3 for client {client_id}")
         with self.all_averages_received_for_client_lock:
             if not self.all_averages_received_for_client.get(client_id, False):
-                logging.debug(f"Aún no se han recibido todas las medias para el cliente {client_id}. Agregando transacción a pendientes.")
-                with self.pending_filters_lock:
-                    self.pending_filters_by_client.setdefault(client_id, []).append((transaction_data, data_id))
+                logging.debug(f"Aún no se han recibido todas las medias para el cliente {client_id}. Guardando transacción en CSV pendiente.")
+                self.csv_file_manager.append_transaction(client_id, transaction_data, data_id)
             else:
                 self._filter_data_with_averages(client_id, data_id, transaction_data)
         
@@ -206,8 +206,9 @@ class AmountFilterQ3:
         with self.all_averages_received_for_client_lock:
             averages_received = client_id in self.all_averages_received_for_client
 
-        with self.pending_filters_lock:
-            is_pending_data_to_send = len(self.pending_filters_by_client.get(client_id, [])) > 0
+        # Check if there are pending transactions in the CSV file
+        pending_transactions = self.csv_file_manager.read_all_transactions(client_id)
+        is_pending_data_to_send = len(pending_transactions) > 0
 
         if averages_received and not is_pending_data_to_send:
             self._finalize_client(client_id)
@@ -233,6 +234,9 @@ class AmountFilterQ3:
                 return
             logging.debug(f"Finalizando cliente {client_id}")
             self._finalized_clients.add(client_id)
+
+        # Clean up CSV file after client is finalized
+        self.csv_file_manager.delete_csv_file(client_id)
 
         if self._is_leader():
             self._leader_count_eof_for_client(client_id)
