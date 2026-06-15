@@ -7,13 +7,8 @@ import threading
 from time import sleep
 
 from common import middleware, message_protocol
+from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as USDFilterMessageHandler
-
-logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s.%(msecs)03d - %(message)s',
-            datefmt='%H:%M:%S'
-        )
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
@@ -298,7 +293,7 @@ class USDFilterQ3:
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_logging_from_env()
     usd_filter_q3 = USDFilterQ3()
 
     def _handle_sigterm(signum, frame):

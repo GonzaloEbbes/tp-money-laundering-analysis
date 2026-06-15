@@ -5,13 +5,8 @@ import signal
 import threading
 
 from common import middleware, message_protocol
+from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as ScatherGatherMessageHandler
-
-logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s.%(msecs)03d - %(message)s',
-            datefmt='%H:%M:%S'
-        )
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
@@ -120,7 +115,7 @@ class ScatherGatherPairJoiner:
                     joiner_index = self._worker_to_send_data_to_joiners(origen, destino)
                     with self.scather_gather_joiner_producer_lock:
                         self.scather_gather_joiner_exchanges[joiner_index].send(msg)
-                    logging.info(f"Sent message for client {client_id} with origin {origen}, destination {destino} and middle account {middle_account} to joiner worker {joiner_index}")
+                    logging.debug(f"Sent message for client {client_id} with origin {origen}, destination {destino} and middle account {middle_account} to joiner worker {joiner_index}")
 
         logging.info(f"Sent all data for client {client_id} to scather gather joiners")
         
@@ -221,7 +216,7 @@ class ScatherGatherPairJoiner:
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_logging_from_env()
     scather_gather_pair_joiner = ScatherGatherPairJoiner()
 
     def _handle_sigterm(signum, frame):

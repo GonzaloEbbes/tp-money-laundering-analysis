@@ -7,8 +7,10 @@ import signal
 import queue
 import threading
 import uuid
+from datetime import datetime
 from pathlib import Path
 from common import message_protocol
+from common.logging.logging_config import configure_logging_from_env
 
 
 
@@ -79,8 +81,11 @@ class ResultWriter:
         self.files[msg_type].flush()
 
     def write_summary(self, result_counts_by_type, eof_count, result_count):
+        now = datetime.now()
+        timestamp = f"{now.hour:02d}:{now.minute:02d}:{now.second:02d}.{now.microsecond // 1000:03d}"
         summary = {
             "run_id": self.run_id,
+            "timestamp": timestamp,
             "eof_count": eof_count,
             "result_count": result_count,
             "result_counts_by_type": result_counts_by_type,
@@ -113,6 +118,7 @@ class Client:
         self.ack_queue = queue.Queue()
         self.eof_queue = queue.Queue()
         self._stop_receiver = False
+        self._expecting_server_close = False
         self._receiver_thread = None
         self.result_writer = ResultWriter(RESULTS_DIR)
         self._results_lock = threading.Lock()
@@ -149,12 +155,15 @@ class Client:
                     self.eof_queue.put(eof_count)
                 else:
                     logging.warning(f"Unexpected message type: {msg_type}")
-            except socket.error:
-                if not self.closed:
-                    logging.error("Connection lost in receiver thread")
+            except socket.error as e:
+                if not (self.closed or self._stop_receiver or self._expecting_server_close):
+                    logging.error("Connection lost in receiver thread: %s", e)
                 break
             except Exception as e:
-                logging.error(f"Receiver error: {e}")
+                if self.closed or self._stop_receiver or self._expecting_server_close:
+                    logging.debug("Receiver stopped after expected socket close: %s", e)
+                else:
+                    logging.error("Receiver error: %s", e)
                 break
 
     def _record_result(self, msg_type, data):
@@ -184,14 +193,21 @@ class Client:
 
     def disconnect(self):
         self._stop_receiver = True
-        if self._receiver_thread:
-            self._receiver_thread.join(timeout=2)
+
         if getattr(self, "server_socket", None):
             try:
                 self.server_socket.shutdown(socket.SHUT_RDWR)
             except OSError:
                 pass
-            self.server_socket.close()
+
+        if self._receiver_thread:
+            self._receiver_thread.join(timeout=2)
+
+        if getattr(self, "server_socket", None):
+            try:
+                self.server_socket.close()
+            except OSError:
+                pass
 
     def _send_and_wait_ack(self, msg_type, *args):
         message_protocol.external.send_msg(self.server_socket, msg_type, *args)
@@ -252,7 +268,9 @@ class Client:
 
     def send_close(self):
         logging.info("Sending close message")
+        self._expecting_server_close = True
         self._send_and_wait_ack(message_protocol.external.MsgType.CLOSE)
+        self._stop_receiver = True
 
     def send_transaction_records(self, input_file):
         logging.info("Sending transaction records")
@@ -325,7 +343,7 @@ class Client:
         logging.info("Results written to %s", self.result_writer.output_dir)
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_logging_from_env()
     client = Client()
     try:
         client.connect(SERVER_HOST, SERVER_PORT)

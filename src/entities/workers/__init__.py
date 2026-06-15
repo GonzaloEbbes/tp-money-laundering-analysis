@@ -1,2 +1,1 @@
 from .currency_converter import CurrencyConverter
-from .dynamic_amount_filter import DynamicAmountFilter

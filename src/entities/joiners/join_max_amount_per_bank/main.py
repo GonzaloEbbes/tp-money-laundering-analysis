@@ -3,6 +3,7 @@ import logging
 import signal
 import threading
 from common import middleware, message_protocol
+from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as JoinMessageHandler
 
@@ -232,7 +233,7 @@ class JoinMaxAmountPerBank:
             
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_logging_from_env()
     w = JoinMaxAmountPerBank()
     signal.signal(signal.SIGTERM, lambda *_: w.stop())
     w.start()

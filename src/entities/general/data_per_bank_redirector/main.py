@@ -4,6 +4,7 @@ import signal
 import threading
 import zlib
 from common import middleware, message_protocol
+from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as DataPerBankRedirectorMessageHandler
 
@@ -197,7 +198,7 @@ class DataPerBankRedirector:
         self.map_exchange.close()
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_logging_from_env()
     w = DataPerBankRedirector()
     def _sigterm(*_):
         logging.info("SIGTERM received")

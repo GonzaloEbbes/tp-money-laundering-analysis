@@ -13,13 +13,8 @@ from common.conversions import (
     conversion_shard,
     to_frankfurter_currency,
 )
+from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as PayFormatFilterMessageHandler
-
-logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s.%(msecs)03d - %(message)s',
-            datefmt='%H:%M:%S'
-        )
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
@@ -371,7 +366,7 @@ class PayFormatFilter:
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_logging_from_env()
     usd_filter_q4 = PayFormatFilter()
 
     def _handle_sigterm(signum, frame):
