@@ -6,7 +6,7 @@ from collections import defaultdict
 from common import message_protocol, middleware
 from common.entity import PipelineEntity
 
-TOTAL_AVERAGE_MAPPERS = int(os.environ.get("TOTAL_AVERAGE_MAPPERS", 1))
+EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", 1))
 AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE = os.environ.get("AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE")
 
 
@@ -28,7 +28,7 @@ class JoinAverage(PipelineEntity):
 
     def process_message(self, message):
         if message.type not in (
-            message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_MAPPER_TO_AVERAGE_PER_PAY_FORMAT_AGGREGATOR,
+            message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_MAPPER_TO_AVERAGE_PER_PAY_FORMAT_JOINER,
             message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE,
         ):
             return None
@@ -38,7 +38,7 @@ class JoinAverage(PipelineEntity):
         if message.type == message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
             logging.info("Received EOF from mapper for client=%s", client_id)
             self.eof_counts[client_id] += 1
-            if self.eof_counts[client_id] < TOTAL_AVERAGE_MAPPERS:
+            if self.eof_counts[client_id] < EXPECTED_INPUT_EOFS:
                 return None
 
             averages = self._build_average_payload(client_id)
@@ -46,7 +46,7 @@ class JoinAverage(PipelineEntity):
                 "averages": averages,
             })
             average_message = message_protocol.internal.serialize(
-                message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_AGGREGATOR_TO_AMOUNT_FILTER_Q3,
+                message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3,
                 client_id,
                 str(uuid.uuid4()),
                 result_payload,

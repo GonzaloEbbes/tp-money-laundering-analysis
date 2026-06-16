@@ -167,7 +167,7 @@ class MapAverage(PipelineEntity):
             })
             self.output_queue.send(
                 message_protocol.internal.serialize(
-                    message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_MAPPER_TO_AVERAGE_PER_PAY_FORMAT_AGGREGATOR,
+                    message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_MAPPER_TO_AVERAGE_PER_PAY_FORMAT_JOINER,
                     client_id,
                     str(uuid.uuid4()),
                     partial_payload,
