@@ -14,8 +14,8 @@ configurations = {
         "scather_gather_pair_joiner": 3,
         "scather_gather_joiner": 3,
         "currency_converter": 4,
-        "average_per_pay_format_mapper": 1,
-        "average_per_pay_format_aggregator": 1,
+        "average_per_pay_format_mapper": 2,
+        "average_per_pay_format_joiner": 1,
         "data_per_bank_redirector": 8,
         "bank_filter": 6,
         "map_max_amount_per_bank": 12,
@@ -35,8 +35,8 @@ configurations = {
         "scather_gather_pair_joiner": 4,
         "scather_gather_joiner": 4,
         "currency_converter": 5,
-        "average_per_pay_format_mapper": 1,
-        "average_per_pay_format_aggregator": 1,
+        "average_per_pay_format_mapper": 4,
+        "average_per_pay_format_joiner": 1,
         "data_per_bank_redirector": 9,
         "bank_filter": 7,
         "map_max_amount_per_bank": 11,
@@ -250,7 +250,7 @@ def set_average_per_pay_format_mapper_config(id,total, log_level):
         f"  average_per_pay_format_mapper_{id}:",
         "    build:",
         "      context: ./src",
-        "      dockerfile: entities/Dockerfile",
+        "      dockerfile: entities/average_per_pay_format/average_per_pay_format_mapper/Dockerfile",
         f"    container_name: average_per_pay_format_mapper_{id}",
         "    depends_on:",
         "      rabbitmq:",
@@ -258,35 +258,38 @@ def set_average_per_pay_format_mapper_config(id,total, log_level):
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
         f"      - LOG_LEVEL={log_level}",
-        "      - PROCESSING_DELAY_SECONDS=0",
-        "      - ENTITY_CLASS=MapAverage",
         "      - MOM_HOST=rabbitmq",
+        f"      - ID={id}",
         "      - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue",
-        "      - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue",
+        "      - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue",
+        f"      - MAPPER_FILTER_PREFIX=average_per_pay_format_mapper",
+        f"      - MAPPER_FILTER_AMOUNT={total}",
+        f"      - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange",
+        f"      - EXPECTED_INPUT_EOFS=1",
         "",
     ]
 
-def set_average_pay_format_aggregator_config(id,total_mappers, log_level):
+def set_average_pay_format_joiner_config(id, log_level):
     return [
-        f"  average_per_pay_format_aggregator_{id}:",
+        f"  average_per_pay_format_joiner_{id}:",
         "    build:",
         "      context: ./src",
-        "      dockerfile: entities/Dockerfile",
-        f"    container_name: average_per_pay_format_aggregator_{id}",
+        "      dockerfile: entities/average_per_pay_format/average_per_pay_format_joiner/Dockerfile",
+        f"    container_name: average_per_pay_format_joiner_{id}",
         "    depends_on:",
         "      rabbitmq:",
         "        condition: service_healthy",
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
         f"      - LOG_LEVEL={log_level}",
-        "      - PROCESSING_DELAY_SECONDS=0",
-        "      - ENTITY_CLASS=JoinAverage",
         "      - MOM_HOST=rabbitmq",
-        "      - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue",
-        "      - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
-        f"      - TOTAL_AVERAGE_MAPPERS={total_mappers}",
-        "      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_aggregator_to_amount_filter_q3_exchange",
-        "",
+        f"      - ID={id}",
+        f"      - JOINER_PREFIX=average_per_pay_format_joiner",
+        f"      - JOINER_AMOUNT=1",
+        f"      - EOF_CONTROL_EXCHANGE=average_per_pay_format_joiner_eof_control_exchange",
+        "      - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue",
+        f"      - EXPECTED_INPUT_EOFS=1",
+        "      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange",
     ]
 
 def set_amount_filter_q3_config(id,total, log_level):
@@ -305,7 +308,7 @@ def set_amount_filter_q3_config(id,total, log_level):
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
         "      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
-        "      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_aggregator_to_amount_filter_q3_exchange",
+        "      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange",
         "      - AMOUNT_FILTER_PREFIX=amount_filter_q3",
         f"      - AMOUNT_FILTER_AMOUNT={total}",
         "      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange",
@@ -621,8 +624,8 @@ def generate_compose(config_id,log_level):
         yaml_lines += set_usd_filter_q4_config(i, config["usd_filter_q4"], log_level)
     for i in range(config["average_per_pay_format_mapper"]):
         yaml_lines += set_average_per_pay_format_mapper_config(i, config["average_per_pay_format_mapper"], log_level)
-    for i in range(config["average_per_pay_format_aggregator"]):
-        yaml_lines += set_average_pay_format_aggregator_config(i, config["average_per_pay_format_mapper"], log_level)
+    for i in range(config["average_per_pay_format_joiner"]):
+        yaml_lines += set_average_pay_format_joiner_config(i, log_level)
     for i in range(config["amount_filter_q3"]):
         yaml_lines += set_amount_filter_q3_config(i, config["amount_filter_q3"], log_level)
     for i in range(config["pay_format_filter"]):

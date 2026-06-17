@@ -7,7 +7,7 @@ from common import message_protocol
 from common.middleware import MessageMiddlewareQueueRabbitMQ
 
 
-class PipelineEntity(ABC):
+class DeprecatedToEliminateEntity(ABC):
     def __init__(self, mom_host, input_queue, output_queue=None):
         self.input_queue_name = input_queue
         self.output_queue_name = output_queue

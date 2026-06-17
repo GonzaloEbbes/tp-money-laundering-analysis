@@ -1,1 +1,0 @@
-from .map_average import MapAverage

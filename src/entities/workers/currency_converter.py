@@ -3,7 +3,7 @@ import os
 from decimal import Decimal, InvalidOperation
 
 from common import message_protocol
-from common.entity import PipelineEntity
+from common.entity import DeprecatedToEliminateEntity
 from common.middleware import MessageMiddlewareExchangeRabbitMQ
 from common.conversions import (
     ConversionRateProviderError,
@@ -18,7 +18,7 @@ from common.conversions import (
 LOGGER = logging.getLogger(__name__)
 
 
-class CurrencyConverter(PipelineEntity):
+class CurrencyConverter(DeprecatedToEliminateEntity):
     def __init__(self, mom_host, input_queue, output_queue=None):
         super().__init__(mom_host, input_queue, output_queue)
         input_exchange = os.environ.get("CONVERSION_INPUT_EXCHANGE")
