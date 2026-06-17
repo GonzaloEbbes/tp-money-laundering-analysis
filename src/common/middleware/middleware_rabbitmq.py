@@ -69,9 +69,9 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 			self._consuming = True
 			self._channel.start_consuming()
 		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
-			raise MessageMiddlewareDisconnectedError("Connection Error during start_consuming") from e
+			raise MessageMiddlewareDisconnectedError("Connection Error during start_consuming: {0}".format(str(e))) from e
 		except Exception as e:
-			raise MessageMiddlewareMessageError("Internal Error during start_consuming") from e
+			raise MessageMiddlewareMessageError("Internal Error during start_consuming: {0}".format(str(e))) from e
 		finally:
 			self._on_message_callback = None
 			self._consuming = False
@@ -104,7 +104,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 			try:
 				self._channel.stop_consuming(consumer_tag=self._consumer_tag)
 			except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
-				raise MessageMiddlewareDisconnectedError("Connection Error during stop_consuming") from e
+				raise MessageMiddlewareDisconnectedError("Connection Error during stop_consuming: {0}".format(str(e))) from e
 			finally:
 				self._consuming = False
 				self._consumer_tag = None
@@ -213,9 +213,9 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			self._consuming = True
 			self._channel.start_consuming()
 		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
-			raise MessageMiddlewareDisconnectedError("Connection Error during start_consuming") from e
+			raise MessageMiddlewareDisconnectedError("Connection Error during start_consuming: {0}".format(str(e))) from e
 		except Exception as e:
-			raise MessageMiddlewareMessageError("Internal Error during start_consuming") from e
+			raise MessageMiddlewareMessageError("Internal Error during start_consuming: {0}".format(str(e))) from e
 		finally:
 			self._on_message_callback = None
 			self._consuming = False
@@ -258,7 +258,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			try:
 				self._channel.stop_consuming(consumer_tag=self._consumer_tag)
 			except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
-				raise MessageMiddlewareDisconnectedError("Connection Error during stop_consuming") from e
+				raise MessageMiddlewareDisconnectedError("Connection Error during stop_consuming: {0}".format(str(e))) from e
 			finally:
 				self._consuming = False
 				self._consumer_tag = None
@@ -272,9 +272,9 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			for routing_key in self._routing_keys:
 				self._batched_publisher.enqueue(routing_key, message)
 		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
-			raise MessageMiddlewareDisconnectedError("Connection Error during send") from e
+			raise MessageMiddlewareDisconnectedError("Connection Error during send: {0}".format(str(e))) from e
 		except Exception as e:
-			raise MessageMiddlewareMessageError("Internal Error during send") from e
+			raise MessageMiddlewareMessageError("Internal Error during send: {0}".format(str(e))) from e
 
 	# Cierra canal y conexion, intentando cerrar ambos recursos aunque uno falle.
 	# Luego limpia el estado interno del middleware.
@@ -349,15 +349,15 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 
 		except Exception as e:
 			self.close()
-			raise MessageMiddlewareMessageError("Internal Error during initialization") from e
+			raise MessageMiddlewareMessageError("Internal Error during initialization: {0}".format(str(e))) from e
 
 	def send(self, message, routing_key):
 		try:
 			self._batched_publisher.enqueue(routing_key, message)
 		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
-			raise MessageMiddlewareDisconnectedError("Connection Error during send") from e
+			raise MessageMiddlewareDisconnectedError("Connection Error during send: {0}".format(str(e))) from e
 		except Exception as e:
-			raise MessageMiddlewareMessageError("Internal Error during send") from e
+			raise MessageMiddlewareMessageError("Internal Error during send: {0}".format(str(e))) from e
 
 	def close(self):
 		errors = []

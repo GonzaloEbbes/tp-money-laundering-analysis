@@ -274,7 +274,7 @@ def set_average_pay_format_joiner_config(id, log_level):
         f"  average_per_pay_format_joiner_{id}:",
         "    build:",
         "      context: ./src",
-        "      dockerfile: entities/Dockerfile",
+        "      dockerfile: entities/average_per_pay_format/average_per_pay_format_joiner/Dockerfile",
         f"    container_name: average_per_pay_format_joiner_{id}",
         "    depends_on:",
         "      rabbitmq:",
@@ -282,14 +282,14 @@ def set_average_pay_format_joiner_config(id, log_level):
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
         f"      - LOG_LEVEL={log_level}",
-        "      - PROCESSING_DELAY_SECONDS=0",
-        "      - ENTITY_CLASS=JoinAverage",
         "      - MOM_HOST=rabbitmq",
+        f"      - ID={id}",
+        f"      - JOINER_PREFIX=average_per_pay_format_joiner",
+        f"      - JOINER_AMOUNT=1",
+        f"      - EOF_CONTROL_EXCHANGE=average_per_pay_format_joiner_eof_control_exchange",
         "      - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue",
-        "      - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
         f"      - EXPECTED_INPUT_EOFS=1",
         "      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange",
-        "",
     ]
 
 def set_amount_filter_q3_config(id,total, log_level):

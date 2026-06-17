@@ -9,67 +9,65 @@ import uuid
 
 from common import middleware, message_protocol
 from common.logging.logging_config import configure_logging_from_env
-from message_handler import MessageHandler as AmountFilterQ1MessageHandler
+from message_handler import MessageHandler as AveragePerPayFormatJoinerMessageHandler
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
-PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE = os.environ["INPUT_QUEUE"] #Es la propia, que conecta con ambos dos filtros
-AMOUNT_FILTER_PREFIX = os.environ["AMOUNT_FILTER_PREFIX"]
-AMOUNT_FILTER_AMOUNT = int(os.environ["AMOUNT_FILTER_AMOUNT"])
+INPUT_QUEUE = os.environ["INPUT_QUEUE"] #Es la que conecta con los mappers
+JOINER_PREFIX = os.environ["JOINER_PREFIX"]
+JOINER_AMOUNT = int(os.environ["JOINER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
-EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", "2"))
+EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", 1))
+OUTPUT_EXCHANGE = os.environ.get("AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE")
 
-OUTPUT_QUEUE = os.environ["GATEWAY_FINAL_QUERY_QUEUE"]
-
-
-class AmountFilterQ1:
+class AveragePerPayFormatJoiner:
 
     def __init__(self):
-        self.pay_format_filter_and_currency_converter_queue = middleware.MessageMiddlewareQueueRabbitMQ(
-            MOM_HOST, PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE
+        self.input_queue = middleware.MessageMiddlewareQueueRabbitMQ(
+            MOM_HOST, INPUT_QUEUE
         )
         logging.info(
-            "AmountFilterQ5 wiring: input_queue=%s output_queue=%s amount_filter_prefix=%s "
-            "amount_filter_amount=%s expected_input_eofs=%s",
-            PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE,
-            OUTPUT_QUEUE,
-            AMOUNT_FILTER_PREFIX,
-            AMOUNT_FILTER_AMOUNT,
+            "AveragePerPayFormatJoiner wiring: input_queue=%s output_queue=%s joiner_prefix=%s "
+            "joiner_amount=%s expected_input_eofs=%s",
+            INPUT_QUEUE,
+            OUTPUT_EXCHANGE,
+            JOINER_PREFIX,
+            JOINER_AMOUNT,
             EXPECTED_INPUT_EOFS,
         )
         
         self.id = int(ID)
 
         # definicion de working queue exchanges de la instancia posterior
-        self.gateway_final_query_queue = middleware.MessageMiddlewareQueueRabbitMQ(
-                MOM_HOST, OUTPUT_QUEUE
-            )
+        self.output_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(
+                MOM_HOST, OUTPUT_EXCHANGE
+            ) 
+        
+        self.averages_by_client = {}
+        self.averages_lock = threading.Lock()
 
         #Exchange de control EOF
-        self.amount_filter_eof_exchange_consumer = None
-        self.amount_filter_eof_exchange_producer = None
-        if AMOUNT_FILTER_AMOUNT > 1:
-            amount_filters = []
-            for i in range(AMOUNT_FILTER_AMOUNT):
+        self._eof_exchange_consumer = None
+        self._eof_exchange_producer = None
+        if JOINER_AMOUNT > 1:
+            joiners = []
+            for i in range(JOINER_AMOUNT):
                 if i != self.id:
-                    amount_filters.append(f"{AMOUNT_FILTER_PREFIX}_{i}")
+                    joiners.append(f"{JOINER_PREFIX}_{i}")
         
-            self.amount_filter_eof_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
+            self._eof_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
                     MOM_HOST,
                     EOF_CONTROL_EXCHANGE,
-                    [f"{AMOUNT_FILTER_PREFIX}_{self.id}"],
+                    [f"{JOINER_PREFIX}_{self.id}"],
                 )
             self._eof_producer_lock = threading.Lock()
-            self.amount_filter_eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
+            self._eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
                     MOM_HOST,
                     EOF_CONTROL_EXCHANGE,
-                    amount_filters,
+                    joiners,
                 )
-            self._eof_count_by_client = {}
-            self._eof_count_lock = threading.Lock()
-            
-        self.cant_trx_lock = threading.Lock()
-        self.cant_trx_by_client = {}
+        self._eof_count_by_client = {}
+        self._eof_count_lock = threading.Lock()
 
         self._sigterm_received = False
         self._runtime_error = False
@@ -87,39 +85,33 @@ class AmountFilterQ1:
         self._stop_lock = threading.Lock()
         self._stopping = False
     
-    def _is_leader(self):
+    def _is_leader(self): #Para cuando sea amount  = 1 se pone SIEMPRE al 0 como líder
         return self.id == 0
     
-    def _run_pay_format_filter_and_currency_converter_consumer(self):
+    def _run_average_per_pay_format_mapper_consumer(self):
         try:
             logging.debug(
-                "AmountFilterQ5 consuming combined Q5 queue=%s",
-                PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE,
+                "AveragePerPayFormatJoiner consuming average per pay format mapper messages=%s",
+                INPUT_QUEUE,
             )
-            self.pay_format_filter_and_currency_converter_queue.start_consuming(self.process_pay_format_and_currency_converter_messages)
+            self.input_queue.start_consuming(self.process_average_per_pay_format_mapper_messagges)
         except Exception as e:
-            self._handle_runtime_failure(e, "Pay format filter and currency converter consumer crashed")
+            self._handle_runtime_failure(e, "Average per pay format mapper consumer crashed")
 
     
     def _run_control_consumer(self):
         try:
-            self.amount_filter_eof_exchange_consumer.start_consuming(self.process_eof_control_message)
+            self._eof_exchange_consumer.start_consuming(self.process_eof_control_messages)
         except Exception as e:
             self._handle_runtime_failure(e, "Control consumer crashed")
     
-    def process_pay_format_and_currency_converter_messages(self, message, ack, nack):
+    def process_average_per_pay_format_mapper_messagges(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
         match message.type:
-            case message_protocol.internal.InternalMessageType.USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5:
+            case message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_MAPPER_TO_AVERAGE_PER_PAY_FORMAT_JOINER:
                 self._add_inflight_message(message.source_client_uuid)
                 client_id = message.source_client_uuid
-                self._process_usd_currency_converter_message(message.data, client_id, message.data_id)
-                self._decrease_inflight_message(message.source_client_uuid)
-                self._check_and_finalize_client_if_pending(client_id)
-            case message_protocol.internal.InternalMessageType.PAY_FORMAT_FILTER_TO_AMOUNT_FILTER_Q5:
-                self._add_inflight_message(message.source_client_uuid)
-                client_id = message.source_client_uuid
-                self._process_pay_format_message(message.data, client_id, message.data_id)
+                self._process_average_per_pay_format_mapper_message(message.data, client_id, message.data_id)
                 self._decrease_inflight_message(message.source_client_uuid)
                 self._check_and_finalize_client_if_pending(client_id)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
@@ -128,43 +120,56 @@ class AmountFilterQ1:
         ack()
         
 
-    def _process_pay_format_message(self, transaction_data, client_id, data_id):
-        amount_paid = float(transaction_data.get("amount_paid"))
+    def _process_average_per_pay_format_mapper_message(self, transaction_data, client_id, data_id): 
+        logging.debug("Received averages from mapper for client=%s", client_id)
 
-        if amount_paid > 0 and amount_paid < 1:
-            with self.cant_trx_lock:
-                self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
-        
+        payment_format = transaction_data.get("PaymentFormat")
+        if not payment_format:
+            return None
 
-    def _process_usd_currency_converter_message(self, transaction_data, client_id, data_id): 
-        amount_paid = float(transaction_data.get("amount_paid"))
 
-        if amount_paid > 0 and amount_paid < 1:
-            with self.cant_trx_lock:
-                self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
+        sum_total = float(transaction_data.get("sum_total", 0))
+        count = int(transaction_data.get("count", 0))
+
+        with self.averages_lock:
+            client_averages = self.averages_by_client.setdefault(client_id, {})
+            values = client_averages.setdefault(payment_format, {
+                "sum_total": 0.0,
+                "count": 0,
+            })
+            values["sum_total"] += sum_total
+            values["count"] += count
+    
+    def _build_average_payload(self, client_id):
+        result = {}
+        with self.averages_lock:
+            client_averages = self.averages_by_client.get(client_id, {})
+        for payment_format, values in client_averages.items():
+            count = values["count"]
+            if count <= 0:
+                continue
+            sum_total = values["sum_total"]
+            result[payment_format] = {
+                "sum_total": sum_total,
+                "count": count,
+                "average": sum_total / count,
+            }
+        return result
 
     def send_final_eof(self, client_id):
         data_id = str(uuid.uuid4()) 
-        with self.cant_trx_lock:
-            cant_trx = self.cant_trx_by_client.get(client_id, 0)
-            self.gateway_final_query_queue.send(
-                AmountFilterQ1MessageHandler.serialize_gateway_query_message(
-                    client_id,
-                    data_id,
-                    {"cantTrx": cant_trx},
-                )
-            )
-        logging.info("Q5 final result for client %s: cantTrx=%s", client_id, cant_trx)
-        self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_eof_message(client_id))
-        logging.info(f"Sent final EOF for client {client_id} to gateway final query queue")
+        averages = self._build_average_payload(client_id)
+        self.output_exchange.send(AveragePerPayFormatJoinerMessageHandler.serialize_amount_filter_q3_exchange_message(averages, client_id, data_id), OUTPUT_EXCHANGE)
+        self.output_exchange.send(AveragePerPayFormatJoinerMessageHandler.serialize_eof_message(client_id), OUTPUT_EXCHANGE)
+        logging.info(f"Sent final EOF for client {client_id} to average per pay format joiner")
     
     def _process_input_queue_eof(self, client_id):
         logging.info(f"Received EOF for client {client_id}")
         self._register_eof_for_client(client_id)
-        if AMOUNT_FILTER_AMOUNT > 1:
+        if JOINER_AMOUNT > 1:
             with self._eof_producer_lock:
-                self.amount_filter_eof_exchange_producer.send(AmountFilterQ1MessageHandler.serialize_eof_message(client_id))
-            logging.info(f"Sent EOF for client {client_id} to other amount filters")
+                self._eof_exchange_producer.send(AveragePerPayFormatJoinerMessageHandler.serialize_eof_message(client_id))
+            logging.info(f"Sent EOF for client {client_id} to other average per pay format joiners")
         self._try_finalize_client(client_id)
     
     def _check_and_finalize_client_if_pending(self, client_id):
@@ -189,6 +194,9 @@ class AmountFilterQ1:
         else:
             self.send_eof_leader_message(client_id)
 
+        with self.averages_lock:
+            self.averages_by_client.pop(client_id, None)
+
         with self._is_pending_to_finalize_client_lock:
             if client_id in self._is_pending_to_finalize_client:
                 self._is_pending_to_finalize_client.remove(client_id)
@@ -210,12 +218,8 @@ class AmountFilterQ1:
         self._finalize_client(client_id)
 
     def send_eof_leader_message(self, client_id):
-        with self.cant_trx_lock:
-            local_count = self.cant_trx_by_client.get(client_id, 0)
-        data = { "cantTrx": local_count }
-        
         with self._eof_producer_lock:
-            self.amount_filter_eof_exchange_producer.send(AmountFilterQ1MessageHandler.serialize_eof_leader_message(client_id,data))
+            self._eof_exchange_producer.send(AveragePerPayFormatJoinerMessageHandler.serialize_eof_leader_message(client_id))
         logging.info(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
 
     def _add_inflight_message(self, client_id):
@@ -227,7 +231,7 @@ class AmountFilterQ1:
             if client_id in self._inflight_messages:
                 self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) - 1
 
-    def process_eof_control_message(self, message, ack, nack):
+    def process_eof_control_messages(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
@@ -242,15 +246,10 @@ class AmountFilterQ1:
     def _leader_count_eof_for_client(self, client_id, partial_data=None):
         should_send_final_eof = False
 
-        if partial_data is not None: #Suma los datos parciales de las otras instancias
-            partial_count = int(partial_data.get("cantTrx", 0))
-            with self.cant_trx_lock:
-                self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + partial_count
-
         with self._leader_eof_lock:
             self.total_eof_leader_received_by_client[client_id] = self.total_eof_leader_received_by_client.get(client_id, 0) + 1
             
-            if self.total_eof_leader_received_by_client[client_id] == AMOUNT_FILTER_AMOUNT:
+            if self.total_eof_leader_received_by_client[client_id] == JOINER_AMOUNT:
                 logging.debug(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
                 should_send_final_eof = True
                 del self.total_eof_leader_received_by_client[client_id]
@@ -281,9 +280,9 @@ class AmountFilterQ1:
                 return
             self._stopping = True
 
-        consumers = [self.pay_format_filter_and_currency_converter_queue]
-        if self.amount_filter_eof_exchange_consumer is not None:
-            consumers.append(self.amount_filter_eof_exchange_consumer)
+        consumers = [self.input_queue]
+        if self._eof_exchange_consumer is not None:
+            consumers.append(self._eof_exchange_consumer)
 
         for consumer in consumers:
             try:
@@ -292,13 +291,13 @@ class AmountFilterQ1:
                 logging.error(f"Error stopping consumer: {e}")
 
     def _close_resources(self):
-        resources = [self.pay_format_filter_and_currency_converter_queue]
-        if self.amount_filter_eof_exchange_consumer is not None:
-            resources.append(self.amount_filter_eof_exchange_consumer)
-        if self.gateway_final_query_queue is not None:
-            resources.append(self.gateway_final_query_queue)
-        if self.amount_filter_eof_exchange_producer is not None:
-            resources.append(self.amount_filter_eof_exchange_producer)
+        resources = [self.input_queue]
+        if self._eof_exchange_consumer is not None:
+            resources.append(self._eof_exchange_consumer)
+        if self.output_exchange is not None:
+            resources.append(self.output_exchange)
+        if self._eof_exchange_producer is not None:
+            resources.append(self._eof_exchange_producer)
 
         for resource in resources:
             try:
@@ -316,19 +315,19 @@ class AmountFilterQ1:
         self.stop()
     
     def start(self):
-        if AMOUNT_FILTER_AMOUNT > 1:
+        if JOINER_AMOUNT > 1:
             control_thread = threading.Thread(
                 target=self._run_control_consumer,
-                name="amount-control-consumer-thread",
+                name="average-per-pay-format-control-consumer-thread",
             )
 
         control_started = False
 
         try:
-            if AMOUNT_FILTER_AMOUNT > 1:
+            if JOINER_AMOUNT > 1:
                 control_thread.start()
                 control_started = True
-            self._run_pay_format_filter_and_currency_converter_consumer()
+            self._run_average_per_pay_format_mapper_consumer()
 
         except Exception as e:
             logging.error(e)
@@ -349,15 +348,15 @@ class AmountFilterQ1:
 
 def main():
     configure_logging_from_env()
-    amount_filter_q1 = AmountFilterQ1()
+    average_per_pay_format_joiner = AveragePerPayFormatJoiner()
 
     def _handle_sigterm(signum, frame):
-        logging.info("SIGTERM received in amount filter q1")
-        amount_filter_q1.notify_sigterm()
+        logging.info("SIGTERM received in average per pay format joiner")
+        average_per_pay_format_joiner.notify_sigterm()
 
     signal.signal(signal.SIGTERM, _handle_sigterm)
-    return amount_filter_q1.start()
+    return average_per_pay_format_joiner.start()
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

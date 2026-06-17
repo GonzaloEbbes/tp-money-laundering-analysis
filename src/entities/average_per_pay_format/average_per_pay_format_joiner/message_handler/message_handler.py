@@ -1,16 +1,23 @@
 import uuid
 
 from common import message_protocol
-from common.message_protocol.internal import CantTrxData 
+from common.message_protocol.internal import TransactionData
+ 
 
 
 class MessageHandler:
 
 
-    def serialize_gateway_query_message(client : str, message_id : str, message : any):
-        parsedMessage = CantTrxData()
-        parsedMessage.cantTrx = message.get("cantTrx")
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q5_TO_GATEWAY, client, message_id, parsedMessage)
+    def serialize_amount_filter_q3_exchange_message(averages, client, message_id):
+        result_payload = TransactionData({
+            "averages": averages,
+        })
+        return message_protocol.internal.serialize(
+            message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3,
+            client,
+            message_id,
+            result_payload,
+        )
 
     def serialize_eof_message(client):
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None, None)

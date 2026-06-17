@@ -993,7 +993,7 @@ services:
   average_per_pay_format_joiner_0:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/average_per_pay_format/average_per_pay_format_joiner/Dockerfile
     container_name: average_per_pay_format_joiner_0
     depends_on:
       rabbitmq:
@@ -1001,14 +1001,14 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=JoinAverage
       - MOM_HOST=rabbitmq
+      - ID=0
+      - JOINER_PREFIX=average_per_pay_format_joiner
+      - JOINER_AMOUNT=1
+      - EOF_CONTROL_EXCHANGE=average_per_pay_format_joiner_eof_control_exchange
       - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue
-      - OUTPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
       - EXPECTED_INPUT_EOFS=1
       - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange
-
   amount_filter_q3_0:
     build:
       context: ./src
