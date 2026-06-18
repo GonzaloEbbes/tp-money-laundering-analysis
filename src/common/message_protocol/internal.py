@@ -32,6 +32,14 @@ class InternalMessageType:
     MAX_AMOUNT_PER_BANK_RESULT = 28
     SCATHER_GATHER_PAIR_JOINER_TO_SCATHER_GATHER_JOINER = 29
     EOF_FINAL_MESSAGE = 30
+    EOF_MESSAGE = 31
+    EOF_CONSENSUS_REQUEST = 32
+    EOF_CONSENSUS_RESPONSE = 33
+    EOF_CONSENSUS_OK = 34
+    EOF_CONSENSUS_FAIL = 35
+    EOF_LEADER_FALLEN = 36
+    EOF_LEADER_ELECTION = 37
+
 
 class ScatherGatherData(dict):
     type : str
@@ -112,6 +120,31 @@ class AccountData(dict):
     account_number : str
     entity_id : str
     entity_name : str
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        try:
+            del self[name]
+        except KeyError:
+            raise AttributeError(name)
+        
+class EOFData(dict):
+    #variables del EOF
+    packets : int
+    origin_worker_prefix : str
+
+    #variables de eleccion de lider #TODO
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
