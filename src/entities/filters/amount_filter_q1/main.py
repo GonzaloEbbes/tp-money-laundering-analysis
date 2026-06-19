@@ -5,6 +5,7 @@ import threading
 from time import sleep
 
 from common import middleware, message_protocol
+from common.dedup import InMemoryDeduplicator
 from message_handler import MessageHandler as AmountFilterQ1MessageHandler
 from common.logging import configure_logging_from_env
 
@@ -27,6 +28,8 @@ class AmountFilterQ1:
         )
         
         self.id = int(ID)
+        self.node_id = f"amount_filter_q1_{self.id}"
+        self.deduplicator = InMemoryDeduplicator()
 
         # definicion de working queue exchanges de la instancia posterior
         self.gateway_final_query_queue = middleware.MessageMiddlewareQueueRabbitMQ(
@@ -92,23 +95,32 @@ class AmountFilterQ1:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1:
-                self._add_inflight_message(message.source_client_uuid)
                 client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
-                self._decrease_inflight_message(message.source_client_uuid)
-                self._check_and_finalize_client_if_pending(client_id)
+
+                def process_transaction():
+                    self._add_inflight_message(message.source_client_uuid)
+                    self._process_transaction(message.data, client_id, message.data_id, message.message_id)
+                    self._decrease_inflight_message(message.source_client_uuid)
+                    self._check_and_finalize_client_if_pending(client_id)
+
+                self.deduplicator.process_once(
+                    self.node_id,
+                    USD_FILTER_Q1Q2_QUEUE,
+                    message,
+                    process_transaction,
+                )
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
                 self._process_usd_filter_q1q2_eof(client_id)
         ack()
         
 
-    def _process_transaction(self, transaction_data, client_id, data_id):
+    def _process_transaction(self, transaction_data, client_id, data_id, message_id=None):
         logging.debug(f"Received USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1 for client {client_id}")
         amount_received = float(transaction_data.get("amount_received"))
 
         if amount_received > 0 and amount_received < 50:
-            self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data))
+            self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data, message_id=message_id))
             logging.debug(f"Transaction for client {client_id} sent to final gateway queue")
         
 
