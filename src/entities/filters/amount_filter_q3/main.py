@@ -4,6 +4,7 @@ import signal
 import threading
 
 from common import middleware, message_protocol
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as AmountFilterQ3MessageHandler
 from csv_file_manager import CSVFileManager
@@ -30,6 +31,7 @@ class AmountFilterQ3:
         )
         
         self.id = int(ID)
+        self.deduplicator = InMemoryDeduplicator()
 
         # definicion de working queue exchanges de la instancia posterior
         self.gateway_final_query_queue = middleware.MessageMiddlewareQueueRabbitMQ(
@@ -117,7 +119,12 @@ class AmountFilterQ3:
             case message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3:
                 logging.info(f"Received AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3 message for client {message.source_client_uuid}")
                 client_id = message.source_client_uuid
+                dedup_key = message_dedup_key(message)
+                if not self.deduplicator.should_process(client_id, dedup_key):
+                    ack()
+                    return
                 self._process_average_message(message.data, client_id)
+                self.deduplicator.mark_processed(client_id, dedup_key)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
                 self._process_eof_average_per_pay_format(client_id)
@@ -160,11 +167,16 @@ class AmountFilterQ3:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3:
-                self._add_inflight_message(message.source_client_uuid)
+                dedup_key = message_dedup_key(message)
                 client_id = message.source_client_uuid
+                if not self.deduplicator.should_process(client_id, dedup_key):
+                    ack()
+                    return
+                self._add_inflight_message(message.source_client_uuid)
                 self._process_transaction(message.data, client_id,message.data_id)
                 self._decrease_inflight_message(message.source_client_uuid)
                 self._check_and_finalize_client_if_pending(client_id)
+                self.deduplicator.mark_processed(client_id, dedup_key)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
                 self._process_usd_filter_q3_eof(client_id)

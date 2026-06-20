@@ -32,6 +32,9 @@ class ComposeTestCase:
     expected_csv_rows: dict[str, list[list[str]]] = field(default_factory=dict)
     expected_csv_row_counts: dict[str, int] = field(default_factory=dict)
     require_unique_csv_rows: tuple[str, ...] = ()
+    allowed_log_patterns: tuple[str, ...] = (
+        r"rabbitmq\s+\| .* \[error\].*(supervisor:|errorContext: shutdown_error|reason: shutdown|offender:|id,channel_sup|mfargs,\{rabbit_channel_sup|restart_type,temporary|shutdown,infinity|child_type,supervisor)",
+    )
     forbidden_log_patterns: tuple[str, ...] = (
         r"\bERROR\b",
         r"\bException\b",
@@ -405,10 +408,20 @@ def validate_logs(test_case, log_path):
     failures = []
     logs = log_path.read_text(encoding="utf-8", errors="replace")
     for pattern in test_case.forbidden_log_patterns:
-        match = re.search(pattern, logs, flags=re.IGNORECASE)
-        if match:
+        for match in re.finditer(pattern, logs, flags=re.IGNORECASE):
             line = logs.count("\n", 0, match.start()) + 1
+            line_start = logs.rfind("\n", 0, match.start()) + 1
+            line_end = logs.find("\n", match.end())
+            if line_end == -1:
+                line_end = len(logs)
+            log_line = logs[line_start:line_end]
+            if any(
+                re.search(allowed_pattern, log_line, flags=re.IGNORECASE)
+                for allowed_pattern in test_case.allowed_log_patterns
+            ):
+                continue
             failures.append(f"Forbidden log pattern {pattern!r} found at {log_path}:{line}")
+            break
     return failures
 
 

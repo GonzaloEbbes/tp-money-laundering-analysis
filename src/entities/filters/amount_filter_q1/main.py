@@ -5,7 +5,7 @@ import threading
 from time import sleep
 
 from common import middleware, message_protocol
-from common.dedup import InMemoryDeduplicator
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from message_handler import MessageHandler as AmountFilterQ1MessageHandler
 from common.logging import configure_logging_from_env
 
@@ -95,14 +95,15 @@ class AmountFilterQ1:
         match message.type:
             case message_protocol.internal.InternalMessageType.USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1:
                 client_id = message.source_client_uuid
+                dedup_key = message_dedup_key(message)
 
-                if self.deduplicator.should_process(client_id, message.message_id):
+                if self.deduplicator.should_process(client_id, dedup_key):
                     self._add_inflight_message(message.source_client_uuid)
                     self._process_transaction(message.data, client_id, message.data_id, message.message_id)
                     self._decrease_inflight_message(message.source_client_uuid)
                     self._check_and_finalize_client_if_pending(client_id)
                     # TODO: Make send-to-next-queue, dedup mark, and RabbitMQ ack/nack atomic.
-                    self.deduplicator.mark_processed(client_id, message.message_id)
+                    self.deduplicator.mark_processed(client_id, dedup_key)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
                 self._process_usd_filter_q1q2_eof(client_id)

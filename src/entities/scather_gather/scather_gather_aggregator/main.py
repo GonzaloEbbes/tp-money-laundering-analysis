@@ -5,6 +5,7 @@ import signal
 import threading
 
 from common import middleware, message_protocol
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as ScatherGatherMessageHandler
 
@@ -25,6 +26,7 @@ class ScatherGatherAggregator:
         )
         
         self.id = int(ID)
+        self.deduplicator = InMemoryDeduplicator()
 
         # definicion de exchanges para enviar a los agregadores
         self.scather_gather_pair_joiner_exchanges = []
@@ -66,7 +68,12 @@ class ScatherGatherAggregator:
         match message.type:
             case message_protocol.internal.InternalMessageType.SCATHER_GATHER_MAPPER_TO_SCATHER_GATHER_AGGREGATOR:
                 client_id = message.source_client_uuid
+                dedup_key = message_dedup_key(message)
+                if not self.deduplicator.should_process(client_id, dedup_key):
+                    ack()
+                    return
                 self._process_transaction(message.data, client_id, message.data_id)
+                self.deduplicator.mark_processed(client_id, dedup_key)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
                 self._process_scather_gather_mapper_eofs(client_id)

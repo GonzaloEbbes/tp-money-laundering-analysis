@@ -3,6 +3,7 @@ import logging
 import signal
 import threading
 from common import middleware, message_protocol
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as JoinMessageHandler
@@ -19,6 +20,7 @@ EOF_CONTROL_EXCHANGE = os.environ.get("EOF_CONTROL_EXCHANGE", "join_control_exch
 class JoinMaxAmountPerBank:
     def __init__(self):
         self.id = ID
+        self.deduplicator = InMemoryDeduplicator()
         self.routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{ID}"
         self.input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
             MOM_HOST,
@@ -110,6 +112,10 @@ class JoinMaxAmountPerBank:
             cid = msg.source_client_uuid
 
             if msg.type == InternalMessageType.BANK_FILTER_TO_JOINER:
+                dedup_key = message_dedup_key(msg)
+                if msg.data is not None and not self.deduplicator.should_process(cid, dedup_key):
+                    ack()
+                    return
                 self._add_inflight(cid)
                 if msg.data is None:
                     logging.info(f"Join {self.id} received EOF from accounts for client {cid}")
@@ -122,14 +128,21 @@ class JoinMaxAmountPerBank:
                         self.bank_cache[bank_id] = bank_name
                 self._dec_inflight(cid)
                 self._try_finalize(cid)
+                if msg.data is not None:
+                    self.deduplicator.mark_processed(cid, dedup_key)
                 ack()
                 return
 
             if msg.type == InternalMessageType.MAX_AMOUNT_PER_BANK_RESULT:
+                dedup_key = message_dedup_key(msg)
+                if not self.deduplicator.should_process(cid, dedup_key):
+                    ack()
+                    return
                 self._add_inflight(cid)
                 self.pending_results.setdefault(cid, []).append(msg)
                 self._dec_inflight(cid)
                 self._try_finalize(cid)
+                self.deduplicator.mark_processed(cid, dedup_key)
                 ack()
                 return
 
@@ -173,9 +186,10 @@ class JoinMaxAmountPerBank:
             if bank_name == "Unknown":
                 logging.warning(f"Join {self.id} could not find bank name for bank_id {from_bank} in cache for client {cid}")
                 continue
+            result_id = f"{self.id}:{from_bank}"
             with self._output_queue_lock:
                 self.output_queue.send(JoinMessageHandler.serialize_result(
-                    cid, msg.data_id, bank_name, origin, amount
+                    cid, result_id, bank_name, origin, amount
                 ))
 
         if cid in self.pending_results:

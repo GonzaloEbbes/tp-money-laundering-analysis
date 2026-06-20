@@ -4,7 +4,7 @@ import signal
 import threading
 import zlib
 from common import middleware, message_protocol
-from common.dedup import InMemoryDeduplicator
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as DataPerBankRedirectorMessageHandler
@@ -140,7 +140,8 @@ class DataPerBankRedirector:
                 ack()
                 return
 
-            if self.deduplicator.should_process(cid, msg.message_id):
+            dedup_key = message_dedup_key(msg)
+            if self.deduplicator.should_process(cid, dedup_key):
                 self._add_inflight(cid)
                 from_bank = msg.data.get("from_bank")
                 if from_bank is not None:
@@ -156,7 +157,7 @@ class DataPerBankRedirector:
                 self._dec_inflight(cid)
                 self._try_finalize(cid)
                 # TODO: Make send-to-next-queue, dedup mark, and RabbitMQ ack/nack atomic.
-                self.deduplicator.mark_processed(cid, msg.message_id)
+                self.deduplicator.mark_processed(cid, dedup_key)
             ack()
         except Exception as e:
             logging.exception(e)

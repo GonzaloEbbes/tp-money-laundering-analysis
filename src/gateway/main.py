@@ -6,6 +6,7 @@ import signal
 import zlib
 
 from common import message_protocol
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.logging.logging_config import configure_logging_from_env
 from common.middleware import MessageMiddlewareExchangePublisherRabbitMQ, MessageMiddlewareQueueRabbitMQ
 from message_handler import message_handler
@@ -142,6 +143,7 @@ RESULT_DATA_EXTRACTORS = {
 
 def handle_client_response(client_list):
     input_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, INPUT_QUEUE)
+    deduplicator = InMemoryDeduplicator()
     should_stop = False
 
     def _consume_result(message, ack, nack):
@@ -170,6 +172,15 @@ def handle_client_response(client_list):
                     logging.warning("Received message with unknown type: %s", msg_type)
                     continue
 
+                if msg_type != message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
+                    dedup_key = message_dedup_key(deserialized_message)
+                    if not deduplicator.should_process(
+                        deserialized_message.source_client_uuid,
+                        dedup_key,
+                    ):
+                        ack()
+                        return
+
                 response_msg_type = MAP_OUTPUT_TYPES[deserialized_message.type]
                 if response_msg_type == message_protocol.external.MsgType.EOF:
                     logging.info("Received EOF message, sending EOF to client")
@@ -193,6 +204,11 @@ def handle_client_response(client_list):
                             response_msg_type,
                             *deserialized_message.data
                         )
+                if msg_type != message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
+                    deduplicator.mark_processed(
+                        deserialized_message.source_client_uuid,
+                        dedup_key,
+                    )
                 ack()
                 return
             

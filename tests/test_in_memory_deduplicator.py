@@ -77,6 +77,15 @@ class InMemoryDeduplicatorTest(unittest.TestCase):
         self.assertFalse(deduplicator.should_process(client_id, 3))
         self.assertTrue(deduplicator.should_process(client_id, 4))
 
+    def test_string_message_id_is_deduplicated(self):
+        deduplicator = InMemoryDeduplicator()
+        client_id = "client-1"
+        message_id = "SCATHER:6b62225f-d307-4065-9125-feb6da1e08a1"
+
+        self.assertTrue(deduplicator.should_process(client_id, message_id))
+        deduplicator.mark_processed(client_id, message_id)
+        self.assertFalse(deduplicator.should_process(client_id, message_id))
+
 
 if __name__ == "__main__":
     unittest.main()
