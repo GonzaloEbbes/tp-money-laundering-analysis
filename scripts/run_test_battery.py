@@ -12,8 +12,15 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 COMPOSE_FILE = ROOT_DIR / "docker-compose.yaml"
+DATA_DIR = ROOT_DIR / "data"
 RESULTS_DIR = ROOT_DIR / "output" / "results"
 LOG_DIR = ROOT_DIR / "output" / "test-runs"
+DEDUP_ALL_QUERIES_RECORD_COUNT = 20_000
+DEDUP_ALL_QUERIES_Q3_RECORD_COUNT = 11
+DEDUP_ALL_QUERIES_Q5_MATCH_COUNT = 7
+DEDUP_ALL_QUERIES_Q4_PATTERN_RECORD_COUNT = 10
+DEDUP_ALL_QUERIES_DATASET = DATA_DIR / "dedup_all_queries_20k_dataset.csv"
+DEDUP_ALL_QUERIES_ACCOUNTS = DATA_DIR / "dedup_all_queries_20k_accounts.csv"
 
 
 @dataclass(frozen=True)
@@ -23,6 +30,8 @@ class ComposeTestCase:
     expected_eofs: int
     expected_counts_by_type: dict[str, int]
     expected_csv_rows: dict[str, list[list[str]]] = field(default_factory=dict)
+    expected_csv_row_counts: dict[str, int] = field(default_factory=dict)
+    require_unique_csv_rows: tuple[str, ...] = ()
     forbidden_log_patterns: tuple[str, ...] = (
         r"\bERROR\b",
         r"\bException\b",
@@ -35,11 +44,22 @@ class ComposeTestCase:
     )
 
 
+@dataclass(frozen=True)
+class TestRunResult:
+    test_name: str
+    failed: bool
+    expected_output_path: Path | None = None
+    log_path: Path | None = None
+    result_dir: Path | None = None
+    failures: list[str] = field(default_factory=list)
+
+
 TEST_CASES = [
     ComposeTestCase(
         name="q5-smoke-toxic-rabbitmq",
         env={
             "MIDDLEWARE_IMPL": "toxic_rabbitmq",
+            "TOXIC_RABBIT_CONFIG_PATH": "/common/middleware/testing/toxic-rabbit-q5-smoke.json",
             "DATA_PATH": "/data/q5_smoke_dataset.csv",
             "DATA_PATH_ACCOUNTS": "/data/q5_smoke_accounts.csv",
             "CONVERSION_PROVIDER": "static",
@@ -63,6 +83,178 @@ TEST_CASES = [
         },
     ),
 ]
+
+
+def ensure_dedup_all_queries_20k_fixture():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    DEDUP_ALL_QUERIES_ACCOUNTS.write_text(
+        "\n".join(
+            [
+                "Bank Name,Bank ID,Account Number,Entity ID,Entity Name",
+                "Bank Alpha,001,SG_SOURCE,entity-1,Entity One",
+                "Bank Beta,002,SG_DEST,entity-2,Entity Two",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    rows = []
+
+    middle_accounts = [f"SG_MID_{index}" for index in range(1, 6)]
+    for middle_account in middle_accounts:
+        rows.append(
+            [
+                "2022/09/01 00:00",
+                "001",
+                "SG_SOURCE",
+                "002",
+                middle_account,
+                "100.00",
+                "US Dollar",
+                "100.00",
+                "US Dollar",
+                "ACH",
+                "0",
+            ]
+        )
+        rows.append(
+            [
+                "2022/09/01 00:01",
+                "001",
+                middle_account,
+                "002",
+                "SG_DEST",
+                "100.00",
+                "US Dollar",
+                "100.00",
+                "US Dollar",
+                "ACH",
+                "0",
+            ]
+        )
+
+    for index in range(1, DEDUP_ALL_QUERIES_Q5_MATCH_COUNT + 1):
+        rows.append(
+            [
+                "2022/09/02 00:00",
+                "001",
+                f"Q5_LOW_{index:02d}O",
+                "002",
+                f"Q5_LOW_{index:02d}D",
+                "100.00",
+                "US Dollar",
+                "0.50",
+                "US Dollar",
+                "ACH" if index % 2 else "Wire",
+                "0",
+            ]
+        )
+
+    for index in range(1, DEDUP_ALL_QUERIES_Q3_RECORD_COUNT + 1):
+        rows.append(
+            [
+                "2022/09/06 00:00",
+                "001",
+                f"Q3_LOW_{index:02d}O",
+                "002",
+                f"Q3_LOW_{index:02d}D",
+                "0.50",
+                "US Dollar",
+                "0.50",
+                "US Dollar",
+                "ACH",
+                "0",
+            ]
+        )
+
+    filler_count = DEDUP_ALL_QUERIES_RECORD_COUNT - len(rows)
+    for index in range(1, filler_count + 1):
+        rows.append(
+            [
+                f"2022/10/{(index % 28) + 1:02d} 00:00",
+                "001",
+                f"DEDUP{index:05d}O",
+                "002",
+                f"DEDUP{index:05d}D",
+                "1.00",
+                "US Dollar",
+                "1.00",
+                "US Dollar",
+                "ACH",
+                "0",
+            ]
+        )
+
+    with DEDUP_ALL_QUERIES_DATASET.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(
+            [
+                "Timestamp",
+                "From Bank",
+                "Account",
+                "To Bank",
+                "Account",
+                "Amount Received",
+                "Receiving Currency",
+                "Amount Paid",
+                "Payment Currency",
+                "Payment Format",
+                "Is Laundering",
+            ]
+        )
+        writer.writerows(rows)
+
+
+TEST_CASES.append(
+    ComposeTestCase(
+        name="all-queries-dedup-20k-toxic-rabbitmq",
+        env={
+            "MIDDLEWARE_IMPL": "toxic_rabbitmq",
+            "TOXIC_RABBIT_CONFIG_PATH": "/common/middleware/testing/toxic-rabbit-all-data-messages.json",
+            "DATA_PATH": "/data/dedup_all_queries_20k_dataset.csv",
+            "DATA_PATH_ACCOUNTS": "/data/dedup_all_queries_20k_accounts.csv",
+            "CONVERSION_PROVIDER": "static",
+            "EXPECTED_RESULT_EOFS": "5",
+            "RESULTS_IDLE_TIMEOUT": "180",
+            "RESULTS_WAIT_LOG_INTERVAL": "30",
+        },
+        expected_eofs=5,
+        expected_counts_by_type={
+            "QUERY_1_RESULT": (
+                DEDUP_ALL_QUERIES_RECORD_COUNT
+                - DEDUP_ALL_QUERIES_Q4_PATTERN_RECORD_COUNT
+                - DEDUP_ALL_QUERIES_Q5_MATCH_COUNT
+            ),
+            "QUERY_2_RESULT": 1,
+            "QUERY_3_RESULT": DEDUP_ALL_QUERIES_Q3_RECORD_COUNT,
+            "QUERY_4_RESULT": 1,
+            "QUERY_5_RESULT": 1,
+        },
+        expected_csv_row_counts={
+            "query_1.csv": (
+                DEDUP_ALL_QUERIES_RECORD_COUNT
+                - DEDUP_ALL_QUERIES_Q4_PATTERN_RECORD_COUNT
+                - DEDUP_ALL_QUERIES_Q5_MATCH_COUNT
+            ),
+            "query_2.csv": 1,
+            "query_3.csv": DEDUP_ALL_QUERIES_Q3_RECORD_COUNT,
+            "query_4.csv": 2,
+        },
+        expected_csv_rows={
+            "query_5.csv": [
+                [str(DEDUP_ALL_QUERIES_Q5_MATCH_COUNT)],
+            ],
+        },
+        require_unique_csv_rows=(
+            "query_1.csv",
+            "query_2.csv",
+            "query_3.csv",
+            "query_4.csv",
+        ),
+    ),
+)
 
 
 def run_command(args, *, env=None, capture=False, check=False):
@@ -119,6 +311,32 @@ def collect_logs(test_name):
     return log_path
 
 
+def expected_output_path(test_name):
+    return LOG_DIR / test_name / "expected_output.json"
+
+
+def write_expected_output(test_case):
+    output_path = expected_output_path(test_case.name)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    expected_output = {
+        "test_name": test_case.name,
+        "summary": {
+            "eof_count": test_case.expected_eofs,
+            "result_counts_by_type": test_case.expected_counts_by_type,
+        },
+        "csv": {
+            "expected_rows": test_case.expected_csv_rows,
+            "expected_row_counts": test_case.expected_csv_row_counts,
+            "require_unique_rows": list(test_case.require_unique_csv_rows),
+        },
+    }
+    output_path.write_text(
+        json.dumps(expected_output, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return output_path
+
+
 def validate_summary(test_case, result_dir):
     failures = []
     summary_path = result_dir / "summary.json"
@@ -155,6 +373,31 @@ def validate_csv_outputs(test_case, result_dir):
                 f"{file_name} mismatch. Expected rows={expected_sorted}, got rows={actual_rows}"
             )
 
+    for file_name, expected_count in test_case.expected_csv_row_counts.items():
+        result_path = result_dir / file_name
+        if not result_path.exists():
+            failures.append(f"Missing result file: {result_path}")
+            continue
+
+        actual_rows = read_csv_body(result_path)
+        if len(actual_rows) != expected_count:
+            failures.append(
+                f"{file_name} row count mismatch. Expected {expected_count}, got {len(actual_rows)}"
+            )
+
+    for file_name in test_case.require_unique_csv_rows:
+        result_path = result_dir / file_name
+        if not result_path.exists():
+            failures.append(f"Missing result file: {result_path}")
+            continue
+
+        actual_rows = read_csv_body(result_path)
+        unique_rows = {tuple(row) for row in actual_rows}
+        if len(unique_rows) != len(actual_rows):
+            failures.append(
+                f"{file_name} contains duplicate rows. rows={len(actual_rows)}, unique_rows={len(unique_rows)}"
+            )
+
     return failures
 
 
@@ -169,9 +412,12 @@ def validate_logs(test_case, log_path):
     return failures
 
 
-def run_test_case(test_case, keep_stack):
+def run_test_case(test_case, keep_stack, expected_output):
     print(f"\n== {test_case.name} ==")
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = None
+    result_dir = None
+    print(f"Expected: {expected_output}")
 
     print("Stopping previous compose stack")
     run_command(
@@ -221,17 +467,32 @@ def run_test_case(test_case, keep_stack):
 
         if failures:
             print("FAIL")
+            print(f"Expected: {expected_output}")
             print(f"Logs: {log_path}")
             if result_dir is not None:
                 print(f"Results: {result_dir}")
             for failure in failures:
                 print(f"  - {failure}")
-            return 1
+            return TestRunResult(
+                test_name=test_case.name,
+                failed=True,
+                expected_output_path=expected_output,
+                log_path=log_path,
+                result_dir=result_dir,
+                failures=failures,
+            )
 
         print("OK")
+        print(f"Expected: {expected_output}")
         print(f"Logs: {log_path}")
         print(f"Results: {result_dir}")
-        return 0
+        return TestRunResult(
+            test_name=test_case.name,
+            failed=False,
+            expected_output_path=expected_output,
+            log_path=log_path,
+            result_dir=result_dir,
+        )
     finally:
         if keep_stack:
             print("Keeping compose stack running")
@@ -268,11 +529,50 @@ def main():
     if args.case:
         selected = [test_case for test_case in TEST_CASES if test_case.name == args.case]
 
-    failures = 0
-    for test_case in selected:
-        failures += run_test_case(test_case, keep_stack=args.keep_stack)
+    if any(test_case.name == "all-queries-dedup-20k-toxic-rabbitmq" for test_case in selected):
+        ensure_dedup_all_queries_20k_fixture()
 
+    results = []
+    for test_case in selected:
+        expected_output = write_expected_output(test_case)
+        try:
+            results.append(
+                run_test_case(
+                    test_case,
+                    keep_stack=args.keep_stack,
+                    expected_output=expected_output,
+                )
+            )
+        except Exception as error:
+            print("FAIL")
+            print(f"  - {error}")
+            results.append(
+                TestRunResult(
+                    test_name=test_case.name,
+                    failed=True,
+                    expected_output_path=expected_output,
+                    failures=[str(error)],
+                )
+            )
+
+    failed_results = [result for result in results if result.failed]
+    failures = len(failed_results)
     print(f"\nRan {len(selected)} test case(s), failures={failures}")
+
+    if failed_results:
+        print("\nFailed test artifacts:")
+        for result in failed_results:
+            print(f"- {result.test_name}")
+            print(
+                "  Expected: "
+                f"{result.expected_output_path if result.expected_output_path is not None else 'not created'}"
+            )
+            print(f"  Logs: {result.log_path if result.log_path is not None else 'not collected'}")
+            print(
+                "  Results: "
+                f"{result.result_dir if result.result_dir is not None else 'not created'}"
+            )
+
     return 1 if failures else 0
 
 

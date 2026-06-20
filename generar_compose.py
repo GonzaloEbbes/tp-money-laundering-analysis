@@ -50,6 +50,7 @@ def with_middleware_impl_env(lines):
         result.append(line)
         if line == "      - PYTHONUNBUFFERED=1":
             result.append("      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}")
+            result.append("      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}")
     return result
 
 # pone aquellas lineas que son iguales siempre

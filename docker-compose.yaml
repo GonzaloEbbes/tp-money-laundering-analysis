@@ -33,6 +33,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - SERVER_HOST=gateway
       - SERVER_PORT=5678
       - LOG_LEVEL=INFO
@@ -56,6 +57,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -78,6 +80,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -100,6 +103,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -122,6 +126,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
@@ -144,6 +149,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
@@ -166,6 +172,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
@@ -188,6 +195,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
@@ -210,6 +218,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
@@ -232,6 +241,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
@@ -254,6 +264,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
@@ -276,6 +287,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
@@ -298,6 +310,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
@@ -320,6 +333,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -341,6 +355,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -362,6 +377,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -383,6 +399,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
@@ -404,6 +421,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
@@ -425,6 +443,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
@@ -446,6 +465,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
@@ -467,6 +487,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
@@ -488,6 +509,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
@@ -509,6 +531,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
@@ -530,6 +553,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
@@ -551,6 +575,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
@@ -572,6 +597,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=12
       - MOM_HOST=rabbitmq
@@ -593,6 +619,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=13
       - MOM_HOST=rabbitmq
@@ -614,6 +641,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=14
       - MOM_HOST=rabbitmq
@@ -635,6 +663,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -655,6 +684,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -675,6 +705,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -695,6 +726,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -715,6 +747,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -735,6 +768,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -755,6 +789,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -776,6 +811,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -797,6 +833,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -818,6 +855,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
@@ -839,6 +877,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
@@ -860,6 +899,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
@@ -881,6 +921,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
@@ -902,6 +943,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
@@ -923,6 +965,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
@@ -944,6 +987,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
@@ -965,6 +1009,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
@@ -986,6 +1031,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
@@ -1007,6 +1053,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=0
@@ -1028,6 +1075,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=1
@@ -1049,6 +1097,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=0
@@ -1069,6 +1118,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -1090,6 +1140,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -1114,6 +1165,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -1138,6 +1190,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -1162,6 +1215,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
@@ -1186,6 +1240,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
@@ -1210,6 +1265,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
@@ -1234,6 +1290,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
@@ -1258,6 +1315,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
@@ -1282,6 +1340,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
@@ -1306,6 +1365,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
@@ -1330,6 +1390,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
@@ -1354,6 +1415,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
@@ -1378,6 +1440,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -1399,6 +1462,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -1420,6 +1484,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -1441,6 +1506,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -1462,6 +1528,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -1483,6 +1550,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -1504,6 +1572,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -1523,6 +1592,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -1542,6 +1612,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -1561,6 +1632,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -1580,6 +1652,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -1599,6 +1672,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -1618,6 +1692,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
@@ -1639,6 +1714,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
@@ -1660,6 +1736,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
@@ -1681,6 +1758,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ENTITY_CLASS=CurrencyConverter
@@ -1712,6 +1790,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ENTITY_CLASS=CurrencyConverter
@@ -1743,6 +1822,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ENTITY_CLASS=CurrencyConverter
@@ -1774,6 +1854,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ENTITY_CLASS=CurrencyConverter
@@ -1805,6 +1886,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
@@ -1827,6 +1909,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
@@ -1849,6 +1932,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
@@ -1871,6 +1955,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=3
@@ -1893,6 +1978,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=4
@@ -1915,6 +2001,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=5
@@ -1937,6 +2024,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=6
@@ -1959,6 +2047,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=7
@@ -1981,6 +2070,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
@@ -2004,6 +2094,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
@@ -2027,6 +2118,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
@@ -2050,6 +2142,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=3
@@ -2073,6 +2166,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=4
@@ -2096,6 +2190,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=5
@@ -2119,6 +2214,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
@@ -2142,6 +2238,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
@@ -2165,6 +2262,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
@@ -2188,6 +2286,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=3
@@ -2211,6 +2310,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=4
@@ -2234,6 +2334,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=5
@@ -2257,6 +2358,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=6
@@ -2280,6 +2382,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=7
@@ -2303,6 +2406,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=8
@@ -2326,6 +2430,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=9
@@ -2349,6 +2454,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=10
@@ -2372,6 +2478,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=11
@@ -2395,6 +2502,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
@@ -2417,6 +2525,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
@@ -2439,6 +2548,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
@@ -2461,6 +2571,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=3
@@ -2595,6 +2706,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
       - SERVER_HOST=gateway
       - SERVER_PORT=5678
