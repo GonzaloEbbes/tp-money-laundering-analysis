@@ -16,60 +16,66 @@ class InMemoryDeduplicatorTest(unittest.TestCase):
 
     def test_processes_first_message_and_discards_duplicate(self):
         deduplicator = InMemoryDeduplicator()
-        calls = []
         message = self._message(3)
 
-        first_processed = deduplicator.process_once(
-            "amount_filter_q1_queue",
-            message,
-            lambda: calls.append("processed"),
+        first_processed = deduplicator.should_process(
+            message.source_client_uuid,
+            message.message_id,
         )
-        second_processed = deduplicator.process_once(
-            "amount_filter_q1_queue",
-            message,
-            lambda: calls.append("processed"),
+        deduplicator.mark_processed(message.source_client_uuid, message.message_id)
+        second_processed = deduplicator.should_process(
+            message.source_client_uuid,
+            message.message_id,
         )
 
         self.assertTrue(first_processed)
         self.assertFalse(second_processed)
-        self.assertEqual(calls, ["processed"])
 
-    def test_same_message_id_with_different_input_queue_is_not_duplicate(self):
+    def test_same_message_id_with_different_client_is_not_duplicate(self):
         deduplicator = InMemoryDeduplicator()
-        calls = []
-        message = self._message(3)
+        first_client_message = self._message(3, client="client-1")
+        second_client_message = self._message(3, client="client-2")
 
-        deduplicator.process_once(
-            "amount_filter_q1_queue",
-            message,
-            lambda: calls.append("first-key"),
+        deduplicator.mark_processed(
+            first_client_message.source_client_uuid,
+            first_client_message.message_id,
         )
-        processed = deduplicator.process_once(
-            "other_input_queue",
-            message,
-            lambda: calls.append("second-key"),
+        processed = deduplicator.should_process(
+            second_client_message.source_client_uuid,
+            second_client_message.message_id,
         )
 
         self.assertTrue(processed)
-        self.assertEqual(calls, ["first-key", "second-key"])
 
     def test_legacy_message_without_message_id_always_processes(self):
         deduplicator = InMemoryDeduplicator()
-        calls = []
         message = self._message(None)
 
-        deduplicator.process_once(
-            "amount_filter_q1_queue",
-            message,
-            lambda: calls.append("processed"),
+        first_processed = deduplicator.should_process(
+            message.source_client_uuid,
+            message.message_id,
         )
-        deduplicator.process_once(
-            "amount_filter_q1_queue",
-            message,
-            lambda: calls.append("processed"),
+        deduplicator.mark_processed(message.source_client_uuid, message.message_id)
+        second_processed = deduplicator.should_process(
+            message.source_client_uuid,
+            message.message_id,
         )
 
-        self.assertEqual(calls, ["processed", "processed"])
+        self.assertTrue(first_processed)
+        self.assertTrue(second_processed)
+
+    def test_mark_processed_collapses_contiguous_ranges(self):
+        deduplicator = InMemoryDeduplicator()
+        client_id = "client-1"
+
+        deduplicator.mark_processed(client_id, 1)
+        deduplicator.mark_processed(client_id, 3)
+        deduplicator.mark_processed(client_id, 2)
+
+        self.assertFalse(deduplicator.should_process(client_id, 1))
+        self.assertFalse(deduplicator.should_process(client_id, 2))
+        self.assertFalse(deduplicator.should_process(client_id, 3))
+        self.assertTrue(deduplicator.should_process(client_id, 4))
 
 
 if __name__ == "__main__":

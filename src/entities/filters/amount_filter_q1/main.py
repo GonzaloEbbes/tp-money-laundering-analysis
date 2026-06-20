@@ -96,17 +96,13 @@ class AmountFilterQ1:
             case message_protocol.internal.InternalMessageType.USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1:
                 client_id = message.source_client_uuid
 
-                def process_transaction():
+                if self.deduplicator.should_process(client_id, message.message_id):
                     self._add_inflight_message(message.source_client_uuid)
                     self._process_transaction(message.data, client_id, message.data_id, message.message_id)
                     self._decrease_inflight_message(message.source_client_uuid)
                     self._check_and_finalize_client_if_pending(client_id)
-
-                self.deduplicator.process_once(
-                    USD_FILTER_Q1Q2_QUEUE,
-                    message,
-                    process_transaction,
-                )
+                    # TODO: Make send-to-next-queue, dedup mark, and RabbitMQ ack/nack atomic.
+                    self.deduplicator.mark_processed(client_id, message.message_id)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
                 self._process_usd_filter_q1q2_eof(client_id)

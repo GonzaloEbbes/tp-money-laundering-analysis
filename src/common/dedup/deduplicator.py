@@ -1,68 +1,39 @@
 import logging
-from dataclasses import dataclass
 from threading import Lock
 
 from .ranges import ProcessedRanges
 
 
-@dataclass(frozen=True)
-class DedupKey:
-    input_queue: str
-    source_client_uuid: str
-    message_type: int
-
-
 class InMemoryDeduplicator:
     def __init__(self):
-        self._processed_by_key = {}
+        self._processed_by_client = {}
         self._lock = Lock()
 
-    def _build_key(self, input_queue, message):
-        return DedupKey(
-            input_queue=str(input_queue),
-            source_client_uuid=str(message.source_client_uuid),
-            message_type=int(message.type),
-        )
-
-    def should_process(self, input_queue, message):
-        if message.message_id is None:
+    def should_process(self, client_id, message_id):
+        if message_id is None:
             return True
 
-        key = self._build_key(input_queue, message)
         with self._lock:
-            ranges = self._processed_by_key.get(key)
+            ranges = self._processed_by_client.get(str(client_id))
             if ranges is None:
                 return True
-            return not ranges.contains(message.message_id)
+            should_process = not ranges.contains(message_id)
+            if not should_process:
+                logging.info(
+                    "Discarding duplicate message. client=%s message_id=%s",
+                    client_id,
+                    message_id,
+                )
+            return should_process
 
-    def mark_processed(self, input_queue, message):
-        if message.message_id is None:
+    def mark_processed(self, client_id, message_id):
+        if message_id is None:
             return
 
-        key = self._build_key(input_queue, message)
         with self._lock:
-            ranges = self._processed_by_key.setdefault(key, ProcessedRanges())
-            ranges.add(message.message_id)
+            ranges = self._processed_by_client.setdefault(str(client_id), ProcessedRanges())
+            ranges.add(message_id)
 
-    def process_once(self, input_queue, message, process):
-        if message.message_id is None:
-            process()
-            return True
-
-        key = self._build_key(input_queue, message)
-        with self._lock:
-            ranges = self._processed_by_key.setdefault(key, ProcessedRanges())
-            if ranges.contains(message.message_id):
-                logging.info(
-                    "Discarding duplicate message. input_queue=%s client=%s "
-                    "type=%s message_id=%s",
-                    input_queue,
-                    message.source_client_uuid,
-                    message.type,
-                    message.message_id,
-                )
-                return False
-
-            process()
-            ranges.add(message.message_id)
-        return True
+    def remove_client(self, client_id):
+        # TODO: Call this after the client's EOF is fully acknowledged by the pipeline.
+        pass

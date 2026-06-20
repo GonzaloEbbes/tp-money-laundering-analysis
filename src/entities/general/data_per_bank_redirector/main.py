@@ -140,7 +140,7 @@ class DataPerBankRedirector:
                 ack()
                 return
 
-            def process_transaction():
+            if self.deduplicator.should_process(cid, msg.message_id):
                 self._add_inflight(cid)
                 from_bank = msg.data.get("from_bank")
                 if from_bank is not None:
@@ -155,12 +155,8 @@ class DataPerBankRedirector:
                         self.map_exchange.send(redirected, routing_key=routing_key)
                 self._dec_inflight(cid)
                 self._try_finalize(cid)
-
-            self.deduplicator.process_once(
-                INPUT_QUEUE,
-                msg,
-                process_transaction,
-            )
+                # TODO: Make send-to-next-queue, dedup mark, and RabbitMQ ack/nack atomic.
+                self.deduplicator.mark_processed(cid, msg.message_id)
             ack()
         except Exception as e:
             logging.exception(e)
