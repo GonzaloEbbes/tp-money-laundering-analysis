@@ -155,7 +155,7 @@ class BankFilter:
                 self.seen_banks.add(bank_id)
                 partition = stable_hash(bank_id) % JOIN_AMOUNT
                 routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{partition}"
-                serialized = BankFilterMessageHandler.serialize_join_message(cid, msg.data_id, bank_id, bank_name)
+                serialized = BankFilterMessageHandler.serialize_join_message(cid, msg.data_id, bank_id, bank_name, message_id=msg.message_id)
                 with self._join_exchange_lock:
                     self.join_exchange.send(serialized, routing_key=routing_key)
             self._dec_inflight(cid)

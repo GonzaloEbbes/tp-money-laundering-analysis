@@ -156,7 +156,7 @@ class AmountFilterQ1:
                 self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
 
     def send_final_eof(self, client_id):
-        data_id = str(uuid.uuid4()) 
+        data_id = f"{ID}:q5-result"
         with self.cant_trx_lock:
             cant_trx = self.cant_trx_by_client.get(client_id, 0)
             self.gateway_final_query_queue.send(
@@ -164,6 +164,7 @@ class AmountFilterQ1:
                     client_id,
                     data_id,
                     {"cantTrx": cant_trx},
+                    message_id=data_id,
                 )
             )
         logging.info("Q5 final result for client %s: cantTrx=%s", client_id, cant_trx)

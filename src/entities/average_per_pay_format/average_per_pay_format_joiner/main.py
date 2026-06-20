@@ -166,7 +166,7 @@ class AveragePerPayFormatJoiner:
     def send_final_eof(self, client_id):
         data_id = str(uuid.uuid4()) 
         averages = self._build_average_payload(client_id)
-        self.output_exchange.send(AveragePerPayFormatJoinerMessageHandler.serialize_amount_filter_q3_exchange_message(averages, client_id, data_id), OUTPUT_EXCHANGE)
+        self.output_exchange.send(AveragePerPayFormatJoinerMessageHandler.serialize_amount_filter_q3_exchange_message(averages, client_id, data_id, message_id=data_id), OUTPUT_EXCHANGE)
         self.output_exchange.send(AveragePerPayFormatJoinerMessageHandler.serialize_eof_message(client_id), OUTPUT_EXCHANGE)
         logging.info(f"Sent final EOF for client {client_id} to average per pay format joiner")
     

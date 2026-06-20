@@ -104,7 +104,7 @@ class USDFilterQ4:
                     ack()
                     return
                 self._add_inflight_message(message.source_client_uuid)
-                self._process_transaction(message.data, client_id, message.data_id)
+                self._process_transaction(message.data, client_id, message.data_id, message.message_id)
                 self._decrease_inflight_message(message.source_client_uuid)
                 self._check_and_finalize_client_if_pending(client_id)
                 self.deduplicator.mark_processed(client_id, dedup_key)
@@ -114,14 +114,14 @@ class USDFilterQ4:
         ack()
         
 
-    def _process_transaction(self, transaction_data, client_id, data_id):
+    def _process_transaction(self, transaction_data, client_id, data_id, message_id=None):
         receiving_currency = transaction_data.get("receiving_currency")
         payment_currency = transaction_data.get("payment_currency")
 
         if receiving_currency == "US Dollar" and payment_currency == "US Dollar":
             with self.producer_lock:
-                self.average_per_pay_format_mapper_queue.send(USDFilterMessageHandler.serialize_average_per_pay_format_mapper_message(client_id, data_id, transaction_data))
-                self.scather_gather_queue.send(USDFilterMessageHandler.serialize_scatter_gather_message(client_id, data_id, transaction_data))
+                self.average_per_pay_format_mapper_queue.send(USDFilterMessageHandler.serialize_average_per_pay_format_mapper_message(client_id, data_id, transaction_data, message_id=message_id))
+                self.scather_gather_queue.send(USDFilterMessageHandler.serialize_scatter_gather_message(client_id, data_id, transaction_data, message_id=message_id))
             logging.debug(f"Transaction for client {client_id} sent to average per pay format mapper and scatter gather mapper")
 
         

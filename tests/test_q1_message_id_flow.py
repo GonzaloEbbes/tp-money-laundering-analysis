@@ -69,7 +69,7 @@ class Q1MessageIdFlowTest(unittest.TestCase):
         self.assertEqual(first_msg.data_id, 1)
         self.assertEqual(second_msg.data_id, 2)
 
-    def test_gateway_does_not_assign_message_id_to_date_path(self):
+    def test_gateway_assigns_incremental_message_id_to_date_path(self):
         handler = gateway_message_handler.MessageHandler()
         raw = handler.serialize_transaction_date(
             (
@@ -88,7 +88,7 @@ class Q1MessageIdFlowTest(unittest.TestCase):
 
         message = internal.deserialize(raw)
 
-        self.assertIsNone(message.message_id)
+        self.assertEqual(message.message_id, 1)
 
     def test_usd_filter_q1_message_preserves_message_id(self):
         raw = usd_q1q2_message_handler.MessageHandler.serialize_amount_filter_q1_message(

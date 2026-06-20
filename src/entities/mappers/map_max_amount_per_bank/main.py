@@ -102,7 +102,7 @@ class MapMaxAmountPerBank:
                     routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{partition}"
                     result_id = f"{self.id}:{from_bank}"
                     result_bytes = MapperMessageHandler.serialize_result(
-                        cid, result_id, from_bank, amount, origin
+                        cid, result_id, from_bank, amount, origin, message_id=result_id
                     )
                     with self._join_exchange_lock:
                         self.join_exchange.send(result_bytes, routing_key=routing_key)

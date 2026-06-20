@@ -32,11 +32,13 @@ class MessageHandler:
             "bank_id": bank_id
         })
         data_id = self._get_next_data_id()
+        message_id = self._get_next_message_id()
         return message_protocol.internal.serialize(
             message_protocol.internal.InternalMessageType.GATEWAY_TO_BANK_FILTER,
             self.client_uuid,
             data_id,
-            account_obj
+            account_obj,
+            message_id=message_id,
         )
     
     def transaction_is_reinvestment(self, msg_data):
@@ -87,11 +89,13 @@ class MessageHandler:
         }
         date_obj = message_protocol.internal.TransactionData(date_data)
         data_id = self._get_next_data_id()
+        message_id = self._get_next_message_id()
         return message_protocol.internal.serialize(
             message_protocol.internal.InternalMessageType.GATEWAY_TO_DATE_FILTER,
             self.client_uuid,
             data_id,
-            date_obj
+            date_obj,
+            message_id=message_id,
         )
 
     def serialize_eof(self):

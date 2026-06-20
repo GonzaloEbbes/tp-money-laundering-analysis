@@ -153,7 +153,7 @@ class AveragePerPayFormatMapper:
             
             with self._eof_producer_lock:
                 self.output_queue.send(
-                    AveragePerPayFormatMapperMessageHandler.serialize_average_per_pay_joiner_message(client_id, data_id, payment_format, values)
+                    AveragePerPayFormatMapperMessageHandler.serialize_average_per_pay_joiner_message(client_id, data_id, payment_format, values, message_id=data_id)
                 )
     def _process_input_queue_eof(self, client_id):
         logging.info(f"Received EOF for client {client_id}")

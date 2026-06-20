@@ -4,7 +4,7 @@ from common.message_protocol.internal import InternalMessageType
 
 class MessageHandler:
     @staticmethod
-    def serialize_result(client_uuid, data_id, bank_name, account_origin, amount_received):
+    def serialize_result(client_uuid, data_id, bank_name, account_origin, amount_received, message_id=None):
         data = {
             "bank_name": bank_name,
             "account_origin": account_origin,
@@ -15,6 +15,7 @@ class MessageHandler:
             client_uuid,
             data_id,
             data,
+            message_id=message_id,
         )
 
     @staticmethod

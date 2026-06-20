@@ -134,6 +134,9 @@ class JoinMaxAmountPerBank:
                 return
 
             if msg.type == InternalMessageType.MAX_AMOUNT_PER_BANK_RESULT:
+                if msg.data is None:
+                    ack()
+                    return
                 dedup_key = message_dedup_key(msg)
                 if not self.deduplicator.should_process(cid, dedup_key):
                     ack()
@@ -189,7 +192,7 @@ class JoinMaxAmountPerBank:
             result_id = f"{self.id}:{from_bank}"
             with self._output_queue_lock:
                 self.output_queue.send(JoinMessageHandler.serialize_result(
-                    cid, result_id, bank_name, origin, amount
+                    cid, result_id, bank_name, origin, amount, message_id=result_id
                 ))
 
         if cid in self.pending_results:

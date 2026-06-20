@@ -144,8 +144,8 @@ class AmountFilterQ3:
         
         # Procesar los pendientes que tenga guardados en el CSV para ese cliente
         pending_transactions = self.csv_file_manager.read_all_transactions(client_id)
-        for pending_transaction, data_id in pending_transactions:
-            self._filter_data_with_averages(client_id, data_id, pending_transaction)
+        for pending_transaction, data_id, message_id in pending_transactions:
+            self._filter_data_with_averages(client_id, data_id, pending_transaction, message_id)
         
         with self._eof_counter_lock: #actualizo eofs
             self._eof_counter_by_client[client_id] = self._eof_counter_by_client.get(client_id, 0) + 1
@@ -173,7 +173,7 @@ class AmountFilterQ3:
                     ack()
                     return
                 self._add_inflight_message(message.source_client_uuid)
-                self._process_transaction(message.data, client_id,message.data_id)
+                self._process_transaction(message.data, client_id, message.data_id, message.message_id)
                 self._decrease_inflight_message(message.source_client_uuid)
                 self._check_and_finalize_client_if_pending(client_id)
                 self.deduplicator.mark_processed(client_id, dedup_key)
@@ -183,22 +183,22 @@ class AmountFilterQ3:
         ack()
         
 
-    def _process_transaction(self, transaction_data, client_id, data_id):
+    def _process_transaction(self, transaction_data, client_id, data_id, message_id=None):
         logging.debug(f"Received USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3 for client {client_id}")
         with self.all_averages_received_for_client_lock:
             if not self.all_averages_received_for_client.get(client_id, False):
                 logging.debug(f"Aún no se han recibido todas las medias para el cliente {client_id}. Guardando transacción en CSV pendiente.")
-                self.csv_file_manager.append_transaction(client_id, transaction_data, data_id)
+                self.csv_file_manager.append_transaction(client_id, transaction_data, data_id, message_id)
             else:
-                self._filter_data_with_averages(client_id, data_id, transaction_data)
+                self._filter_data_with_averages(client_id, data_id, transaction_data, message_id)
         
-    def _filter_data_with_averages(self, client_id, data_id, transaction_data):
+    def _filter_data_with_averages(self, client_id, data_id, transaction_data, message_id=None):
         amount_received = float(transaction_data.get("amount_received", 0))
         with self.averages_by_client_lock:
             average_centesimal_to_compare = self.averages_by_client.get(client_id, {}).get(transaction_data.get("payment_format"), 0)
         if amount_received > 0 and amount_received < average_centesimal_to_compare :
             with self.producer_lock:
-                self.gateway_final_query_queue.send(AmountFilterQ3MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data))
+                self.gateway_final_query_queue.send(AmountFilterQ3MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data, message_id=message_id))
             logging.debug(f"Transaction for client {client_id} sent to final gateway queue")
 
     def send_final_eof(self, client_id):

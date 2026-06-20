@@ -11,7 +11,7 @@ class MessageHandler:
         parsedMessage = ScatherGatherData()
         parsedMessage.type = "FINAL"
         parsedMessage.value = [origen, destino]
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_JOINER_TO_GATEWAY, client, message_id, parsedMessage)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_JOINER_TO_GATEWAY, client, message_id, parsedMessage, message_id=message_id)
 
     def serialize_eof_message(client):
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None, None)
