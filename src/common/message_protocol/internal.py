@@ -37,8 +37,9 @@ class InternalMessageType:
     EOF_CONSENSUS_RESPONSE = 33
     EOF_CONSENSUS_OK = 34
     EOF_CONSENSUS_FAIL = 35
-    EOF_LEADER_FALLEN = 36
-    EOF_LEADER_ELECTION = 37
+    EOF_POST_CONSENSUS_OK = 36
+    EOF_LEADER_FALLEN = 37
+    EOF_LEADER_ELECTION = 38
 
 
 class ScatherGatherData(dict):
@@ -141,8 +142,19 @@ class AccountData(dict):
         
 class EOFData(dict):
     #variables del EOF
-    packets : int
+    total_packets : int
     origin_worker_prefix : str
+    amount_origin_workers : int
+
+    #variables para consenso eof, suponiendo maximo 2 input eofs
+    partial_packets_count_flux_1 : int
+    partial_packets_count_flux_2 : int
+    origin_worker_prefix_flux_1 : str
+    origin_worker_prefix_flux_2 : str
+    worker_id_flux_1 : str
+    worker_id_flux_2 : str
+
+    postconsensus_worker_id : str
 
     #variables de eleccion de lider #TODO
 
