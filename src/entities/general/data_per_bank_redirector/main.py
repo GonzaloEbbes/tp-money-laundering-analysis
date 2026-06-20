@@ -4,6 +4,7 @@ import signal
 import threading
 import zlib
 from common import middleware, message_protocol
+from common.dedup import InMemoryDeduplicator
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as DataPerBankRedirectorMessageHandler
@@ -58,6 +59,7 @@ class DataPerBankRedirector:
         self._sigterm = False
         self._map_exchange_lock = threading.Lock()
         self._eof_producer_lock = threading.Lock()
+        self.deduplicator = InMemoryDeduplicator()
 
     def _add_inflight(self, cid):
         with self._inflight_lock:
@@ -138,20 +140,27 @@ class DataPerBankRedirector:
                 ack()
                 return
 
-            self._add_inflight(cid)
-            from_bank = msg.data.get("from_bank")
-            if from_bank is not None:
-                partition = stable_hash(from_bank) % TOTAL_MAPPERS
-                logging.debug(f"Redirector {self.id} calculated partition {partition} for bank {from_bank}")
-                routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{partition}"
-                account_origin = msg.data.get("account_origin")
-                amount_received = msg.data.get("amount_received")
-                logging.debug(f"Redirector {self.id} redirecting message for client {cid} to mapper partition {partition}")
-                msg = DataPerBankRedirectorMessageHandler.serialize_redirect(cid, msg.data_id, from_bank, account_origin, amount_received)
-                with self._map_exchange_lock:
-                    self.map_exchange.send(msg, routing_key=routing_key)
-            self._dec_inflight(cid)
-            self._try_finalize(cid)
+            def process_transaction():
+                self._add_inflight(cid)
+                from_bank = msg.data.get("from_bank")
+                if from_bank is not None:
+                    partition = stable_hash(from_bank) % TOTAL_MAPPERS
+                    logging.debug(f"Redirector {self.id} calculated partition {partition} for bank {from_bank}")
+                    routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{partition}"
+                    account_origin = msg.data.get("account_origin")
+                    amount_received = msg.data.get("amount_received")
+                    logging.debug(f"Redirector {self.id} redirecting message for client {cid} to mapper partition {partition}")
+                    redirected = DataPerBankRedirectorMessageHandler.serialize_redirect(cid, msg.data_id, from_bank, account_origin, amount_received)
+                    with self._map_exchange_lock:
+                        self.map_exchange.send(redirected, routing_key=routing_key)
+                self._dec_inflight(cid)
+                self._try_finalize(cid)
+
+            self.deduplicator.process_once(
+                INPUT_QUEUE,
+                msg,
+                process_transaction,
+            )
             ack()
         except Exception as e:
             logging.exception(e)

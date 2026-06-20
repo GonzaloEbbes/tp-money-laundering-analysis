@@ -118,7 +118,7 @@ class USDFilterQ1Q2:
         
         if payment_currency == "US Dollar" and receiving_currency == "US Dollar":
             self.amount_filter_q1_queue.send(USDFilterMessageHandler.serialize_amount_filter_q1_message(client_id, data_id, transaction_data, message_id=message_id))
-            self.data_per_bank_shuffler_queue.send(USDFilterMessageHandler.serialize_data_per_bank_shuffler_message(client_id, data_id, transaction_data))
+            self.data_per_bank_shuffler_queue.send(USDFilterMessageHandler.serialize_data_per_bank_shuffler_message(client_id, data_id, transaction_data, message_id=message_id))
             logging.debug(f"Transaction for client {client_id} sent to amount filter and data per bank shuffler")
         
 

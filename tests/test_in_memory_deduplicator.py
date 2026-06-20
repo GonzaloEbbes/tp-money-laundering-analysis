@@ -20,13 +20,11 @@ class InMemoryDeduplicatorTest(unittest.TestCase):
         message = self._message(3)
 
         first_processed = deduplicator.process_once(
-            "amount_filter_q1_0",
             "amount_filter_q1_queue",
             message,
             lambda: calls.append("processed"),
         )
         second_processed = deduplicator.process_once(
-            "amount_filter_q1_0",
             "amount_filter_q1_queue",
             message,
             lambda: calls.append("processed"),
@@ -36,20 +34,18 @@ class InMemoryDeduplicatorTest(unittest.TestCase):
         self.assertFalse(second_processed)
         self.assertEqual(calls, ["processed"])
 
-    def test_same_message_id_with_different_key_is_not_duplicate(self):
+    def test_same_message_id_with_different_input_queue_is_not_duplicate(self):
         deduplicator = InMemoryDeduplicator()
         calls = []
         message = self._message(3)
 
         deduplicator.process_once(
-            "amount_filter_q1_0",
             "amount_filter_q1_queue",
             message,
             lambda: calls.append("first-key"),
         )
         processed = deduplicator.process_once(
-            "amount_filter_q1_1",
-            "amount_filter_q1_queue",
+            "other_input_queue",
             message,
             lambda: calls.append("second-key"),
         )
@@ -63,13 +59,11 @@ class InMemoryDeduplicatorTest(unittest.TestCase):
         message = self._message(None)
 
         deduplicator.process_once(
-            "amount_filter_q1_0",
             "amount_filter_q1_queue",
             message,
             lambda: calls.append("processed"),
         )
         deduplicator.process_once(
-            "amount_filter_q1_0",
             "amount_filter_q1_queue",
             message,
             lambda: calls.append("processed"),

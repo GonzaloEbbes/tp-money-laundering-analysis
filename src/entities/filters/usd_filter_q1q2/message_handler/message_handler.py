@@ -20,12 +20,18 @@ class MessageHandler:
             message_id=message_id,
         )
 
-    def serialize_data_per_bank_shuffler_message(client : str, message_id : str, message : any):
+    def serialize_data_per_bank_shuffler_message(client : str, data_id : str, message : any, message_id=None):
         parsedMessage = TransactionData()
         parsedMessage.account_origin = message["account_origin"]
         parsedMessage.from_bank = message["from_bank"]
         parsedMessage.amount_received = message["amount_received"]
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.USD_FILTER_Q1Q2_TO_DATA_PER_BANK_SHUFFLER, client, message_id, parsedMessage)
+        return message_protocol.internal.serialize(
+            message_protocol.internal.InternalMessageType.USD_FILTER_Q1Q2_TO_DATA_PER_BANK_SHUFFLER,
+            client,
+            data_id,
+            parsedMessage,
+            message_id=message_id,
+        )
 
 
     def serialize_eof_message(client):

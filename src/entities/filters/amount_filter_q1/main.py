@@ -28,7 +28,6 @@ class AmountFilterQ1:
         )
         
         self.id = int(ID)
-        self.node_id = f"amount_filter_q1_{self.id}"
         self.deduplicator = InMemoryDeduplicator()
 
         # definicion de working queue exchanges de la instancia posterior
@@ -104,7 +103,6 @@ class AmountFilterQ1:
                     self._check_and_finalize_client_if_pending(client_id)
 
                 self.deduplicator.process_once(
-                    self.node_id,
                     USD_FILTER_Q1Q2_QUEUE,
                     message,
                     process_transaction,

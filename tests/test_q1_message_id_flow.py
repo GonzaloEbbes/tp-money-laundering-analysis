@@ -107,6 +107,23 @@ class Q1MessageIdFlowTest(unittest.TestCase):
         self.assertEqual(message.data_id, 7)
         self.assertEqual(message.message_id, 3)
 
+    def test_usd_filter_q2_message_preserves_message_id(self):
+        raw = usd_q1q2_message_handler.MessageHandler.serialize_data_per_bank_shuffler_message(
+            "client-1",
+            7,
+            {
+                "account_origin": "origin-a",
+                "from_bank": "bank-a",
+                "amount_received": "10",
+            },
+            message_id=3,
+        )
+
+        message = internal.deserialize(raw)
+
+        self.assertEqual(message.data_id, 7)
+        self.assertEqual(message.message_id, 3)
+
     def test_amount_filter_q1_result_preserves_message_id(self):
         raw = amount_q1_message_handler.MessageHandler.serialize_gateway_query_message(
             "client-1",
