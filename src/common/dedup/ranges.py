@@ -31,7 +31,15 @@ class ProcessedRanges:
         return ";".join(parts)
 
     def contains(self, message_id):
-        message_id = int(message_id)
+        if not self._ranges:
+            return False
+
+        last_start, last_end = self._ranges[-1]
+        if last_start <= message_id <= last_end:
+            return True
+        if message_id > last_end:
+            return False
+
         for start, end in self._ranges:
             if message_id < start:
                 return False
@@ -43,10 +51,21 @@ class ProcessedRanges:
         return self.add_range(message_id, message_id)
 
     def add_range(self, start, end):
-        start = int(start)
-        end = int(end)
         if start > end:
             raise ValueError("range start must be less than or equal to end")
+
+        if not self._ranges:
+            self._ranges.append((start, end))
+            return self
+
+        last_start, last_end = self._ranges[-1]
+        if last_start <= start <= last_end + 1:
+            self._ranges[-1] = (last_start, max(last_end, end))
+            return self
+
+        if start > last_end + 1:
+            self._ranges.append((start, end))
+            return self
 
         new_start = start
         new_end = end
