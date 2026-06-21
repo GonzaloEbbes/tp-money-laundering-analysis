@@ -292,7 +292,7 @@ class _DestinationBatchPublisher:
 		body = _encode_batch(messages)
 		properties = pika.BasicProperties(
 			headers={RABBITMQ_SETTINGS.batch_header: RABBITMQ_SETTINGS.batch_header_value},
-			delivery_mode=1  # Keep batched messages transient to reduce disk pressure.
+			delivery_mode=2  # Make messages persistent
 		)
 		channel.basic_publish(
 			exchange=self._exchange_name,

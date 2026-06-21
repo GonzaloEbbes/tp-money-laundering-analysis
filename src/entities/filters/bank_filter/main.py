@@ -5,7 +5,6 @@ import signal
 import threading
 import zlib
 from common import middleware, message_protocol
-from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as BankFilterMessageHandler
@@ -42,7 +41,6 @@ class BankFilter:
         )
         self.seen_banks = set()
         self.id = ID
-        self.deduplicator = InMemoryDeduplicator()
         self.total = BANK_FILTERS_AMOUNT
         self.eof_consumer = None
         self.eof_producer = None
@@ -142,11 +140,6 @@ class BankFilter:
                 ack()
                 return
             
-            dedup_key = message_dedup_key(msg)
-            if not self.deduplicator.should_process(cid, dedup_key):
-                ack()
-                return
-
             self._add_inflight(cid)
             bank_id = msg.data.get("bank_id")
             bank_name = msg.data.get("bank_name")
@@ -160,7 +153,6 @@ class BankFilter:
                     self.join_exchange.send(serialized, routing_key=routing_key)
             self._dec_inflight(cid)
             self._try_finalize(cid)
-            self.deduplicator.mark_processed(cid, dedup_key)
             ack()
         except Exception as e:
             logging.exception(e)

@@ -5,7 +5,6 @@ import signal
 import threading
 import zlib
 from common import middleware, message_protocol
-from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as MapperMessageHandler
 
@@ -28,7 +27,6 @@ def stable_hash(value):
 class MapMaxAmountPerBank:
     def __init__(self):
         self.id = ID
-        self.deduplicator = InMemoryDeduplicator()
         self.total = MAP_AMOUNT
         self.input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
             MOM_HOST,
@@ -130,18 +128,12 @@ class MapMaxAmountPerBank:
                 ack()
                 return
 
-            dedup_key = message_dedup_key(msg)
-            if not self.deduplicator.should_process(cid, dedup_key):
-                ack()
-                return
-
             self._add_inflight(cid)
             from_bank = msg.data.get("from_bank")
             amount = msg.data.get("amount_received")
             if amount is None:
                 self._dec_inflight(cid)
                 self._try_finalize(cid)
-                self.deduplicator.mark_processed(cid, dedup_key)
                 ack()
                 return
             origin = msg.data.get("account_origin")
@@ -152,7 +144,6 @@ class MapMaxAmountPerBank:
                     
             self._dec_inflight(cid)
             self._try_finalize(cid)
-            self.deduplicator.mark_processed(cid, dedup_key)
             ack()
             
         except Exception as e:

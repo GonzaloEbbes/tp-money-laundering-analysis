@@ -4,7 +4,6 @@ import time
 from abc import ABC, abstractmethod
 
 from common import message_protocol
-from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.middleware import MessageMiddlewareQueueRabbitMQ
 
 
@@ -21,8 +20,6 @@ class DeprecatedToEliminateEntity(ABC):
             if output_queue
             else None
         )
-        self.deduplicator = InMemoryDeduplicator()
-
     @abstractmethod
     def entity_type(self):
         pass
@@ -43,11 +40,6 @@ class DeprecatedToEliminateEntity(ABC):
     def _handle_raw_message(self, raw_message, ack, nack):
         try:
             message = message_protocol.deserialize(raw_message)
-            dedup_key = message_dedup_key(message)
-            if not self.deduplicator.should_process(message.source_client_uuid, dedup_key):
-                ack()
-                return
-
             processed = self.process_message(message)
             if self.processing_delay_seconds > 0:
                 time.sleep(self.processing_delay_seconds)
@@ -66,7 +58,6 @@ class DeprecatedToEliminateEntity(ABC):
                 )
                 
                 self.output_queue.send(serialized_bytes)
-            self.deduplicator.mark_processed(message.source_client_uuid, dedup_key)
             ack()
         except Exception:
             logging.exception("%s failed while processing message", self.entity_type())
