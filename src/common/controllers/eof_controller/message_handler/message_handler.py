@@ -1,5 +1,3 @@
-import uuid
-
 from common import message_protocol
 from common.message_protocol.internal import CantTrxData, EOFData, TransactionData 
 from common.controllers.eof_controller.types import partial_count_by_worker_prefix, partial_count_by_worker_prefix_and_id, total_count_by_prefix
@@ -18,7 +16,7 @@ class MessageHandler:
     
     def serialize_eof_consensus_response_message(client, worker_id, is_auxiliary_input, partial_packets : dict[str, partial_count_by_worker_prefix], partial_packets_lock):
         with partial_packets_lock:
-            partial_packets_by_client = partial_packets.setdefault(client, {})
+            partial_packets_by_client : partial_count_by_worker_prefix = dict(partial_packets.get(client, {}))
 
         packets_in_flux_1 = None
         origin_worker_prefix_flux_1 = None
@@ -36,7 +34,7 @@ class MessageHandler:
                     packets_in_flux_1 = partial_count
                     origin_worker_prefix_flux_1 = origin_worker_prefix_flux
 
-            return MessageHandler._serialize_eof_consensus_response_message_auxiliary_flux(client, is_auxiliary_input, packets_in_flux_1, packets_in_flux_2, origin_worker_prefix_flux_1, origin_worker_prefix_flux_2, worker_id)
+            return MessageHandler._serialize_eof_consensus_response_message_default(client, packets_in_flux_1, packets_in_flux_2, origin_worker_prefix_flux_1, origin_worker_prefix_flux_2, worker_id)
         else:
             # Aquí es indistinto. El primero que llega es el flujo 1, el segundo el flujo 2. Si solo llega uno, ese es el flujo 1 y el flujo 2 queda con valor 0
             for origin_worker_prefix_flux, partial_count in partial_packets_by_client.items():
@@ -47,7 +45,7 @@ class MessageHandler:
                     packets_in_flux_2 = partial_count
                     origin_worker_prefix_flux_2 = origin_worker_prefix_flux
 
-            return MessageHandler._serialize_eof_consensus_response_message_default(client, is_auxiliary_input, packets_in_flux_1, packets_in_flux_2, origin_worker_prefix_flux_1, origin_worker_prefix_flux_2, worker_id)
+            return MessageHandler._serialize_eof_consensus_response_message_default(client, packets_in_flux_1, packets_in_flux_2, origin_worker_prefix_flux_1, origin_worker_prefix_flux_2, worker_id)
 
     def _serialize_eof_consensus_response_message_default(client, packets_in_flux_1, packets_in_flux_2, origin_worker_prefix_flux_1, origin_worker_prefix_flux_2, worker_id):
         msg = EOFData()
@@ -56,7 +54,7 @@ class MessageHandler:
         msg.origin_worker_prefix_flux_1 = origin_worker_prefix_flux_1
         msg.origin_worker_prefix_flux_2 = origin_worker_prefix_flux_2
         msg.worker_id_sending_partials = worker_id
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_CONSENSUS_RESPONSE, client, None, None)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_CONSENSUS_RESPONSE, client, None, msg)
     
     def serialize_eof_consensus_ok_message(client):
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_CONSENSUS_OK, client, None, None)
@@ -64,10 +62,12 @@ class MessageHandler:
     def serialize_eof_consensus_failed_message(client):
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_CONSENSUS_FAIL, client, None, None)
 
-    def serialize_eof_post_consensus_ok_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_POST_CONSENSUS_OK, client, None, None)
-    
-    
+    def serialize_eof_post_consensus_ok_message(client, id):
+        msg = EOFData()
+        msg.postconsensus_worker_id = id
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_POST_CONSENSUS_OK, client, None, msg)
+
+
     def deserialize_message(message):
         internal_message = message_protocol.internal.deserialize(message)
         return internal_message

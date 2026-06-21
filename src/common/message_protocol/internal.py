@@ -178,7 +178,7 @@ class InternalMessage:
 
     type : InternalMessageType
     source_client_uuid : str | None
-    data : TransactionData | AccountData | CantTrxData | ScatherGatherData | None
+    data : TransactionData | AccountData | CantTrxData | ScatherGatherData | EOFData | None
     
     def __init__(self, type=None, source_client_uuid=None, data_id=None, data=None):
         self.type = type
