@@ -68,7 +68,6 @@ class AmountFilterQ1:
             self._eof_count_by_client = {}
             self._eof_count_lock = threading.Lock()
             
-        self.cant_trx_lock = threading.Lock()
         self.cant_trx_by_client = {}
 
         self._sigterm_received = False
@@ -76,6 +75,7 @@ class AmountFilterQ1:
 
         if (self._is_leader()):
             self.total_eof_leader_received_by_client = {}
+            self.remote_cant_trx_by_client = {}
             self._leader_eof_lock = threading.Lock()
 
         self._is_pending_to_finalize_client = set()
@@ -132,28 +132,28 @@ class AmountFilterQ1:
         amount_paid = float(transaction_data.get("amount_paid"))
 
         if amount_paid > 0 and amount_paid < 1:
-            with self.cant_trx_lock:
-                self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
+            self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
         
 
     def _process_usd_currency_converter_message(self, transaction_data, client_id, data_id): 
         amount_paid = float(transaction_data.get("amount_paid"))
 
         if amount_paid > 0 and amount_paid < 1:
-            with self.cant_trx_lock:
-                self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
+            self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
 
     def send_final_eof(self, client_id):
         data_id = str(uuid.uuid4()) 
-        with self.cant_trx_lock:
-            cant_trx = self.cant_trx_by_client.get(client_id, 0)
-            self.gateway_final_query_queue.send(
-                AmountFilterQ1MessageHandler.serialize_gateway_query_message(
-                    client_id,
-                    data_id,
-                    {"cantTrx": cant_trx},
-                )
+        cant_trx = self.cant_trx_by_client.get(client_id, 0)
+        if self._is_leader():
+            cant_trx += self.remote_cant_trx_by_client.get(client_id, 0)
+            self.remote_cant_trx_by_client.pop(client_id, None)
+        self.gateway_final_query_queue.send(
+            AmountFilterQ1MessageHandler.serialize_gateway_query_message(
+                client_id,
+                data_id,
+                {"cantTrx": cant_trx},
             )
+        )
         logging.info("Q5 final result for client %s: cantTrx=%s", client_id, cant_trx)
         self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_eof_message(client_id))
         logging.info(f"Sent final EOF for client {client_id} to gateway final query queue")
@@ -210,8 +210,7 @@ class AmountFilterQ1:
         self._finalize_client(client_id)
 
     def send_eof_leader_message(self, client_id):
-        with self.cant_trx_lock:
-            local_count = self.cant_trx_by_client.get(client_id, 0)
+        local_count = self.cant_trx_by_client.get(client_id, 0)
         data = { "cantTrx": local_count }
         
         with self._eof_producer_lock:
@@ -244,10 +243,10 @@ class AmountFilterQ1:
 
         if partial_data is not None: #Suma los datos parciales de las otras instancias
             partial_count = int(partial_data.get("cantTrx", 0))
-            with self.cant_trx_lock:
-                self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + partial_count
 
         with self._leader_eof_lock:
+            if partial_data is not None:
+                self.remote_cant_trx_by_client[client_id] = self.remote_cant_trx_by_client.get(client_id, 0) + partial_count
             self.total_eof_leader_received_by_client[client_id] = self.total_eof_leader_received_by_client.get(client_id, 0) + 1
             
             if self.total_eof_leader_received_by_client[client_id] == AMOUNT_FILTER_AMOUNT:
