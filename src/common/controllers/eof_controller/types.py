@@ -70,3 +70,7 @@ class ClientEOFState:
     def mark_client_as_eof_consensus_achieved(client_id, client_list : dict[str, 'ClientEOFState'], lock: threading.Lock):
         with lock:
             client_list.setdefault(client_id, ClientEOFState()).change_state_to_eof_consensus_achieved()
+
+    def mark_client_as_eof_finish_enabled(client_id, client_list : dict[str, 'ClientEOFState'], lock: threading.Lock):
+        with lock:
+            client_list.setdefault(client_id, ClientEOFState()).change_state_to_eof_finish_enabled()

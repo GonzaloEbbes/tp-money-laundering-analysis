@@ -151,8 +151,7 @@ class EOFData(dict):
     partial_packets_count_flux_2 : int
     origin_worker_prefix_flux_1 : str
     origin_worker_prefix_flux_2 : str
-    worker_id_flux_1 : str
-    worker_id_flux_2 : str
+    worker_id_sending_partials : str
 
     postconsensus_worker_id : str
 
