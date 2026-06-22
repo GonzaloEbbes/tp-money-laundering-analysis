@@ -146,6 +146,10 @@ class EOFData(dict):
     origin_worker_prefix : str
     amount_origin_workers : int
 
+    #variables de solicitud de consenso EOF
+    awaited_origin_worker_prefix_flux_1 : str
+    awaited_origin_worker_prefix_flux_2 : str
+
     #variables para consenso eof, suponiendo maximo 2 input eofs
     partial_packets_count_flux_1 : int
     partial_packets_count_flux_2 : int

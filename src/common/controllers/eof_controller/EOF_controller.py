@@ -8,7 +8,7 @@ from time import sleep
 
 from common import message_protocol, middleware
 from common.controllers.eof_controller.message_handler.message_handler import MessageHandler
-from common.controllers.eof_controller.types import ClientEOFState
+from common.controllers.eof_controller.types import ClientEOFState, EOFStates
 from common.message_protocol.internal import EOFData, InternalMessageType, deserialize
 from common.controllers.eof_controller.types import partial_count_by_worker_prefix, partial_count_by_worker_prefix_and_id, total_count_by_prefix
 
@@ -16,8 +16,6 @@ class EOFController:
 
     
     BACKOFF_TIME_SECONDS_BEFORE_RESENDING_CONSENSUS_REQUEST = 2
-
-    #todo: VAS A TENER QUE HACER FUNCIONES CALLBACK PARA EL ENVIO PROPIO DEL EOF FINAL Y LA RECEPCION DEL EOF INICIAL?
 
     def __init__(self, mom_host, id_worker, prefix_worker, amount_workers,eof_control_exchange_name,input_eofs_quantities,on_consensus_ok_callback,on_send_eof_to_next_stage_callback,auxiliary_input_data=False):
 
@@ -51,6 +49,7 @@ class EOFController:
         self.consensus_partial_count_by_client_lock = threading.Lock()
         self.consensus_partial_count_by_client : dict[str, partial_count_by_worker_prefix_and_id] = {}
 
+        self.consensus_request_transition_lock = threading.Lock() #lock para evitar condicion de carrera entre el comienzo de consenso desde el input thread y la lectura de un mensaje RESPONSE de consenso en el eof consumer
 
         # FUNCIONES DE CALLBACK A CONECTAR SI O SI. PUEDEN VENIR COMO None SI NO HACE FALTA
         self.on_consensus_ok_reception_for_client_callback = on_consensus_ok_callback
@@ -86,14 +85,15 @@ class EOFController:
             #el eof_exchange_producer_to_leader quedaría en None hasta poder establecer la routing key del nodo lider
             ##el algoritmo a utilizar debería ser
             
-        self.eof_client_state_lock = threading.Lock()
-        self.eof_client_state : dict[str, ClientEOFState] = {} 
+        self.client_eof_state_lock = threading.Lock()
+        self.client_eof_state : dict[str, ClientEOFState] = {} 
         
         #TODO: GPT doce qie Hay una carrera entre EOF_MESSAGE y EOF_CONSENSUS_REQUEST. ver
 
         self._stop_lock = threading.Lock()
         self._stopping = False
-
+        self._sigterm_received = False
+        self._runtime_error = False
     
     def _im_leader(self):
         return self.id == 0
@@ -113,18 +113,20 @@ class EOFController:
 
     #Funcion a llamarse para cuando desde alguna de las colas/exchanges de entrada se reciba un EOF. Usar tambien desde fuera del controller para la cola de carga
     def on_input_queue_eof_reception(self, client_id,data : EOFData):
-        self._process_input_eof_reception(client_id, data)
-        self._broadcast_eof_message_to_other_worker_instances(client_id, data.total_packets, data.origin_worker_prefix, data.amount_origin_workers)
-
+        if not ClientEOFState.can_receive_input_eof(client_id, self.client_eof_state, self.client_eof_state_lock): return
+        self._process_starting_eof_reception(client_id, data)
+        if not self.is_single_instance():
+            self._broadcast_eof_message_to_other_worker_instances(client_id, data.total_packets, data.origin_worker_prefix, data.amount_origin_workers)
         #Si soy lider, chequear si se alcanzaron todos los EOFs necesarios para ese cliente y en ese caso iniciar proceso de consenso EOF
         self._check_and_start_eof_consensus_if_applicable(client_id)
 
+    #Funcion a llamarse cuando desde el hilo principal del worker se recibe SIGTERM, para realizar una parada ordenada del controller
+    def on_sigterm(self):
+        self._sigterm_received = True
+        self._stop()
 
 
-
-    def _process_input_eof_reception(self, client_id, data : EOFData):
-        ClientEOFState.mark_client_as_active(client_id, self.eof_client_state, self.eof_client_state_lock)
-
+    def _process_starting_eof_reception(self, client_id, data : EOFData):
         #Sumar el EOF al set de EOFs recibidos para ese cliente. como clave debe ir el prefix que viaja en el tipo de mensaje EOF_MESSAGE
         with self.eofs_received_by_client_lock:
             self.eofs_received_by_client.setdefault(client_id, set())
@@ -141,7 +143,7 @@ class EOFController:
             #Nota: se usa setdefault sin problema porque nunca va a pasar de recibir 2 eofs con totalizaciones diferentes provenientes del mismo flujo
 
     def _process_input_eof_reception_from_eof_exchange(self, client_id, data : EOFData):
-        self._process_input_eof_reception(client_id, data)
+        self._process_starting_eof_reception(client_id, data)
 
         #Si soy lider, chequear si se alcanzaron todos los EOFs necesarios para ese cliente y en ese caso iniciar proceso de consenso EOF
         self._check_and_start_eof_consensus_if_applicable(client_id)
@@ -153,22 +155,30 @@ class EOFController:
             match message.type:
                 case InternalMessageType.EOF_MESSAGE:
                     logging.debug(f"Received EOF_MESSAGE for client {message.source_client_uuid}")
-                    self._process_input_eof_reception_from_eof_exchange(message.source_client_uuid, message.data)
+                    if ClientEOFState.can_receive_input_eof(message.source_client_uuid, self.client_eof_state, self.client_eof_state_lock):
+                        self._process_input_eof_reception_from_eof_exchange(message.source_client_uuid, message.data)
                 case InternalMessageType.EOF_CONSENSUS_REQUEST:
                     logging.debug(f"Received EOF_CONSENSUS_REQUEST for client {message.source_client_uuid}")
-                    self._process_eof_consensus_request(message.source_client_uuid)
+                    self._process_eof_consensus_request(message.source_client_uuid, message.data)
                 case InternalMessageType.EOF_CONSENSUS_RESPONSE:
                     logging.debug(f"Received EOF_CONSENSUS_RESPONSE for client {message.source_client_uuid}")
-                    self._process_eof_consensus_response(message.source_client_uuid, message.data)
+                    resend_consensus = False
+                    with self.consensus_request_transition_lock:
+                        if ClientEOFState.with_valid_transition_to(EOFStates.PENDING_EOF_IN_CONSENSUS_RESPONSE_SENT, message.source_client_uuid, self.client_eof_state, self.client_eof_state_lock):
+                            resend_consensus = self._process_eof_consensus_response(message.source_client_uuid, message.data)
+                    self._see_if_resend_eof_consensus_request(message.source_client_uuid,resend_consensus) #realizar un proceso de espera de n segundos y volver a enviar EOF_CONSENSUS_REQUEST con _send_eof_consensus_request
                 case InternalMessageType.EOF_CONSENSUS_OK:
                     logging.debug(f"Received EOF_CONSENSUS_OK for client {message.source_client_uuid}")
-                    self._process_eof_consensus_ok(message.source_client_uuid)
+                    if ClientEOFState.with_valid_transition_to(EOFStates.EOF_CONSENSUS_ACHIEVED, message.source_client_uuid, self.client_eof_state, self.client_eof_state_lock):
+                        self._process_eof_consensus_ok(message.source_client_uuid)
                 case InternalMessageType.EOF_CONSENSUS_FAIL:
                     logging.debug(f"Received EOF_CONSENSUS_FAIL for client {message.source_client_uuid}")
-                    self._process_eof_consensus_fail(message.source_client_uuid)
+                    if ClientEOFState.with_valid_transition_to(EOFStates.PENDING_EOF, message.source_client_uuid, self.client_eof_state, self.client_eof_state_lock):
+                        self._process_eof_consensus_fail(message.source_client_uuid)
                 case InternalMessageType.EOF_POST_CONSENSUS_OK:
                     logging.debug(f"Received EOF_POST_CONSENSUS_OK for client {message.source_client_uuid}")
-                    self._process_eof_post_consensus_ok(message.source_client_uuid,message.data.postconsensus_worker_id)
+                    if ClientEOFState.with_valid_transition_to(EOFStates.EOF_FINISH_ENABLED, message.source_client_uuid, self.client_eof_state, self.client_eof_state_lock):
+                        self._process_eof_post_consensus_ok(message.source_client_uuid,message.data.postconsensus_worker_id)
             ack()
         except Exception as e:
             logging.error(f"Error processing EOF control message: {e}")
@@ -179,22 +189,25 @@ class EOFController:
 
     #FUNCIONES RELACIONADAS A CONSENSO DE EOF ENTRE INSTANCIAS DE UN MISMO WORKER
     def _check_and_start_eof_consensus_if_applicable(self, client_id):
+        
         with self.eofs_received_by_client_lock:
             eof_prefixes_received = self.eofs_received_by_client.get(client_id, set())
+
+        
         if len(eof_prefixes_received) == self.input_eofs_quantities:
+            if not ClientEOFState.try_start_eof_consensus(client_id,self.client_eof_state,self.client_eof_state_lock): return
             if self._im_leader():
                 if not self.is_single_instance():
                     logging.debug(f"Leader de {self.prefix_worker} ha recibido todos los EOFs de las colas de entrada para el cliente {client_id}. Iniciando consenso de EOF.")
-                    ClientEOFState.mark_client_as_pending_eof(client_id, self.eof_client_state, self.eof_client_state_lock)
                     self._send_eof_consensus_request(client_id)
                 else:
                     logging.debug(f"Worker {self.prefix_worker}-{self.id} ha recibido todos los EOFs de las colas de entrada para el cliente {client_id}. No hay consenso necesario, procesando como si ya se hubiera hecho.")
                     # Si es una sola instancia, no necesito hacer consenso, directamente proceso como si ya se hubiera hecho
                     self.execute_on_total_ok_eof_reception_for_client(client_id)
-                    ClientEOFState.mark_client_as_eof_consensus_achieved(client_id, self.eof_client_state, self.eof_client_state_lock)
+                    ClientEOFState.mark_client_as_eof_finish_enabled(client_id, self.client_eof_state, self.client_eof_state_lock)
+                    self.send_eof_message_to_next_stage(client_id)
             else:
                 # Si no soy lider, marco que estoy pendiente de consenso y espero a que el lider me mande la respuesta
-                ClientEOFState.mark_client_as_pending_eof(client_id, self.eof_client_state, self.eof_client_state_lock)
                 logging.debug(f"Worker {self.prefix_worker}-{self.id} ha recibido todos los EOFs de las colas de entrada para el cliente {client_id}. Marcando como pendiente de consenso de EOF y esperando respuesta del lider.")
 
 
@@ -310,25 +323,46 @@ class EOFController:
                 self.consensus_partial_count_by_client.setdefault(client_id, {}).setdefault(prefix_flux, {}).setdefault(self.id, 0)
                 self.consensus_partial_count_by_client[client_id][prefix_flux][self.id] = partial_count
 
+    # actualiza el eof para tener todos los prefixes. No importa que quede mal el total de EOF, total pronto recibiría el EOF_MESSAGE de ultima
+    def _include_eof_prefix_data_in_eof_variables(self, client_id, data):
+        if data.awaited_origin_worker_prefix_flux_1 is not None:
+
+            with self.packets_processed_by_client_lock:
+                self.packets_processed_by_client.setdefault(client_id, {}).setdefault(data.awaited_origin_worker_prefix_flux_1, 0)
+            
+            #with self.total_packets_received_by_client_lock:
+            #    self.total_packets_received_by_client.setdefault(client_id, {}).setdefault(data.awaited_origin_worker_prefix_flux_1, (0, 0))
+        
+        if data.awaited_origin_worker_prefix_flux_2 is not None:
+
+            with self.packets_processed_by_client_lock:
+                self.packets_processed_by_client.setdefault(client_id, {}).setdefault(data.awaited_origin_worker_prefix_flux_2, 0)
+            
+            #with self.total_packets_received_by_client_lock:
+            #    self.total_packets_received_by_client.setdefault(client_id, {}).setdefault(data.awaited_origin_worker_prefix_flux_2, (0, 0))
 
     #FUNCIONES DE PROCESAMIENTO DE MENSAJES RECIBIDOS POR EL CONSUMER DE CONTROL DE EOF
 
     #le llega a los no lider
-    def _process_eof_consensus_request(self, client_id):
+    def _process_eof_consensus_request(self, client_id, data):
         #Al comenzar, actualizo mi estado a PENDING_EOF_IN_CONSENSUS_REQUEST_SENT
-        ClientEOFState.mark_client_as_pending_eof_in_consensus_request_sent(client_id, self.eof_client_state, self.eof_client_state_lock)
+        self._include_eof_prefix_data_in_eof_variables(client_id, data) #por si no los tengo, informo cuales son los flujos de los que tengo que esperar parciales
+        ClientEOFState.mark_client_as_pending_eof_in_consensus_request_sent(client_id, self.client_eof_state, self.client_eof_state_lock)
         #Al recibir esto, intento enviar mis parciales propios. 
         self._send_eof_consensus_response(client_id)
 
         #Cuando termino de enviar actualizo mi estado a PENDING_EOF_IN_CONSENSUS_RESPONSE_SENT
-        ClientEOFState.mark_client_as_pending_eof_in_consensus_response_sent(client_id, self.eof_client_state, self.eof_client_state_lock)
+        ClientEOFState.mark_client_as_pending_eof_in_consensus_response_sent(client_id, self.client_eof_state, self.client_eof_state_lock)
     
     #le llega al lider, con los parciales de las otras instancias
-    def _process_eof_consensus_response(self, client_id, data):
+    def _process_eof_consensus_response(self, client_id, data) -> bool:
+        resend_eof_consensus = False
         # Va acumulando los parciales que le llegan del cliente, con ese prefix del flujo origen y ID del worker que envio la data
         self._accumulate_consensus_partials(client_id, data)
         # Cuando los totalizadores alcanzan consenso manda ok. Si no se alcanza el total y encima se obtuvieron totales de todas las instancias, se manda fail
         have_received_all_consensus_partials = self._have_received_all_consensus_partials_for_client(client_id)
+        if have_received_all_consensus_partials:
+            ClientEOFState.mark_client_as_pending_eof_in_consensus_response_sent(client_id, self.client_eof_state, self.client_eof_state_lock)
         if (self._totalizer_has_achieved_consensus_for_client(client_id) and have_received_all_consensus_partials):
             self._send_eof_consensus_ok_message(client_id)
             # Ejecución en el lider del post-consenso
@@ -339,12 +373,13 @@ class EOFController:
         elif (have_received_all_consensus_partials):
             self._send_eof_consensus_fail_message(client_id)
             self._clear_consensus_partials_for_client(client_id) #limpiar los parciales que tengo acumulados para consenso de ese cliente, para esperar sus parciales correspondientes nuevos
-            self._ask_to_resend_eof_consensus_request(client_id) #realizar un proceso de espera de n segundos y volver a enviar EOF_CONSENSUS_REQUEST con _send_eof_consensus_request
-        
+            resend_eof_consensus = True
+        return resend_eof_consensus
+    
     #le llega a los no lider, con la respuesta del lider de si se alcanzo consenso o no
     def _process_eof_consensus_ok(self, client_id):
         # Si recibo esto, significa que se alcanzo consenso. Actualizo mi estado a EOF_CONSENSUS_ACHIEVED
-        ClientEOFState.mark_client_as_eof_consensus_achieved(client_id, self.eof_client_state, self.eof_client_state_lock)
+        ClientEOFState.mark_client_as_eof_consensus_achieved(client_id, self.client_eof_state, self.client_eof_state_lock)
         # Luego debere ejecutar un callback de posproceso, si es que esta definido
         self.execute_on_total_ok_eof_reception_for_client(client_id)
         
@@ -353,7 +388,7 @@ class EOFController:
     
     def _process_eof_consensus_fail(self, client_id):
         # Si recibo esto, significa que no se alcanzo consenso. Actualizo mi estado a PENDING_EOF y me quedo esperando al lider
-        ClientEOFState.mark_client_as_pending_eof(client_id, self.eof_client_state, self.eof_client_state_lock)
+        ClientEOFState.mark_client_as_pending_eof(client_id, self.client_eof_state, self.client_eof_state_lock)
 
     # le llega al lider, luego de que finalicen tareas post consenso
     def _process_eof_post_consensus_ok(self, client_id, postconsensus_worker_id):
@@ -366,9 +401,8 @@ class EOFController:
         # Entonces envío el mensaje EOF_MESSAGE a la capa siguiente, usando la función send_eof_message_to_next_stage
         if len(self.postprocess_received_by_client[client_id]) == self.amount_workers:
             # Actualizo el estado del cliente a EOF_FINISH_ENABLED, que es el estado que habilita el envio de los EOFs a la capa siguiente
-            ClientEOFState.mark_client_as_eof_finish_enabled(client_id, self.eof_client_state, self.eof_client_state_lock)
             self.send_eof_message_to_next_stage(client_id)
-        
+            ClientEOFState.mark_client_as_eof_finish_enabled(client_id, self.client_eof_state, self.client_eof_state_lock)
 
 
         
@@ -382,11 +416,12 @@ class EOFController:
     #llamarse solo si ya se pregunto im_leader()
     def _send_eof_consensus_request(self, client_id):
         self._update_leader_own_partials(client_id) #actualizo mis propios parciales para ese cliente, antes de que me lleguen los parciales de las otras instancias y poder alcanzar consenso
-        with self.eof_exchange_producer_fanout_lock:
-            # se sobreentiende que si yo soy el lider el resto son de mi mismo workers objetivo y por eso uso el fanout
-            self.eof_exchange_producer_fanout.send(MessageHandler.serialize_eof_consensus_request_message(client_id))
-        logging.debug(f"Leader {self.prefix_worker} sent EOF_CONSENSUS_REQUEST for client {client_id}")
-        ClientEOFState.mark_client_as_pending_eof_in_consensus_request_sent(client_id, self.eof_client_state, self.eof_client_state_lock)
+        with self.consensus_request_transition_lock:
+            with self.eof_exchange_producer_fanout_lock:
+                # se sobreentiende que si yo soy el lider el resto son de mi mismo workers objetivo y por eso uso el fanout
+                self.eof_exchange_producer_fanout.send(MessageHandler.serialize_eof_consensus_request_message(client_id, self.eofs_received_by_client, self.eofs_received_by_client_lock, self.auxiliary_input_data))
+            logging.debug(f"Leader {self.prefix_worker} sent EOF_CONSENSUS_REQUEST for client {client_id}")
+            ClientEOFState.mark_client_as_pending_eof_in_consensus_request_sent(client_id, self.client_eof_state, self.client_eof_state_lock)
 
     #Funcion a llamarse para enviar EOF_MESSAGE a la capa siguiente una vez que se recibieron todos los EOFs de las colas/exchanges de entrada
     def send_eof_message_to_next_stage(self, client_id):
@@ -394,7 +429,7 @@ class EOFController:
         if self.on_send_eof_to_next_stage_callback is not None:
             self.on_send_eof_to_next_stage_callback(client_id)
         #al final, limpiar toda la informacion que haya de ese cliente 
-        #TODO: cuando limpia los no lideres? Cuando pasan a estado 5
+        #TODO: cuando limpia los no lideres? Cuando pasan a estado 5?
         self._clear_all_client_data(client_id)
 
     # Funcion a llamarse por NO LIDER para enviar la respuesta del consenso de EOF al lider, con el resultado del conteo de los parciales
@@ -409,24 +444,25 @@ class EOFController:
             # se sobreentiende que si yo soy el lider el resto son de mi mismo workers objetivo y por eso uso el fanout
             self.eof_exchange_producer_fanout.send(MessageHandler.serialize_eof_consensus_ok_message(client_id))
         
-        ClientEOFState.mark_client_as_eof_consensus_achieved(client_id, self.eof_client_state, self.eof_client_state_lock)
+        ClientEOFState.mark_client_as_eof_consensus_achieved(client_id, self.client_eof_state, self.client_eof_state_lock)
 
     def _send_eof_consensus_fail_message(self, client_id):
         # cambio estado a PENDING_EOF (para reiniciar el proceso y esperar a que me vuelvan a llegar los EOFs de entrada, porque algo fallo en el medio)
         with self.eof_exchange_producer_fanout_lock:
             # se sobreentiende que si yo soy el lider el resto son de mi mismo workers objetivo y por eso uso el fanout
             self.eof_exchange_producer_fanout.send(MessageHandler.serialize_eof_consensus_failed_message(client_id))
-        ClientEOFState.mark_client_as_pending_eof(client_id, self.eof_client_state, self.eof_client_state_lock)
+        ClientEOFState.mark_client_as_pending_eof(client_id, self.client_eof_state, self.client_eof_state_lock)
 
-    def _ask_to_resend_eof_consensus_request(self, client_id):
+    def _see_if_resend_eof_consensus_request(self, client_id, resend_consensus):
         # Espero n segundos y vuelvo a enviar el mensaje de EOF_CONSENSUS_REQUEST para ese cliente
-        sleep(self.BACKOFF_TIME_SECONDS_BEFORE_RESENDING_CONSENSUS_REQUEST)
-        self._send_eof_consensus_request(client_id)
+        if resend_consensus:
+            sleep(self.BACKOFF_TIME_SECONDS_BEFORE_RESENDING_CONSENSUS_REQUEST)
+            self._send_eof_consensus_request(client_id)
     
     def _send_eof_post_consensus_ok_message(self, client_id):
         with self.eof_exchange_producer_to_leader_lock:
             self.eof_exchange_producer_to_leader.send(MessageHandler.serialize_eof_post_consensus_ok_message(client_id, self.id))
-        ClientEOFState.mark_client_as_eof_finish_enabled(client_id, self.eof_client_state, self.eof_client_state_lock)
+        ClientEOFState.mark_client_as_eof_finish_enabled(client_id, self.client_eof_state, self.client_eof_state_lock)
         self._clear_all_client_data(client_id) #limpiar toda la informacion que haya de ese cliente, para liberar memoria lo antes posible
     
     def _clear_consensus_partials_for_client(self, client_id):
@@ -457,28 +493,29 @@ class EOFController:
             if self._stopping:
                 return
             self._stopping = True
+        if not self.is_single_instance():
+            consumers = [
+                self.eof_exchange_consumer,
+            ]
 
-        consumers = [
-            self.eof_exchange_consumer,
-        ]
-
-        for consumer in consumers:
-            try:
-                consumer.stop_consuming()
-            except Exception as e:
-                logging.error(f"Error stopping consumer: {e}")
+            for consumer in consumers:
+                try:
+                    consumer.stop_consuming()
+                except Exception as e:
+                    logging.error(f"Error stopping consumer: {e}")
 
     def _close_resources(self):
-        resources = [
-            self.eof_exchange_consumer,
-            self.eof_exchange_producer_fanout,
-            self.eof_exchange_producer_to_leader
-        ]
-        for resource in resources:
-            try:
-                resource.close()
-            except Exception as e:
-                logging.error(f"Error closing resource: {e}")
+        if not self.is_single_instance():
+            resources = [
+                self.eof_exchange_consumer,
+                self.eof_exchange_producer_fanout,
+                self.eof_exchange_producer_to_leader
+            ]
+            for resource in resources:
+                try:
+                    resource.close()
+                except Exception as e:
+                    logging.error(f"Error closing resource: {e}")
 
     def _run_control_consumer(self):
         try:
@@ -487,7 +524,8 @@ class EOFController:
             logging.error(f"{self.prefix_worker.replace('_', ' ').title()} Control Consumer Crashed: {e}")
             self._runtime_error = True
             self._stop()
-    
+
+
     def start(self):
 
         if self.amount_workers > 1:
@@ -519,5 +557,3 @@ class EOFController:
 
         return 0
 
-
-    #TODO: corregir para single instance

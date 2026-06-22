@@ -11,8 +11,19 @@ class MessageHandler:
         msg.amount_origin_workers = amount_origin_workers
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_MESSAGE, client, None, msg)
     
-    def serialize_eof_consensus_request_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_CONSENSUS_REQUEST, client, None, None)
+    def serialize_eof_consensus_request_message(client, eofs_received_by_client, eofs_received_by_client_lock, is_auxiliary_input):
+        with eofs_received_by_client_lock:
+            eofs_received_for_client = set(eofs_received_by_client.get(client, set()))
+        msg = EOFData()
+        if is_auxiliary_input and "average_per_pay_format_joiner" in eofs_received_for_client:
+            msg.awaited_origin_worker_prefix_flux_2 = "average_per_pay_format_joiner"
+            eofs_received_for_client.discard("average_per_pay_format_joiner")
+            msg.awaited_origin_worker_prefix_flux_1 = eofs_received_for_client.pop() if len(eofs_received_for_client) > 0 else None
+        else:
+            msg.awaited_origin_worker_prefix_flux_1 = eofs_received_for_client.pop() if len(eofs_received_for_client) > 0 else None
+            msg.awaited_origin_worker_prefix_flux_2 = eofs_received_for_client.pop() if len(eofs_received_for_client) > 0 else None
+        
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_CONSENSUS_REQUEST, client, None, msg)
     
     def serialize_eof_consensus_response_message(client, worker_id, is_auxiliary_input, partial_packets : dict[str, partial_count_by_worker_prefix], partial_packets_lock):
         with partial_packets_lock:
