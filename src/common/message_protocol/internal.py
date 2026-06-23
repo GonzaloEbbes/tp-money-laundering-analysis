@@ -1,4 +1,5 @@
 import json
+from common.controllers.eof_controller.types import partial_count_by_worker_prefix
 
 class InternalMessageType:
     GATEWAY_TO_DATE_FILTER = 0
@@ -156,6 +157,8 @@ class EOFData(dict):
     origin_worker_prefix_flux_1 : str
     origin_worker_prefix_flux_2 : str
     worker_id_sending_partials : str
+    total_packets_sent_by_worker : partial_count_by_worker_prefix
+
 
     postconsensus_worker_id : str
 

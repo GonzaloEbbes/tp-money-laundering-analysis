@@ -2,14 +2,14 @@ from common import message_protocol
 from common.message_protocol.internal import CantTrxData, EOFData, TransactionData 
 from common.controllers.eof_controller.types import partial_count_by_worker_prefix, partial_count_by_worker_prefix_and_id, total_count_by_prefix
 
-class MessageHandler:
+class EOFMessageHandler:
 
-    def serialize_eof_message(client, total_packets, origin_worker_prefix, amount_origin_workers):
+    def serialize_eof_message(client, total_packets, origin_worker_prefix, amount_origin_workers, data_id=None):
         msg = EOFData()
         msg.total_packets = total_packets
         msg.origin_worker_prefix = origin_worker_prefix
         msg.amount_origin_workers = amount_origin_workers
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_MESSAGE, client, None, msg)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_MESSAGE, client, data_id, msg)
     
     def serialize_eof_consensus_request_message(client, eofs_received_by_client, eofs_received_by_client_lock, is_auxiliary_input):
         with eofs_received_by_client_lock:
@@ -25,9 +25,9 @@ class MessageHandler:
         
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_CONSENSUS_REQUEST, client, None, msg)
     
-    def serialize_eof_consensus_response_message(client, worker_id, is_auxiliary_input, partial_packets : dict[str, partial_count_by_worker_prefix], partial_packets_lock):
-        with partial_packets_lock:
-            partial_packets_by_client : partial_count_by_worker_prefix = dict(partial_packets.get(client, {}))
+    def serialize_eof_consensus_response_message(client, worker_id, is_auxiliary_input, partial_packets_received : dict[str, partial_count_by_worker_prefix], partial_packets_received_lock):
+        with partial_packets_received_lock:
+            partial_packets_by_client : partial_count_by_worker_prefix = dict(partial_packets_received.get(client, {}))
 
         packets_in_flux_1 = None
         origin_worker_prefix_flux_1 = None
@@ -45,7 +45,7 @@ class MessageHandler:
                     packets_in_flux_1 = partial_count
                     origin_worker_prefix_flux_1 = origin_worker_prefix_flux
 
-            return MessageHandler._serialize_eof_consensus_response_message_default(client, packets_in_flux_1, packets_in_flux_2, origin_worker_prefix_flux_1, origin_worker_prefix_flux_2, worker_id)
+            return EOFMessageHandler._serialize_eof_consensus_response_message_default(client, packets_in_flux_1, packets_in_flux_2, origin_worker_prefix_flux_1, origin_worker_prefix_flux_2, worker_id)
         else:
             # Aquí es indistinto. El primero que llega es el flujo 1, el segundo el flujo 2. Si solo llega uno, ese es el flujo 1 y el flujo 2 queda con valor 0
             for origin_worker_prefix_flux, partial_count in partial_packets_by_client.items():
@@ -56,7 +56,7 @@ class MessageHandler:
                     packets_in_flux_2 = partial_count
                     origin_worker_prefix_flux_2 = origin_worker_prefix_flux
 
-            return MessageHandler._serialize_eof_consensus_response_message_default(client, packets_in_flux_1, packets_in_flux_2, origin_worker_prefix_flux_1, origin_worker_prefix_flux_2, worker_id)
+            return EOFMessageHandler._serialize_eof_consensus_response_message_default(client, packets_in_flux_1, packets_in_flux_2, origin_worker_prefix_flux_1, origin_worker_prefix_flux_2, worker_id)
 
     def _serialize_eof_consensus_response_message_default(client, packets_in_flux_1, packets_in_flux_2, origin_worker_prefix_flux_1, origin_worker_prefix_flux_2, worker_id):
         msg = EOFData()
@@ -73,12 +73,49 @@ class MessageHandler:
     def serialize_eof_consensus_failed_message(client):
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_CONSENSUS_FAIL, client, None, None)
 
-    def serialize_eof_post_consensus_ok_message(client, id):
+    def serialize_eof_post_consensus_ok_message(client, id, partial_packets_sent_by_client_lock, partial_packets_sent_by_client: partial_count_by_worker_prefix):
         msg = EOFData()
         msg.postconsensus_worker_id = id
+        with partial_packets_sent_by_client_lock:
+            msg.total_packets_sent_by_worker = dict(partial_packets_sent_by_client.get(client, {}))
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_POST_CONSENSUS_OK, client, None, msg)
 
 
     def deserialize_message(message):
         internal_message = message_protocol.internal.deserialize(message)
+
+        eof_message_types = {
+            message_protocol.internal.InternalMessageType.EOF_MESSAGE,
+            message_protocol.internal.InternalMessageType.EOF_CONSENSUS_REQUEST,
+            message_protocol.internal.InternalMessageType.EOF_CONSENSUS_RESPONSE,
+            message_protocol.internal.InternalMessageType.EOF_POST_CONSENSUS_OK,
+        }
+
+        if (
+            internal_message.type in eof_message_types
+            and internal_message.data is not None
+        ):
+            internal_message.data = EOFMessageHandler.parse_eof_data(
+                internal_message.data
+            )
+
         return internal_message
+    
+    def parse_eof_data(data):
+        if isinstance(data, EOFData):
+            return data
+
+        if not isinstance(data, dict):
+            raise TypeError(
+                f"EOF data inválida: se esperaba dict o EOFData, "
+                f"llegó {type(data).__name__}"
+            )
+
+        eof_data = EOFData()
+
+        for field_name, value in data.items():
+            setattr(eof_data, field_name, value)
+
+        return eof_data
+
+

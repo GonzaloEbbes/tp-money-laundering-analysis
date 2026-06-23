@@ -121,6 +121,12 @@ def set_date_filter_config(id,total, log_level):
         "      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue",
         "      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue",
         "      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=gateway",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=usd_filter_q3",
+        "      - OUTPUT_PREFIX_2=usd_filter_q4",
+        "      - OUTPUT_PREFIX_3=pay_format_filter"
         "",
     ]
 

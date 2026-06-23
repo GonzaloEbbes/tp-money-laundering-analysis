@@ -21,6 +21,7 @@ CURRENCY_FILTER_QUEUE = os.environ.get("CURRENCY_FILTER_QUEUE", "currency_filter
 DATE_FILTER_QUEUE = os.environ.get("DATE_FILTER_QUEUE", "date_filter_queue")
 TOTAL_BANK_FILTERS = int(os.environ.get("BANK_FILTERS_AMOUNT", 1))
 
+
 def stable_hash(value):
     try:
         norm_val = int(value)
@@ -28,24 +29,30 @@ def stable_hash(value):
         norm_val = str(value).strip()
     return zlib.crc32(str(norm_val).encode())
 
-def handle_client_request(client_socket, message_handler_instance, client_list):
+def handle_client_request(client_socket, message_handler_instance : message_handler.MessageHandler, client_list):
 
     currency_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, CURRENCY_FILTER_QUEUE)
     date_queue = MessageMiddlewareQueueRabbitMQ(MOM_HOST, DATE_FILTER_QUEUE)
     bank_exchange = MessageMiddlewareExchangePublisherRabbitMQ(MOM_HOST, BANK_EXCHANGE)
 
+    total_transaction_packets = 0
+    total_account_packets = 0
+
     def _send_internal(queue, serialized_message):
         queue.send(serialized_message)
 
     def _handle_account(msg_data):
+        nonlocal total_account_packets
         logging.debug(f"Received account record: {msg_data}")
         serialized = message_handler_instance.serialize_account_data(msg_data)
         bank_id = message_handler_instance.extract_bank_id(msg_data)
         partition = stable_hash(bank_id) % TOTAL_BANK_FILTERS
         routing_key = f"{BANK_ROUTING_KEY_PREFIX}_{partition}"
         bank_exchange.send(serialized, routing_key=routing_key)
+        total_account_packets += 1
 
     def _handle_transaction(msg_data):
+        nonlocal total_transaction_packets
         if message_handler_instance.transaction_is_reinvestment(msg_data):
             return
         logging.debug(f"Received transaction record: {msg_data}")
@@ -53,17 +60,18 @@ def handle_client_request(client_socket, message_handler_instance, client_list):
         _send_internal(currency_queue, serialized_currency)
         serialized_date = message_handler_instance.serialize_transaction_date(msg_data)
         _send_internal(date_queue, serialized_date)
+        total_transaction_packets += 1
 
     def _handle_eof(_msg_data):
         message_handler_instance.eof_count += 1
         if message_handler_instance.eof_count == 1:
-            eof_bytes = message_handler_instance.serialize_eof()
+            eof_bytes = message_handler_instance.serialize_eof(total_account_packets)
             for i in range(TOTAL_BANK_FILTERS):
                 routing_key = f"{BANK_ROUTING_KEY_PREFIX}_{i}"
                 logging.info(f"Gateway sending EOF to partition {i}")
                 bank_exchange.send(eof_bytes, routing_key=routing_key)
         elif message_handler_instance.eof_count == 2:
-            eof_bytes = message_handler_instance.serialize_eof()
+            eof_bytes = message_handler_instance.serialize_eof(total_transaction_packets)
             _send_internal(currency_queue, eof_bytes)
             _send_internal(date_queue, eof_bytes)
 
@@ -115,7 +123,7 @@ MAP_OUTPUT_TYPES = {
     message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q3_TO_GATEWAY: message_protocol.external.MsgType.QUERY_3_RESULT,
     message_protocol.internal.InternalMessageType.SCATHER_GATHER_JOINER_TO_GATEWAY: message_protocol.external.MsgType.QUERY_4_RESULT,
     message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q5_TO_GATEWAY: message_protocol.external.MsgType.QUERY_5_RESULT,
-    message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE: message_protocol.external.MsgType.EOF
+    message_protocol.internal.InternalMessageType.EOF_MESSAGE: message_protocol.external.MsgType.EOF
 }
 
 RESULT_DATA_EXTRACTORS = {
