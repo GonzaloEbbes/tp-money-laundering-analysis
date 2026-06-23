@@ -2,22 +2,20 @@ import os
 import logging
 import signal
 import threading
-
 from common import middleware, message_protocol
 from common.logging.logging_config import configure_logging_from_env
+from common.snapshots.snapshot import SnapshotManager
 from message_handler import MessageHandler as AmountFilterQ3MessageHandler
-from csv_file_manager import CSVFileManager
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
-USD_FILTER_Q3_QUEUE = os.environ["INPUT_QUEUE"] #Es la propia, que conecta con el filtro USD Q3
+USD_FILTER_Q3_QUEUE = os.environ["INPUT_QUEUE"]
 AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE = os.environ["AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE"]
 AMOUNT_FILTER_PREFIX = os.environ["AMOUNT_FILTER_PREFIX"]
 AMOUNT_FILTER_AMOUNT = int(os.environ["AMOUNT_FILTER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
 OUTPUT_QUEUE = os.environ["GATEWAY_FINAL_QUERY_QUEUE"]
-
 
 class AmountFilterQ3:
 
@@ -31,18 +29,24 @@ class AmountFilterQ3:
         
         self.id = int(ID)
 
-        # definicion de working queue exchanges de la instancia posterior
         self.gateway_final_query_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, OUTPUT_QUEUE
             )
 
-        #Exchange de control EOF
         self.amount_filter_eof_exchange_consumer = None
         self.amount_filter_eof_exchange_producer = None
 
-        # CSV File Manager for persisting pending transactions
-        self.csv_file_manager = CSVFileManager()
+        # Usar UN SOLO LOCK para proteger la escritura a gateway_final_query_queue
         self.producer_lock = threading.Lock()
+
+        data_dir = f"/data/snapshots/amount_filter_q3_{self.id}"
+        self.snapshot_manager = SnapshotManager(data_dir)
+        self.state = self.snapshot_manager.recover()
+        
+        if 'averages_received' not in self.state:
+            self.snapshot_manager.apply_operation({'type': 'set', 'key': 'averages_received', 'value': {}})
+        if 'averages_by_client' not in self.state:
+            self.snapshot_manager.apply_operation({'type': 'set', 'key': 'averages_by_client', 'value': {}})
 
         self._eof_producer_lock = threading.Lock()
         self._eof_counter_by_client : dict[str, int] = {}
@@ -59,7 +63,6 @@ class AmountFilterQ3:
                     EOF_CONTROL_EXCHANGE,
                     [f"{AMOUNT_FILTER_PREFIX}_{self.id}"],
                 )
-            
             self.amount_filter_eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
                     MOM_HOST,
                     EOF_CONTROL_EXCHANGE,
@@ -68,16 +71,27 @@ class AmountFilterQ3:
             
         self.all_averages_received_for_client : dict[str, bool] = {}
         self.all_averages_received_for_client_lock = threading.Lock()
-        self.averages_by_client : dict[str, dict[str, float]] = {}
-        self.averages_by_client_lock = threading.Lock()
         
-
         self._sigterm_received = False
         self._runtime_error = False
 
-        if (self._is_leader()):
+        if self._is_leader():
             self.total_eof_received_by_client = {}
             self._leader_eof_lock = threading.Lock()
+
+        self.BATCH_MAX_SIZE = 1000
+        self.FLUSH_INTERVAL_SECONDS = 20.0
+        self.batch_ops = []
+        self.batch_acks = []
+        self.batch_lock = threading.Lock()
+        
+        self._stop_flush_event = threading.Event()
+        self._flush_thread = threading.Thread(
+            target=self._periodic_flush_loop,
+            daemon=True,
+            name=f"flush-q3-{self.id}"
+        )
+        self._flush_thread.start()
 
         self._is_pending_to_finalize_client = set()
         self._is_pending_to_finalize_client_lock = threading.Lock()
@@ -103,48 +117,108 @@ class AmountFilterQ3:
         except Exception as e:
             self._handle_runtime_failure(e, "Average per pay format consumer crashed")
 
-
     def _run_control_consumer(self):
         try:
             self.amount_filter_eof_exchange_consumer.start_consuming(self.process_eof_control_message)
         except Exception as e:
             self._handle_runtime_failure(e, "Control consumer crashed")
+
+    def _periodic_flush_loop(self):
+        while not self._stop_flush_event.wait(timeout=self.FLUSH_INTERVAL_SECONDS):
+            self._flush_batch_thread_safe()
+
+    def _flush_batch_thread_safe(self):
+        with self.batch_lock:
+            self._flush_batch_locked()
+
+    def _flush_batch_locked(self):
+        if not self.batch_ops:
+            return
+            
+        if hasattr(self.snapshot_manager, 'apply_batch'):
+            self.snapshot_manager.apply_batch(self.batch_ops)
+        else:
+            for op in self.batch_ops:
+                self.snapshot_manager.apply_operation(op)
+        
+        for conn, ack_func in self.batch_acks:
+            if conn is not None and callable(ack_func):
+                conn.add_callback_threadsafe(ack_func)
+                
+        self.batch_ops.clear()
+        for conn, ack_func in self.batch_acks:
+            if conn is not None and callable(ack_func):
+                conn.add_callback_threadsafe(ack_func)
+        self.batch_acks.clear()
     
-
     def process_average_per_pay_format_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3:
-                logging.info(f"Received AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3 message for client {message.source_client_uuid}")
-                client_id = message.source_client_uuid
-                self._process_average_message(message.data, client_id)
-            case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
-                client_id = message.source_client_uuid
-                self._process_eof_average_per_pay_format(client_id)
-        ack()
+        try:
+            message = message_protocol.internal.deserialize(message)
+            match message.type:
+                case message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3:
+                    client_id = message.source_client_uuid
+                    self._process_average_message(message.data, client_id, ack)
+                    ack()
+                case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
+                    client_id = message.source_client_uuid
+                    self._process_eof_average_per_pay_format(client_id, ack)
+                case _:
+                    ack()
+        except Exception as _:
+            logging.exception("Error processing average message")
+            nack()
 
-    def _process_average_message(self, average_data, client_id):
+    def _process_average_message(self, average_data, client_id, ack):
+        average_data = average_data or {}
         average_per_pay_format = average_data.get("averages", {})
-        for payment_format, data in average_per_pay_format.items():
-            with self.averages_by_client_lock:
-                self.averages_by_client.setdefault(client_id, {})[payment_format] = data["average"] * 0.01
+        with self.batch_lock:
+            for payment_format, data in average_per_pay_format.items():
+                avg_value = data["average"] * 0.01
+                self.state['averages_by_client'].setdefault(client_id, {})[payment_format] = avg_value
+                
+                op = {
+                    'type': 'update',
+                    'path': ['averages_by_client', client_id, payment_format],
+                    'value': avg_value
+                }
+                self.batch_ops.append(op)
+                
+            self.batch_acks.append((self.average_per_pay_format_to_filter_exchange_consumer._connection, ack))
+            if len(self.batch_ops) >= self.BATCH_MAX_SIZE:
+                self._flush_batch_locked()
+                
+    def _process_eof_average_per_pay_format(self, client_id, ack):
+        self._flush_batch_thread_safe()
+        self.state['averages_received'][client_id] = True
+        op = {
+            'type': 'update',
+            'path': ['averages_received', client_id],
+            'value': True
+        }
 
+        with self.batch_lock:
+            self.batch_ops.append(op)
+            self.batch_acks.append((self.average_per_pay_format_to_filter_exchange_consumer._connection, ack))
+            self._flush_batch_locked()
 
+        pending_key = f'pending_{client_id}'
+        pending_transactions = self.state.get(pending_key, {})
 
-    def _process_eof_average_per_pay_format(self, client_id):
-        with self.all_averages_received_for_client_lock: #actualizo que ya tengo todas las medias para el cliente, 
+        if isinstance(pending_transactions, list):
+            logging.warning("Detectada lista en transacciones pendientes. Limpia los volumenes de Docker.")
+            pending_transactions = {tx.get('data_id', 'unknown'): tx for tx in pending_transactions if isinstance(tx, dict)}
+
+        # FIX 2: Se lee y procesa unicamente desde la memoria del SnapshotManager (Chau CSV)
+        for data_id, transaction in pending_transactions.items():
+            self._filter_data_with_averages(client_id, data_id, transaction)
+
+        with self.all_averages_received_for_client_lock: 
             self.all_averages_received_for_client[client_id] = True
         
-        # Procesar los pendientes que tenga guardados en el CSV para ese cliente
-        pending_transactions = self.csv_file_manager.read_all_transactions(client_id)
-        for pending_transaction, data_id in pending_transactions:
-            self._filter_data_with_averages(client_id, data_id, pending_transaction)
-        
-        with self._eof_counter_lock: #actualizo eofs
+        with self._eof_counter_lock: 
             self._eof_counter_by_client[client_id] = self._eof_counter_by_client.get(client_id, 0) + 1
-
-        with self._eof_counter_lock:
             obtenidosDosEofs = self._eof_counter_by_client[client_id] == 2
+        
         if obtenidosDosEofs:
             with self._inflight_message_lock:
                 if self._inflight_messages.get(client_id, 0) > 0:
@@ -155,42 +229,64 @@ class AmountFilterQ3:
                     logging.debug(f"EOF received for client {client_id} from averages and no inflight messages. Finalizing client.")
                     self._finalize_client(client_id)
                         
-
     def process_usd_filter_q3_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3:
-                self._add_inflight_message(message.source_client_uuid)
-                client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id,message.data_id)
-                self._decrease_inflight_message(message.source_client_uuid)
-                self._check_and_finalize_client_if_pending(client_id)
-            case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
-                client_id = message.source_client_uuid
-                self._process_usd_filter_q3_eof(client_id)
-        ack()
+        try:
+            message = message_protocol.internal.deserialize(message)
+            match message.type:
+                case message_protocol.internal.InternalMessageType.USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3:
+                    self._add_inflight_message(message.source_client_uuid)
+                    client_id = message.source_client_uuid
+                    self._process_transaction(message.data, client_id, message.data_id, ack)
+                    self._decrease_inflight_message(message.source_client_uuid)
+                    self._check_and_finalize_client_if_pending(client_id)
+                case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
+                    client_id = message.source_client_uuid
+                    self._process_usd_filter_q3_eof(client_id)
+                    ack()
+                case _:
+                    ack()
+        except Exception as _:
+            logging.exception("Error processing transaction message")
+            nack()
         
-
-    def _process_transaction(self, transaction_data, client_id, data_id):
+    def _process_transaction(self, transaction_data, client_id, data_id, ack):
         logging.debug(f"Received USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3 for client {client_id}")
-        with self.all_averages_received_for_client_lock:
-            if not self.all_averages_received_for_client.get(client_id, False):
-                logging.debug(f"Aún no se han recibido todas las medias para el cliente {client_id}. Guardando transacción en CSV pendiente.")
-                self.csv_file_manager.append_transaction(client_id, transaction_data, data_id)
-            else:
-                self._filter_data_with_averages(client_id, data_id, transaction_data)
-        
+        averages_received = self.state.get('averages_received', {}).get(client_id, False)
+
+        if not averages_received:
+            pending = self.state.setdefault(f'pending_{client_id}', {})
+            pending[data_id] = transaction_data
+            
+            op ={
+                'type': 'update',
+                'path': [f'pending_{client_id}', data_id],
+                'value': transaction_data
+            }
+            with self.batch_lock:
+                self.batch_ops.append(op)
+                self.batch_acks.append((self.usd_filter_q3_queue._connection, ack))
+                if len(self.batch_ops) >= self.BATCH_MAX_SIZE:
+                    self._flush_batch_locked()
+        else:
+            self._filter_data_with_averages(client_id, data_id, transaction_data)
+            ack()
+                
     def _filter_data_with_averages(self, client_id, data_id, transaction_data):
         amount_received = float(transaction_data.get("amount_received", 0))
-        with self.averages_by_client_lock:
-            average_centesimal_to_compare = self.averages_by_client.get(client_id, {}).get(transaction_data.get("payment_format"), 0)
-        if amount_received > 0 and amount_received < average_centesimal_to_compare :
+        
+        client_averages = self.state.get('averages_by_client', {}).get(client_id, {})
+        average_centesimal_to_compare = client_averages.get(transaction_data.get("payment_format"), 0)
+
+        if amount_received > 0 and amount_received < average_centesimal_to_compare:
+            # FIX 3: Usamos producer_lock (no cambies esto a eof_producer_lock)
             with self.producer_lock:
                 self.gateway_final_query_queue.send(AmountFilterQ3MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data))
             logging.debug(f"Transaction for client {client_id} sent to final gateway queue")
 
     def send_final_eof(self, client_id):
-        self.gateway_final_query_queue.send(AmountFilterQ3MessageHandler.serialize_eof_message(client_id))
+        # FIX 3: Protegemos el uso de gateway_final_query_queue con producer_lock para evitar el Index Error
+        with self.producer_lock:
+            self.gateway_final_query_queue.send(AmountFilterQ3MessageHandler.serialize_eof_message(client_id))
         logging.info(f"Sent final EOF for client {client_id} to gateway final query queue")
     
     def _process_usd_filter_q3_eof(self, client_id):
@@ -198,21 +294,21 @@ class AmountFilterQ3:
 
         with self._eof_counter_lock:
             self._eof_counter_by_client[client_id] = self._eof_counter_by_client.get(client_id, 0) + 1
+            obtenidosTodosLosEofs = self._eof_counter_by_client[client_id] >= 2
 
+        # Propagamos a los peers si hay múltiples replicas
         if AMOUNT_FILTER_AMOUNT > 1:
             with self._eof_producer_lock:
                 self.amount_filter_eof_exchange_producer.send(AmountFilterQ3MessageHandler.serialize_eof_message(client_id))
-            logging.debug(f"Sent EOF for client {client_id} to other amount filters")
 
-        with self.all_averages_received_for_client_lock:
-            averages_received = client_id in self.all_averages_received_for_client
-
-        # Check if there are pending transactions in the CSV file
-        pending_transactions = self.csv_file_manager.read_all_transactions(client_id)
-        is_pending_data_to_send = len(pending_transactions) > 0
-
-        if averages_received and not is_pending_data_to_send:
-            self._finalize_client(client_id)
+        # Si tenemos los dos EOFs de entrada, finalizamos
+        if obtenidosTodosLosEofs:
+            with self._inflight_message_lock:
+                if self._inflight_messages.get(client_id, 0) > 0:
+                    with self._is_pending_to_finalize_client_lock:
+                        self._is_pending_to_finalize_client.add(client_id)
+                else:
+                    self._finalize_client(client_id)
     
     def _check_and_finalize_client_if_pending(self, client_id):
         should_finalize = False
@@ -229,15 +325,17 @@ class AmountFilterQ3:
             self._finalize_client(client_id)
                         
     def _finalize_client(self, client_id):
-
         with self._finalized_clients_lock:
             if client_id in self._finalized_clients:
                 return
             logging.debug(f"Finalizando cliente {client_id}")
             self._finalized_clients.add(client_id)
 
-        # Clean up CSV file after client is finalized
-        self.csv_file_manager.delete_csv_file(client_id)
+        # Limpiar la data persistida de las transacciones en vuelo del snapshot
+        with self.batch_lock:
+            self.batch_ops.append({'type': 'delete', 'key': f'pending_{client_id}'})
+            self.batch_acks.append((None, None))
+            self._flush_batch_locked()
 
         if self._is_leader():
             self._leader_count_eof_for_client(client_id)
@@ -247,7 +345,6 @@ class AmountFilterQ3:
         with self._is_pending_to_finalize_client_lock:
             if client_id in self._is_pending_to_finalize_client:
                 self._is_pending_to_finalize_client.remove(client_id)
-        
 
     def send_eof_leader_message(self, client_id):
         with self._eof_producer_lock:
@@ -273,8 +370,8 @@ class AmountFilterQ3:
                 if self._is_leader():
                     logging.debug(f"Received EOF_LEADER_MESSAGE for client {message.source_client_uuid}")
                     self._leader_count_eof_for_client(message.source_client_uuid)
-                
         ack()
+
     def _leader_count_eof_for_client(self, client_id):
         should_send_final_eof = False
         with self._leader_eof_lock:
@@ -303,26 +400,22 @@ class AmountFilterQ3:
                 logging.debug(f"EOF received for client {client_id} and no inflight messages. Finalizing client.")
                 self._finalize_client(client_id)
 
-
-
     def stop(self):
         with self._stop_lock:
             if self._stopping:
                 return
             self._stopping = True
-
-        consumers = [
-            self.usd_filter_q3_queue,
-            self.average_per_pay_format_to_filter_exchange_consumer,
-        ]
-        if self.amount_filter_eof_exchange_consumer is not None:
-            consumers.append(self.amount_filter_eof_exchange_consumer)
-
-        for consumer in consumers:
-            try:
-                consumer.stop_consuming()
-            except Exception as e:
-                logging.error(f"Error stopping consumer: {e}")
+        self._stop_flush_event.set()
+        self._flush_thread.join()
+        self._flush_batch_thread_safe()
+        
+        # Apagado thread-safe
+        if hasattr(self, 'usd_filter_q3_queue') and self.usd_filter_q3_queue._connection:
+            self.usd_filter_q3_queue._connection.add_callback_threadsafe(self.usd_filter_q3_queue.stop_consuming)
+        if hasattr(self, 'average_per_pay_format_to_filter_exchange_consumer') and self.average_per_pay_format_to_filter_exchange_consumer._connection:
+            self.average_per_pay_format_to_filter_exchange_consumer._connection.add_callback_threadsafe(self.average_per_pay_format_to_filter_exchange_consumer.stop_consuming)
+        if self.amount_filter_eof_exchange_consumer and self.amount_filter_eof_exchange_consumer._connection:
+            self.amount_filter_eof_exchange_consumer._connection.add_callback_threadsafe(self.amount_filter_eof_exchange_consumer.stop_consuming)
 
     def _close_resources(self):
         resources = [
@@ -352,7 +445,6 @@ class AmountFilterQ3:
         self.stop()
     
     def start(self):
-
         usd_filter_q3_thread = threading.Thread(
         target=self._run_usd_filter_q3_consumer,
         name="usd-q3-consumer-thread",
@@ -362,7 +454,6 @@ class AmountFilterQ3:
         target=self._run_average_per_pay_format_aggregator,
         name="average-per-pay-format-consumer-thread",
         )
-
 
         if AMOUNT_FILTER_AMOUNT > 1:
             control_thread = threading.Thread(
@@ -403,7 +494,6 @@ class AmountFilterQ3:
 
         return 0
 
-
 def main():
     configure_logging_from_env()
     amount_filter_q3 = AmountFilterQ3()
@@ -414,7 +504,6 @@ def main():
 
     signal.signal(signal.SIGTERM, _handle_sigterm)
     return amount_filter_q3.start()
-
 
 if __name__ == "__main__":
     main()

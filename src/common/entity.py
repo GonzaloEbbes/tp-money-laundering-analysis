@@ -20,7 +20,6 @@ class DeprecatedToEliminateEntity(ABC):
             if output_queue
             else None
         )
-
     @abstractmethod
     def entity_type(self):
         pass
@@ -41,7 +40,7 @@ class DeprecatedToEliminateEntity(ABC):
     def _handle_raw_message(self, raw_message, ack, nack):
         try:
             message = message_protocol.deserialize(raw_message)
-            processed = self.process_message(message)
+            processed = self.process_message(message, ack, nack)
             if self.processing_delay_seconds > 0:
                 time.sleep(self.processing_delay_seconds)
 

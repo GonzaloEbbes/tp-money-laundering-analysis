@@ -53,7 +53,7 @@ class CurrencyConverter(DeprecatedToEliminateEntity):
     def entity_type(self):
         return "currency_converter"
 
-    def process_message(self, message):
+    def process_message(self, message, ack, nack):
         if message.type == message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
             return message
 

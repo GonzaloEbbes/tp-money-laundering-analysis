@@ -1,14 +1,12 @@
-import hashlib
 import os
 import logging
-import re
 import signal
 import threading
-from time import sleep
 import uuid
 
 from common import middleware, message_protocol
 from common.logging.logging_config import configure_logging_from_env
+from common.snapshots.snapshot import SnapshotManager
 from message_handler import MessageHandler as AmountFilterQ1MessageHandler
 
 ID = os.environ["ID"]
@@ -67,6 +65,14 @@ class AmountFilterQ1:
                 )
             self._eof_count_by_client = {}
             self._eof_count_lock = threading.Lock()
+        data_dir = f"/data/snapshots/amount_filter_q5_{self.id}"
+        self.snapshot_manager = SnapshotManager(data_dir)
+        self.state = self.snapshot_manager.recover()
+        self.BATCH_MAX_SIZE = 1000
+        self.FLUSH_INTERVAL_SECONDS = 2.0
+        self.batch_ops = []
+        self.batch_acks = []
+        self.batch_lock = threading.Lock()
             
         self.cant_trx_lock = threading.Lock()
         self.cant_trx_by_client = {}
@@ -86,6 +92,14 @@ class AmountFilterQ1:
         self._inflight_message_lock = threading.Lock()
         self._stop_lock = threading.Lock()
         self._stopping = False
+
+        self._stop_flush_event = threading.Event()
+        self._flush_thread = threading.Thread(
+            target=self._periodic_flush_loop,
+            daemon=True,
+            name=f"flush-q5-{self.id}"
+        )
+        self._flush_thread.start()
     
     def _is_leader(self):
         return self.id == 0
@@ -106,6 +120,29 @@ class AmountFilterQ1:
             self.amount_filter_eof_exchange_consumer.start_consuming(self.process_eof_control_message)
         except Exception as e:
             self._handle_runtime_failure(e, "Control consumer crashed")
+
+    def _periodic_flush_loop(self):
+        while not self._stop_flush_event.wait(timeout=self.FLUSH_INTERVAL_SECONDS):
+            self._flush_batch_thread_safe()
+
+    def _flush_batch_thread_safe(self):
+        with self.batch_lock:
+            self._flush_batch_locked()
+
+    def _flush_batch_locked(self):
+        if self.batch_ops:
+            if hasattr(self.snapshot_manager, 'apply_batch'):
+                self.snapshot_manager.apply_batch(self.batch_ops)
+            else:
+                for op in self.batch_ops:
+                    self.snapshot_manager.apply_operation(op)
+            self.batch_ops.clear()
+        
+        # Iterar sobre las conexiones y delegar el ACK siempre
+        for conn, ack_func in self.batch_acks:
+            if callable(ack_func):
+                conn.add_callback_threadsafe(ack_func)
+        self.batch_acks.clear()
     
     def process_pay_format_and_currency_converter_messages(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
@@ -113,47 +150,51 @@ class AmountFilterQ1:
             case message_protocol.internal.InternalMessageType.USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5:
                 self._add_inflight_message(message.source_client_uuid)
                 client_id = message.source_client_uuid
-                self._process_usd_currency_converter_message(message.data, client_id, message.data_id)
+                self._process_q5_transaction_message(message.data, client_id, message.data_id, ack)
                 self._decrease_inflight_message(message.source_client_uuid)
                 self._check_and_finalize_client_if_pending(client_id)
             case message_protocol.internal.InternalMessageType.PAY_FORMAT_FILTER_TO_AMOUNT_FILTER_Q5:
                 self._add_inflight_message(message.source_client_uuid)
                 client_id = message.source_client_uuid
-                self._process_pay_format_message(message.data, client_id, message.data_id)
+                self._process_q5_transaction_message(message.data, client_id, message.data_id, ack)
                 self._decrease_inflight_message(message.source_client_uuid)
                 self._check_and_finalize_client_if_pending(client_id)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
                 self._process_input_queue_eof(client_id)
-        ack()
+                ack()
         
 
-    def _process_pay_format_message(self, transaction_data, client_id, data_id):
+    def _process_q5_transaction_message(self, transaction_data, client_id, data_id, ack):
         amount_paid = float(transaction_data.get("amount_paid"))
 
         if amount_paid > 0 and amount_paid < 1:
-            with self.cant_trx_lock:
-                self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
-        
+            current_count = self.state.get(client_id, 0)
 
-    def _process_usd_currency_converter_message(self, transaction_data, client_id, data_id): 
-        amount_paid = float(transaction_data.get("amount_paid"))
-
-        if amount_paid > 0 and amount_paid < 1:
-            with self.cant_trx_lock:
-                self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + 1
+            self.state[client_id] = current_count + 1
+            op = {
+                'type': 'set',
+                'key': client_id,
+                'value': current_count + 1
+            }
+            with self.batch_lock:
+                self.batch_ops.append(op)
+                self.batch_acks.append((self.pay_format_filter_and_currency_converter_queue._connection,ack))
+                if len(self.batch_ops) >= self.BATCH_MAX_SIZE:
+                    self._flush_batch_locked()
+        else:
+            ack()
 
     def send_final_eof(self, client_id):
         data_id = str(uuid.uuid4()) 
-        with self.cant_trx_lock:
-            cant_trx = self.cant_trx_by_client.get(client_id, 0)
-            self.gateway_final_query_queue.send(
-                AmountFilterQ1MessageHandler.serialize_gateway_query_message(
-                    client_id,
-                    data_id,
-                    {"cantTrx": cant_trx},
-                )
+        cant_trx = self.state.get(client_id, 0)
+        self.gateway_final_query_queue.send(
+            AmountFilterQ1MessageHandler.serialize_gateway_query_message(
+                client_id,
+                data_id,
+                {"cantTrx": cant_trx},
             )
+        )
         logging.info("Q5 final result for client %s: cantTrx=%s", client_id, cant_trx)
         self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_eof_message(client_id))
         logging.info(f"Sent final EOF for client {client_id} to gateway final query queue")
@@ -178,6 +219,8 @@ class AmountFilterQ1:
     
     def _finalize_client(self, client_id):
 
+        self._flush_batch_thread_safe()
+
         with self._finalized_clients_lock:
             if client_id in self._finalized_clients:
                 return
@@ -188,6 +231,14 @@ class AmountFilterQ1:
             self._leader_count_eof_for_client(client_id)
         else:
             self.send_eof_leader_message(client_id)
+
+            with self.batch_lock:
+                self.batch_ops.extend([
+                    {'type': 'delete', 'key': client_id},
+                    {'type': 'delete', 'key': f'eof_count_{client_id}'}
+                ])
+                self.batch_acks.append((None, None))
+                self._flush_batch_locked()
 
         with self._is_pending_to_finalize_client_lock:
             if client_id in self._is_pending_to_finalize_client:
@@ -210,8 +261,7 @@ class AmountFilterQ1:
         self._finalize_client(client_id)
 
     def send_eof_leader_message(self, client_id):
-        with self.cant_trx_lock:
-            local_count = self.cant_trx_by_client.get(client_id, 0)
+        local_count = self.state.get(client_id, 0)
         data = { "cantTrx": local_count }
         
         with self._eof_producer_lock:
@@ -239,13 +289,26 @@ class AmountFilterQ1:
                     self._leader_count_eof_for_client(message.source_client_uuid,message.data)
                 
         ack()
+
     def _leader_count_eof_for_client(self, client_id, partial_data=None):
         should_send_final_eof = False
 
         if partial_data is not None: #Suma los datos parciales de las otras instancias
             partial_count = int(partial_data.get("cantTrx", 0))
-            with self.cant_trx_lock:
-                self.cant_trx_by_client[client_id] = self.cant_trx_by_client.get(client_id, 0) + partial_count
+            current_count = self.state.get(client_id, 0)
+            new_count = current_count + partial_count
+            self.state[client_id] = new_count
+
+            op = {
+                'type': 'set',
+                'key': client_id,
+                'value': new_count
+            }
+            with self.batch_lock:
+                self.batch_ops.append(op)
+                self.batch_acks.append((None, None))
+                if len(self.batch_ops) >= self.BATCH_MAX_SIZE:
+                    self._flush_batch_locked()
 
         with self._leader_eof_lock:
             self.total_eof_leader_received_by_client[client_id] = self.total_eof_leader_received_by_client.get(client_id, 0) + 1
@@ -257,6 +320,13 @@ class AmountFilterQ1:
         
         if should_send_final_eof:
             self.send_final_eof(client_id)
+            with self.batch_lock:
+                self.batch_ops.extend([
+                    {'type': 'delete', 'key': client_id},
+                    {'type': 'delete', 'key': f'eof_count_{client_id}'}
+                ])
+                self.batch_acks.append((None, None))
+                self._flush_batch_locked()
 
     def _process_eof_from_control_exchange(self, client_id):
         self._register_eof_for_client(client_id)
@@ -280,6 +350,9 @@ class AmountFilterQ1:
             if self._stopping:
                 return
             self._stopping = True
+        self._stop_flush_event.set()
+        self._flush_thread.join()
+        self._flush_batch_thread_safe()
 
         consumers = [self.pay_format_filter_and_currency_converter_queue]
         if self.amount_filter_eof_exchange_consumer is not None:

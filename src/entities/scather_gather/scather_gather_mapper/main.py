@@ -5,6 +5,7 @@ import signal
 import threading
 
 from common import middleware, message_protocol
+from common.snapshots.snapshot import SnapshotManager
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as ScatherGatherMessageHandler
 
@@ -64,6 +65,27 @@ class ScatherGatherMapper:
         self.partial_fanout_by_client : dict[str, dict[str, set[str]]] = {}
         self.partial_fanin_by_client : dict[str, dict[str, set[str]]] = {}
 
+        data_dir = f"/data/snapshots/sg_mapper_{self.id}"
+        self.snapshot_manager = SnapshotManager(data_dir)
+        self.state = self.snapshot_manager.recover()
+
+        self.BATCH_MAX_SIZE = 1000
+        self.FLUSH_INTERVAL_SECONDS = 7.0
+        self.batch_ops = []
+        self.batch_acks = []
+        self.batch_lock = threading.Lock()
+
+        # Reconstruir RAM desde WAL al bootear
+        self._is_pending_to_finalize_client = set()
+        for key, txs in self.state.items():
+            if key.startswith('txs_'):
+                cid = key[4:]
+                for tx in txs:
+                    self._populate_ram(tx, cid)
+            elif key.startswith('control_eof_'):
+                cid = key[12:]
+                self._is_pending_to_finalize_client.add(cid)
+
 
         #Control de shutdown y estado de clientes
         self._sigterm_received = False
@@ -76,6 +98,43 @@ class ScatherGatherMapper:
         self._inflight_message_lock = threading.Lock()
         self._stop_lock = threading.Lock()
         self._stopping = False
+
+        self._stop_flush_event = threading.Event()
+        self._flush_thread = threading.Thread(
+            target=self._periodic_flush_loop, daemon=True, name=f"flush-sg-map-{self.id}"
+        )
+        self._flush_thread.start()
+
+    def _periodic_flush_loop(self):
+        while not self._stop_flush_event.wait(timeout=self.FLUSH_INTERVAL_SECONDS):
+            self._flush_batch_thread_safe()
+
+    def _flush_batch_thread_safe(self):
+        with self.batch_lock:
+            self._flush_batch_locked()
+
+    def _flush_batch_locked(self):
+        # 1. Procesar la data del Snapshot si hay algo
+        if self.batch_ops:
+            if hasattr(self.snapshot_manager, 'apply_batch'):
+                self.snapshot_manager.apply_batch(self.batch_ops)
+            else:
+                for op in self.batch_ops:
+                    self.snapshot_manager.apply_operation(op)
+            self.batch_ops.clear()
+            
+        # 2. Los acks SIEMPRE se despachan, aunque no haya habido escrituras a disco
+        for conn, ack_func in self.batch_acks:
+            if conn and callable(ack_func):
+                conn.add_callback_threadsafe(ack_func)
+        self.batch_acks.clear()
+
+    def _populate_ram(self, transaction_data, client_id):
+        origin = transaction_data.get("account_origin")
+        destination = transaction_data.get("account_destination")
+        with self.partial_dicts_lock:
+            self.partial_fanin_by_client.setdefault(client_id, {}).setdefault(destination, set()).add(origin)
+            self.partial_fanout_by_client.setdefault(client_id, {}).setdefault(origin, set()).add(destination)
 
     
     def _run_usd_filter_q4_consumer(self):
@@ -97,24 +156,30 @@ class ScatherGatherMapper:
             case message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_SCATHER_GATHER_MAPPER:
                 self._add_inflight_message(message.source_client_uuid)
                 client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
+                self._process_transaction(message.data, client_id, message.data_id, ack)
                 self._decrease_inflight_message(message.source_client_uuid)
                 self._check_and_finalize_client_if_pending(client_id)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
-                self._process_usd_filter_q4_eof(client_id)
-        ack()
+                self._process_usd_filter_q4_eof(client_id, ack)
+            case _:
+                ack()
         
 
-    def _process_transaction(self, transaction_data, client_id, data_id):
+    def _process_transaction(self, transaction_data, client_id, data_id, ack):
         logging.debug(f"Received USD_FILTER_Q4_TO_SCATHER_GATHER_MAPPER for client {client_id}")
-        origin = transaction_data.get("account_origin")
-        destination = transaction_data.get("account_destination")
+        self._populate_ram(transaction_data, client_id)
+        op = {
+            'type':'append',
+            'key': f"txs_{client_id}",
+            'value': transaction_data
+        }
 
-        with self.partial_dicts_lock:
-            self.partial_fanin_by_client.setdefault(client_id, {}).setdefault(destination, set()).add(origin)
-            self.partial_fanout_by_client.setdefault(client_id, {}).setdefault(origin, set()).add(destination)
-
+        with self.batch_lock:
+            self.batch_ops.append(op)
+            self.batch_acks.append((self.usd_filter_q4_queue._connection, ack))
+            if len(self.batch_ops) >= self.BATCH_MAX_SIZE:
+                self._flush_batch_locked()
 
     def _send_eof_to_aggregators(self, client_id):
         eof_message = ScatherGatherMessageHandler.serialize_eof_message(client_id)
@@ -153,8 +218,9 @@ class ScatherGatherMapper:
         value = int.from_bytes(digest, byteorder="big")
         return value % SCATHER_GATHER_AGGREGATOR_AMOUNT
     
-    def _process_usd_filter_q4_eof(self, client_id):
+    def _process_usd_filter_q4_eof(self, client_id, ack):
         logging.info(f"Received EOF for client {client_id}")
+        self._flush_batch_thread_safe()
 
         if SCATHER_GATHER_MAPPER_AMOUNT > 1:
             with self._eof_producer_lock:
@@ -163,7 +229,7 @@ class ScatherGatherMapper:
 
         self._send_data_to_aggregators(client_id)
         self._send_eof_to_aggregators(client_id)
-        self._finalize_client(client_id)
+        self._finalize_client(client_id, self.usd_filter_q4_queue._connection, ack)
     
     def _check_and_finalize_client_if_pending(self, client_id):
         should_finalize = False
@@ -182,9 +248,13 @@ class ScatherGatherMapper:
             self._send_eof_to_aggregators(client_id)
             self._finalize_client(client_id)
                         
-    def _finalize_client(self, client_id):
+    def _finalize_client(self, client_id, conn=None, ack=None):
         with self._finalized_clients_lock:
             if client_id in self._finalized_clients:
+                if conn and ack:
+                    with self.batch_lock:
+                        self.batch_acks.append((conn, ack))
+                        self._flush_batch_locked()
                 return
             logging.info(f"Finalizando cliente {client_id}")
             self._finalized_clients.add(client_id)
@@ -214,11 +284,17 @@ class ScatherGatherMapper:
         match message.type:
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 logging.info(f"Received EOF_GENERIC_MESSAGE for client {message.source_client_uuid}")
-                self._process_eof_from_control_exchange(message.source_client_uuid)
+                self._process_eof_from_control_exchange(message.source_client_uuid, ack)
                 
         ack()
 
-    def _process_eof_from_control_exchange(self, client_id):
+    def _process_eof_from_control_exchange(self, client_id, ack):
+        op = {'type': 'set', 'key': f'control_eof_{client_id}', 'value': True}
+        with self.batch_lock:
+            self.batch_ops.append(op)
+            self.batch_acks.append((self.scather_gather_eof_exchange_consumer._connection, ack))
+            self._flush_batch_locked()
+
         with self._inflight_message_lock:
             if self._inflight_messages.get(client_id, 0) > 0:
                 logging.info(f"EOF received for client {client_id} but there are still inflight messages. Marking client as finalized but waiting for inflight messages to finish.")
@@ -235,6 +311,10 @@ class ScatherGatherMapper:
             if self._stopping:
                 return
             self._stopping = True
+        self._stop_flush_event.set()
+        if hasattr(self, '_flush_thread'):
+            self._flush_thread.join()
+        self._flush_batch_thread_safe()
 
         consumers = [self.usd_filter_q4_queue]
         if self.scather_gather_eof_exchange_consumer is not None:

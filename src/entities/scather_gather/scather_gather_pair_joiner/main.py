@@ -5,6 +5,7 @@ import signal
 import threading
 
 from common import middleware, message_protocol
+from common.snapshots.snapshot import SnapshotManager
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as ScatherGatherMessageHandler
 
@@ -44,6 +45,25 @@ class ScatherGatherPairJoiner:
 
         self.eof_count_by_client = {}
 
+        data_dir = f"/data/snapshots/sg_pair_{self.id}"
+        self.snapshot_manager = SnapshotManager(data_dir)
+        self.state = self.snapshot_manager.recover()
+
+        self.BATCH_MAX_SIZE = 100
+        self.FLUSH_INTERVAL_SECONDS = 2.0
+        self.batch_ops = []
+        self.batch_acks = []
+        self.batch_lock = threading.Lock()
+
+        for key, data in self.state.items():
+            if key.startswith('txs_'):
+                cid = key[4:]
+                for tx in data:
+                    self._populate_ram(tx, cid)
+            elif key.startswith('eofs_'):
+                cid = key[5:]
+                self.eof_count_by_client[cid] = data
+
         #Control de shutdown y estado de clientes
         self._sigterm_received = False
         self._runtime_error = False
@@ -52,7 +72,42 @@ class ScatherGatherPairJoiner:
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-    
+        self._stop_flush_event = threading.Event()
+        self._flush_thread = threading.Thread(
+            target=self._periodic_flush_loop, daemon=True, name=f"flush-sg-pair-{self.id}"
+        )
+        self._flush_thread.start()
+
+        for cid, count in list(self.eof_count_by_client.items()):
+            if count >= SCATHER_GATHER_AGGREGATOR_AMOUNT:
+                self._send_data_to_joiners(cid)
+                self._send_eof_to_joiners(cid)
+                self._finalize_client(cid)
+
+    def _periodic_flush_loop(self):
+        while not self._stop_flush_event.wait(timeout=self.FLUSH_INTERVAL_SECONDS):
+            self._flush_batch_thread_safe()
+
+    def _flush_batch_thread_safe(self):
+        with self.batch_lock: 
+            self._flush_batch_locked()
+
+    def _flush_batch_locked(self):
+        # 1. Procesar la data del Snapshot si hay algo
+        if self.batch_ops:
+            if hasattr(self.snapshot_manager, 'apply_batch'):
+                self.snapshot_manager.apply_batch(self.batch_ops)
+            else:
+                for op in self.batch_ops:
+                    self.snapshot_manager.apply_operation(op)
+            self.batch_ops.clear()
+            
+        # 2. Los acks SIEMPRE se despachan, aunque no haya habido escrituras a disco
+        for conn, ack_func in self.batch_acks:
+            if conn and callable(ack_func):
+                conn.add_callback_threadsafe(ack_func)
+        self.batch_acks.clear()
+
     def _run_input_exchange_consumer(self):
         try:
             self.scather_gather_pair_joiner_input_exchange.start_consuming(self.process_scather_gather_agg_messages)
@@ -64,17 +119,17 @@ class ScatherGatherPairJoiner:
         match message.type:
             case message_protocol.internal.InternalMessageType.SCATHER_GATHER_AGGREGATOR_TO_SCATHER_GATHER_PAIR_JOINER:
                 client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
+                self._process_transaction(message.data, client_id, message.data_id, ack)
             case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
                 client_id = message.source_client_uuid
-                self._process_scather_gather_agg_eofs(client_id)
-        ack()
-        
+                self._process_scather_gather_agg_eofs(client_id, ack)
+            case _:
+                ack()
 
-    def _process_transaction(self, transaction_data, client_id, data_id):
-        type = transaction_data.get("type")
-        key = transaction_data.get("key")
-        value = transaction_data.get("value")
+    def _populate_ram(self, tx, client_id):
+        type = tx.get("type")
+        key = tx.get("key")
+        value = tx.get("value")
         if type == "FANIN_MIDDLE":
             logging.debug(f"Received FANIN MIDDLE message for client {client_id}")
             self._process_fanin_transaction_in_middle_structure(client_id, key, value)
@@ -84,6 +139,14 @@ class ScatherGatherPairJoiner:
         else:
             logging.warning(f"Received unknown transaction type {type} for client {client_id}")
 
+    def _process_transaction(self, transaction_data, client_id, data_id, ack):
+        self._populate_ram(transaction_data, client_id)
+        op = {'type': 'append', 'key': f'txs_{client_id}', 'value': transaction_data}
+        with self.batch_lock:
+            self.batch_ops.append(op)
+            self.batch_acks.append((self.scather_gather_pair_joiner_input_exchange._connection, ack))
+            if len(self.batch_ops) >= self.BATCH_MAX_SIZE:
+                self._flush_batch_locked()
 
     def _process_fanin_transaction_in_middle_structure(self, client_id, destination, middle_account):
         with self.dicts_lock:
@@ -121,17 +184,25 @@ class ScatherGatherPairJoiner:
         
 
     def _worker_to_send_data_to_joiners(self, origen, destino):
-
         hashkey=("".join([origen, destino])).encode("utf-8")
         digest=hashlib.sha256(hashkey).digest()
         value = int.from_bytes(digest, byteorder="big")
         return value % SCATHER_GATHER_JOINER_AMOUNT
 
-    def _process_scather_gather_agg_eofs(self, client_id):
+    def _process_scather_gather_agg_eofs(self, client_id, ack):
         logging.info(f"Received EOF for client {client_id}")
+        self._flush_batch_thread_safe()
+        
         self.eof_count_by_client[client_id] = self.eof_count_by_client.get(client_id, 0) + 1
+        count = self.eof_count_by_client[client_id]
 
-        if self.eof_count_by_client[client_id] == SCATHER_GATHER_AGGREGATOR_AMOUNT:
+        op = {'type': 'set', 'key': f'eofs_{client_id}', 'value': count}
+        with self.batch_lock:
+            self.batch_ops.append(op)
+            self.batch_acks.append((self.scather_gather_pair_joiner_input_exchange._connection, ack))
+            self._flush_batch_locked() 
+
+        if count == SCATHER_GATHER_AGGREGATOR_AMOUNT:
             self._send_data_to_joiners(client_id)
             self._send_eof_to_joiners(client_id)
             self._finalize_client(client_id)
@@ -150,12 +221,25 @@ class ScatherGatherPairJoiner:
         
         if client_id in self.eof_count_by_client:
             del self.eof_count_by_client[client_id]
+        
+        with self.batch_lock:
+            self.batch_ops.extend([
+                {'type': 'delete', 'key': f'txs_{client_id}'},
+                {'type': 'delete', 'key': f'eofs_{client_id}'}
+            ])
+            self.batch_acks.append((None, None))
+            self._flush_batch_locked()
 
     def stop(self):
         with self._stop_lock:
             if self._stopping:
                 return
             self._stopping = True
+
+        self._stop_flush_event.set()
+        if hasattr(self, '_flush_thread'):
+            self._flush_thread.join()
+        self._flush_batch_thread_safe()
 
         consumers = [self.scather_gather_pair_joiner_input_exchange]
 
