@@ -17,7 +17,7 @@ class EOFController:
     
     BACKOFF_TIME_SECONDS_BEFORE_RESENDING_CONSENSUS_REQUEST = 2
 
-    def __init__(self, mom_host, id_worker, prefix_worker, amount_workers,eof_control_exchange_name,input_eofs_quantities,on_consensus_ok_callback,on_send_eof_to_next_stage_callback,auxiliary_input_data=False):
+    def __init__(self, mom_host, id_worker, prefix_worker, amount_workers,eof_control_exchange_name,input_eofs_quantities,on_consensus_ok_callback,on_send_eof_to_next_stage_callback,on_clean_client_in_main_thread_callback,auxiliary_input_data=False):
 
         
         self.id = int(id_worker)
@@ -49,7 +49,7 @@ class EOFController:
         self.consensus_partial_count_by_client_lock = threading.Lock()
         self.consensus_partial_count_by_client : dict[str, partial_count_by_worker_prefix_and_id] = {}
         
-        #Parcial de envio de paquetes a la capa siguiente
+        #Parcial de envio de paquetes a la capa siguiente 
         self.total_packets_sent_by_client_lock = threading.Lock() 
         self.total_packets_sent_by_client : dict[str, partial_count_by_worker_prefix_and_id ] = {} #acumulado del lider 
         self.packets_partial_sent_by_client_lock = threading.Lock()
@@ -58,8 +58,9 @@ class EOFController:
         self.consensus_request_transition_lock = threading.Lock() #lock para evitar condicion de carrera entre el comienzo de consenso desde el input thread y la lectura de un mensaje RESPONSE de consenso en el eof consumer
 
         # FUNCIONES DE CALLBACK A CONECTAR SI O SI. PUEDEN VENIR COMO None SI NO HACE FALTA
-        self.on_consensus_ok_reception_for_client_callback = on_consensus_ok_callback #Son las acciones de post proces, como enviar consolidados
+        self.on_consensus_ok_reception_for_client_callback = on_consensus_ok_callback #Son las acciones de post proceso, como armar consolidados
         self.on_send_eof_to_next_stage_callback = on_send_eof_to_next_stage_callback #se necesita para desde el hilo principal enviar el mensaje por el producer correcto
+        self.on_clean_client_in_main_thread_callback = on_clean_client_in_main_thread_callback #si desde el hilo principal hay que limpiar datos al finalizar
 
         if not self.is_single_instance():
             other_worker_instances = []
@@ -517,6 +518,8 @@ class EOFController:
                 del self.postprocess_received_by_client[client_id]
         with self.packets_partial_sent_by_client_lock:
             self.packets_partial_sent_by_client.pop(client_id, None)
+        if self.on_clean_client_in_main_thread_callback is not None:
+            self.on_clean_client_in_main_thread_callback(client_id)
 
 
     def on_stop(self):

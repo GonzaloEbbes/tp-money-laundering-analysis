@@ -62,7 +62,7 @@ class DateFilter:
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_controller = EOFController(MOM_HOST, self.id, DATE_FILTER_PREFIX, DATE_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, AUXILIARY_INPUT)
+        self.eof_controller = EOFController(MOM_HOST, self.id, DATE_FILTER_PREFIX, DATE_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None,AUXILIARY_INPUT)
     
     def _run_gateway_consumer(self):
         try:
@@ -99,7 +99,7 @@ class DateFilter:
                 with self.producer_lock:
                     self.usd_filters_q4_queue.send(
                         DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
-                    )
+                    ) 
                     self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
                 
                 with self.producer_lock:
@@ -154,9 +154,9 @@ class DateFilter:
                 logging.error(f"Error closing resource: {e}")
 
     def notify_sigterm(self):
-            self._sigterm_received = True
-            self.stop()
-            self.eof_controller.on_sigterm()
+        self._sigterm_received = True
+        self.stop()
+        self.eof_controller.on_sigterm()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
@@ -165,17 +165,17 @@ class DateFilter:
         self.eof_controller.on_stop()
     
     def start(self):
-        gateway_thread = threading.Thread(
+        process_thread = threading.Thread(
         target=self._run_gateway_consumer,
         name="date-filter-consumer-thread",
         )
 
-        gateway_started = False
+        processing_thread_started = False
         eof_exit_code=0
 
         try:
-            gateway_thread.start()
-            gateway_started = True
+            process_thread.start()
+            processing_thread_started = True
             eof_exit_code = self.eof_controller.start()
 
         except Exception as e:
@@ -186,8 +186,8 @@ class DateFilter:
 
         self._close_resources()
 
-        if gateway_started:
-            gateway_thread.join()
+        if processing_thread_started:
+            process_thread.join()
 
         if self._runtime_error and not self._sigterm_received:
             return max(eof_exit_code, 1)
