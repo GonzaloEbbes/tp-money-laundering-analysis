@@ -1,10 +1,14 @@
 import hashlib
 import os
 import logging
+from random import randint
 import signal
+import sys
 import threading
 
 from common import middleware, message_protocol
+from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as ScatherGatherMessageHandler
 
@@ -17,7 +21,10 @@ EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
 SCATHER_GATHER_AGGREGATOR_AMOUNT = int(os.environ["SCATHER_GATHER_AGGREGATOR_AMOUNT"])
 SCATHER_GATHER_AGGREGATOR_PREFIX = os.environ["SCATHER_GATHER_AGGREGATOR_PREFIX"]
-
+EXPECTED_INPUT_EOFS = int(os.environ["EXPECTED_INPUT_EOFS"]) #1
+INPUT_PREFIX_1 = os.environ["INPUT_PREFIX_1"] #que es el prefix del usd filter q4
+AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true" #false
+OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #al aggregator
 
 class ScatherGatherMapper:
 
@@ -37,29 +44,8 @@ class ScatherGatherMapper:
             )
             self.scather_gather_aggregator_exchanges.append(scather_gather_aggregator_exchanges)
 
+        self.producer_lock = threading.Lock()
 
-        #Exchange de control EOF
-        self.scather_gather_eof_exchange_consumer = None
-        self.scather_gather_eof_exchange_producer = None
-        if SCATHER_GATHER_MAPPER_AMOUNT > 1:
-            scather_gather_mappers = []
-            for i in range(SCATHER_GATHER_MAPPER_AMOUNT):
-                if i != self.id:
-                    scather_gather_mappers.append(f"{SCATHER_GATHER_MAPPER_PREFIX}_{i}")
-        
-            self.scather_gather_eof_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
-                    MOM_HOST,
-                    EOF_CONTROL_EXCHANGE,
-                    [f"{SCATHER_GATHER_MAPPER_PREFIX}_{self.id}"],
-                )
-            
-            self._eof_producer_lock = threading.Lock()
-            self.scather_gather_eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
-                    MOM_HOST,
-                    EOF_CONTROL_EXCHANGE,
-                    scather_gather_mappers,
-                )
-            
         self.partial_dicts_lock = threading.Lock()
         self.partial_fanout_by_client : dict[str, dict[str, set[str]]] = {}
         self.partial_fanin_by_client : dict[str, dict[str, set[str]]] = {}
@@ -68,41 +54,28 @@ class ScatherGatherMapper:
         #Control de shutdown y estado de clientes
         self._sigterm_received = False
         self._runtime_error = False
-        self._is_pending_to_finalize_client = set()
-        self._is_pending_to_finalize_client_lock = threading.Lock()
-        self._finalized_clients = set()
-        self._finalized_clients_lock = threading.Lock()
-        self._inflight_messages = {}
-        self._inflight_message_lock = threading.Lock()
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-    
+        self.eof_controller = EOFController(MOM_HOST, self.id, SCATHER_GATHER_MAPPER_PREFIX, SCATHER_GATHER_MAPPER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,self.on_consensus_ok_callback,self.on_send_eof_to_next_stage_callback, self.on_clean_client_callback, AUXILIARY_INPUT)
+
+
     def _run_usd_filter_q4_consumer(self):
         try:
             self.usd_filter_q4_queue.start_consuming(self.process_usd_filter_q4_messages)
         except Exception as e:
             self._handle_runtime_failure(e, "USD filter Q4 consumer crashed")
 
-    
-    def _run_control_consumer(self):
-        try:
-            self.scather_gather_eof_exchange_consumer.start_consuming(self.process_eof_control_message)
-        except Exception as e:
-            self._handle_runtime_failure(e, "Control consumer crashed")
-    
     def process_usd_filter_q4_messages(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_SCATHER_GATHER_MAPPER:
-                self._add_inflight_message(message.source_client_uuid)
                 client_id = message.source_client_uuid
                 self._process_transaction(message.data, client_id, message.data_id)
-                self._decrease_inflight_message(message.source_client_uuid)
-                self._check_and_finalize_client_if_pending(client_id)
-            case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
+                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
                 client_id = message.source_client_uuid
-                self._process_usd_filter_q4_eof(client_id)
+                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
         ack()
         
 
@@ -115,15 +88,15 @@ class ScatherGatherMapper:
             self.partial_fanin_by_client.setdefault(client_id, {}).setdefault(destination, set()).add(origin)
             self.partial_fanout_by_client.setdefault(client_id, {}).setdefault(origin, set()).add(destination)
 
-
-    def _send_eof_to_aggregators(self, client_id):
-        eof_message = ScatherGatherMessageHandler.serialize_eof_message(client_id)
-        for exchange in self.scather_gather_aggregator_exchanges:
-            with self.scather_gather_aggregator_producer_lock:
-                exchange.send(eof_message)
+    def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
+        eof_message = EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers)
+        with self.producer_lock:
+            #EL EOF SE ENVIA A UNA INSTANCIA ALEATORIA
+            eof_random_instance = randint(0, SCATHER_GATHER_AGGREGATOR_AMOUNT - 1)
+            self.scather_gather_aggregator_exchanges[eof_random_instance].send(eof_message)
         logging.info(f"Sent final EOFs for client {client_id} to scather gather aggregators")
 
-    def _send_data_to_aggregators(self, client_id):
+    def on_consensus_ok_callback(self, client_id):
         #extraigo los datos del cliente,
         with self.partial_dicts_lock:
             fanout_data = {
@@ -137,13 +110,17 @@ class ScatherGatherMapper:
         
         for (origen,destinos) in fanout_data.items():
             aggregation_worker = self._worker_to_send_data_to_aggregator(origen)
-            self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_mapper_message_fanout(client_id, origen, destinos))
+            with self.producer_lock:
+                self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_mapper_message_fanout(client_id, origen, destinos))
+                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
             logging.debug(f"Sent fanout data for origin {origen} of client {client_id} to aggregator worker {aggregation_worker}")
         del fanout_data
 
         for (destino,origenes) in fanin_data.items():
             aggregation_worker = self._worker_to_send_data_to_aggregator(destino)
-            self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_mapper_message_fanin(client_id, destino, origenes))
+            with self.producer_lock:
+                self.scather_gather_aggregator_exchanges[aggregation_worker].send(ScatherGatherMessageHandler.serialize_scather_gather_mapper_message_fanin(client_id, destino, origenes))
+                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
             logging.debug(f"Sent fanin data for destination {destino} of client {client_id} to aggregator worker {aggregation_worker}")
         del fanin_data
 
@@ -152,83 +129,14 @@ class ScatherGatherMapper:
         digest=hashlib.sha256(key).digest()
         value = int.from_bytes(digest, byteorder="big")
         return value % SCATHER_GATHER_AGGREGATOR_AMOUNT
-    
-    def _process_usd_filter_q4_eof(self, client_id):
-        logging.info(f"Received EOF for client {client_id}")
 
-        if SCATHER_GATHER_MAPPER_AMOUNT > 1:
-            with self._eof_producer_lock:
-                self.scather_gather_eof_exchange_producer.send(ScatherGatherMessageHandler.serialize_eof_message(client_id))
-            logging.info(f"Sent EOF for client {client_id} to other scather gather mappers")
-
-        self._send_data_to_aggregators(client_id)
-        self._send_eof_to_aggregators(client_id)
-        self._finalize_client(client_id)
-    
-    def _check_and_finalize_client_if_pending(self, client_id):
-        should_finalize = False
-
-        with self._is_pending_to_finalize_client_lock:
-            is_pending = client_id in self._is_pending_to_finalize_client
-
-        if is_pending:
-            with self._inflight_message_lock:
-                should_finalize = self._inflight_messages.get(client_id, 0) == 0
-
-        if should_finalize:
-            logging.info(f"Finalizando cliente {client_id} que estaba pendiente")
-            
-            self._send_data_to_aggregators(client_id)
-            self._send_eof_to_aggregators(client_id)
-            self._finalize_client(client_id)
-                        
-    def _finalize_client(self, client_id):
-        with self._finalized_clients_lock:
-            if client_id in self._finalized_clients:
-                return
-            logging.info(f"Finalizando cliente {client_id}")
-            self._finalized_clients.add(client_id)
+    def on_clean_client_callback(self, client_id):
 
         with self.partial_dicts_lock:
             if client_id in self.partial_fanout_by_client:
                 del self.partial_fanout_by_client[client_id]
             if client_id in self.partial_fanin_by_client:
                 del self.partial_fanin_by_client[client_id]
-
-
-        with self._is_pending_to_finalize_client_lock:
-            if client_id in self._is_pending_to_finalize_client:
-                self._is_pending_to_finalize_client.remove(client_id)
-
-    def _add_inflight_message(self, client_id):
-        with self._inflight_message_lock:
-            self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) + 1
-    
-    def _decrease_inflight_message(self, client_id):
-        with self._inflight_message_lock:
-            if client_id in self._inflight_messages:
-                self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) - 1
-
-    def process_eof_control_message(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
-                logging.info(f"Received EOF_GENERIC_MESSAGE for client {message.source_client_uuid}")
-                self._process_eof_from_control_exchange(message.source_client_uuid)
-                
-        ack()
-
-    def _process_eof_from_control_exchange(self, client_id):
-        with self._inflight_message_lock:
-            if self._inflight_messages.get(client_id, 0) > 0:
-                logging.info(f"EOF received for client {client_id} but there are still inflight messages. Marking client as finalized but waiting for inflight messages to finish.")
-                with self._is_pending_to_finalize_client_lock:
-                    self._is_pending_to_finalize_client.add(client_id)
-            else:
-                logging.info(f"EOF received for client {client_id} and no inflight messages. Finalizing client.")
-                self._send_data_to_aggregators(client_id)
-                self._send_eof_to_aggregators(client_id)
-                self._finalize_client(client_id)
 
     def stop(self):
         with self._stop_lock:
@@ -237,8 +145,6 @@ class ScatherGatherMapper:
             self._stopping = True
 
         consumers = [self.usd_filter_q4_queue]
-        if self.scather_gather_eof_exchange_consumer is not None:
-            consumers.append(self.scather_gather_eof_exchange_consumer)
 
         for consumer in consumers:
             try:
@@ -251,11 +157,6 @@ class ScatherGatherMapper:
 
         resources.extend(self.scather_gather_aggregator_exchanges)
 
-        if self.scather_gather_eof_exchange_consumer is not None:
-            resources.append(self.scather_gather_eof_exchange_consumer)
-        if self.scather_gather_eof_exchange_producer is not None:
-            resources.append(self.scather_gather_eof_exchange_producer)
-
         for resource in resources:
             try:
                 resource.close()
@@ -263,55 +164,47 @@ class ScatherGatherMapper:
                 logging.error(f"Error closing resource: {e}")
 
     def notify_sigterm(self):
-            self._sigterm_received = True
-            self.stop()
+        self._sigterm_received = True
+        self.stop()
+        self.eof_controller.on_sigterm()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
+        self.eof_controller.on_stop()
     
     def start(self):
 
-        usd_filter_q4_thread = threading.Thread(
+        process_thread = threading.Thread(
         target=self._run_usd_filter_q4_consumer,
         name="usd-q4-consumer-thread",
         )
 
-
-        if SCATHER_GATHER_MAPPER_AMOUNT > 1:
-            control_thread = threading.Thread(
-                target=self._run_control_consumer,
-                name="scather-gather-control-consumer-thread",
-            )
-
-        usd_q4_filter_thread_started = False
-        control_started = False
+        processing_thread_started = False
+        eof_exit_code=0
 
         try:
-            usd_filter_q4_thread.start()
-            usd_q4_filter_thread_started = True
-            if SCATHER_GATHER_MAPPER_AMOUNT > 1:
-                control_thread.start()
-                control_started = True
+            process_thread.start()
+            processing_thread_started = True
+            eof_exit_code = self.eof_controller.start()
+
+            if processing_thread_started:
+                process_thread.join()
 
         except Exception as e:
             logging.error(e)
             self.stop()
+            return max(eof_exit_code, 2)
+
+        finally:
             self._close_resources()
-            return 2
-
-        if usd_q4_filter_thread_started:
-            usd_filter_q4_thread.join()
-        if control_started:
-            control_thread.join()
-
-        self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
-            return 1
+            return max(eof_exit_code, 1)
 
-        return 0
+        return max(eof_exit_code, 0)
+
 
 
 def main():
@@ -327,4 +220,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

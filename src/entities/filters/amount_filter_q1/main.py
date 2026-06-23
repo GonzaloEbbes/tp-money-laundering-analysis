@@ -65,6 +65,7 @@ class AmountFilterQ1:
                 self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
         ack()
         
+        
 
     def _process_transaction(self, transaction_data, client_id, data_id):
         logging.debug(f"Received USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1 for client {client_id}")

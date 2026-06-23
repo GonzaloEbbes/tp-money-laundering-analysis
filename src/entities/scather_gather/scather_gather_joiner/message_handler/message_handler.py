@@ -13,12 +13,6 @@ class MessageHandler:
         parsedMessage.value = [origen, destino]
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_JOINER_TO_GATEWAY, client, message_id, parsedMessage)
 
-    def serialize_eof_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None, None)
-    
-    def serialize_eof_leader_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE, client, None, None)
-    
     def deserialize_input_message(message):
         internal_message = message_protocol.internal.deserialize(message)
         return internal_message

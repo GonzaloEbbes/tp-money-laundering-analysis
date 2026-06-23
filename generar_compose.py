@@ -405,10 +405,14 @@ def set_scather_gather_mapper_config(id,total_mappers,total_aggregators, log_lev
         "      - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange",
         f"      - SCATHER_GATHER_AGGREGATOR_AMOUNT={total_aggregators}",
         "      - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - AUXILIARY_INPUT=false",
+        "      - INPUT_PREFIX_1=usd_filter_q4",
+        "      - OUTPUT_PREFIX_1=scather_gather_aggregator",
         "",
     ]
 
-def set_scather_gather_aggregator_config(id,total_mappers,total_pair_joiners, log_level):
+def set_scather_gather_aggregator_config(id,total_aggregators,total_pair_joiners, log_level):
     return [
         f"  scather_gather_aggregator_{id}:",
         "    build:",
@@ -423,14 +427,19 @@ def set_scather_gather_aggregator_config(id,total_mappers,total_pair_joiners, lo
         f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
-        f"      - SCATHER_GATHER_MAPPER_AMOUNT={total_mappers}",
         "      - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator",
+        f"      - SCATHER_GATHER_AGG_AMOUNT={total_aggregators}",
         f"      - SCATHER_GATHER_PAIR_JOINER_AMOUNT={total_pair_joiners}",
         "      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner",
+        "      - EOF_CONTROL_EXCHANGE=scather_gather_aggregator_eof_control_exchange",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - AUXILIARY_INPUT=false",
+        "      - INPUT_PREFIX_1=scather_gather_mapper",
+        "      - OUTPUT_PREFIX_1=scather_gather_pair_joiner",
         "",
     ]
 
-def set_scather_gather_pair_joiner_config(id,total_aggregators,total_joiners, log_level):
+def set_scather_gather_pair_joiner_config(id,total_pair_joiners,total_aggregators,total_joiners, log_level):
     return [
         f"  scather_gather_pair_joiner_{id}:",
         "    build:",
@@ -447,12 +456,18 @@ def set_scather_gather_pair_joiner_config(id,total_aggregators,total_joiners, lo
         "      - MOM_HOST=rabbitmq",
         f"      - SCATHER_GATHER_AGGREGATOR_AMOUNT={total_aggregators}",
         "      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner",
+        f"      - SCATHER_GATHER_PAIR_JOINER_AMOUNT={total_pair_joiners}",
         f"      - SCATHER_GATHER_JOINER_AMOUNT={total_joiners}",
         "      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner",
+        "      - EOF_CONTROL_EXCHANGE=scather_gather_pair_joiner_eof_control_exchange",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - AUXILIARY_INPUT=false",
+        "      - INPUT_PREFIX_1=scather_gather_aggregator",
+        "      - OUTPUT_PREFIX_1=scather_gather_joiner",
         "",
     ]
 
-def set_scather_gather_joiner_config(id,total_pair_joiners,total_joiners, log_level):
+def set_scather_gather_joiner_config(id,total_joiners, log_level):
     return [
         f"  scather_gather_joiner_{id}:",
         "    build:",
@@ -467,12 +482,15 @@ def set_scather_gather_joiner_config(id,total_pair_joiners,total_joiners, log_le
         f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
-        f"      - SCATHER_GATHER_PAIR_JOINER_AMOUNT={total_pair_joiners}",
         "      - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner",
         "      - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange",
         f"      - SCATHER_GATHER_JOINER_AMOUNT={total_joiners}",
         "      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner",
         "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - AUXILIARY_INPUT=false",
+        "      - INPUT_PREFIX_1=scather_gather_pair_joiner",
+        "      - OUTPUT_PREFIX_1=gateway",
         "",
     ]
 
@@ -679,11 +697,11 @@ def generate_compose(config_id,log_level):
     for i in range(config["scather_gather_mapper"]):
         yaml_lines += set_scather_gather_mapper_config(i, config["scather_gather_mapper"], config["scather_gather_aggregator"], log_level)
     for i in range(config["scather_gather_aggregator"]):
-        yaml_lines += set_scather_gather_aggregator_config(i, config["scather_gather_mapper"], config["scather_gather_pair_joiner"], log_level)
+        yaml_lines += set_scather_gather_aggregator_config(i, config["scather_gather_aggregator"], config["scather_gather_pair_joiner"], log_level)
     for i in range(config["scather_gather_pair_joiner"]):
-        yaml_lines += set_scather_gather_pair_joiner_config(i, config["scather_gather_aggregator"], config["scather_gather_joiner"], log_level)
+        yaml_lines += set_scather_gather_pair_joiner_config(i, config["scather_gather_pair_joiner"], config["scather_gather_aggregator"], config["scather_gather_joiner"], log_level)
     for i in range(config["scather_gather_joiner"]):
-        yaml_lines += set_scather_gather_joiner_config(i, config["scather_gather_pair_joiner"], config["scather_gather_joiner"], log_level)
+        yaml_lines += set_scather_gather_joiner_config(i, config["scather_gather_joiner"], log_level)
     for i in range(config["currency_converter"]):
         yaml_lines += set_currency_converter_config(i, config["currency_converter"], log_level)
     for i in range(config["data_per_bank_redirector"]):

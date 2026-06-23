@@ -132,6 +132,7 @@ class EOFController:
         self._sigterm_received = True
         self.on_stop()
 
+    #Funcion a llamarse cuando desde el hilo principal del worker se envía un dato a la siguiente capa (NO EOF)
     def on_packet_sent_by_client_to(self, prefix_worker, client_id):
         with self.packets_partial_sent_by_client_lock:
             self.packets_partial_sent_by_client.setdefault(client_id, {}).setdefault(prefix_worker, 0)
