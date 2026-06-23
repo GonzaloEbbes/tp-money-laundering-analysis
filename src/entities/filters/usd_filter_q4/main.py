@@ -1,12 +1,12 @@
-import hashlib
 import os
 import logging
-import re
 import signal
+import sys
 import threading
-from time import sleep
 
 from common import middleware, message_protocol
+from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as USDFilterMessageHandler
 
@@ -20,6 +20,11 @@ EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE = os.environ["AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE"]
 SCATHER_GATHER_QUEUE = os.environ["SCATHER_GATHER_QUEUE"]
 
+EXPECTED_INPUT_EOFS = int(os.environ["EXPECTED_INPUT_EOFS"]) #1
+INPUT_PREFIX_1 = os.environ["INPUT_PREFIX_1"] #que es el prefix de date filter
+AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true" #va false
+OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #scatter gather mapper
+OUTPUT_PREFIX_2 = os.environ["OUTPUT_PREFIX_2"] #average per pay format mapper
 
 class USDFilterQ4:
 
@@ -30,6 +35,8 @@ class USDFilterQ4:
         
         self.id = int(ID)
 
+        self.producer_lock = threading.Lock()
+
         # definicion de working queue exchanges de la instancia posterior
         self.average_per_pay_format_mapper_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE
@@ -38,46 +45,14 @@ class USDFilterQ4:
                 MOM_HOST, SCATHER_GATHER_QUEUE
             )
 
-        #Exchange de control EOF
-        self.usd_filter_eof_exchange_consumer = None
-        self.producer_lock = threading.Lock()
-        if USD_FILTER_AMOUNT > 1:
-            usd_filters = []
-            for i in range(USD_FILTER_AMOUNT):
-                if i != self.id:
-                    usd_filters.append(f"{USD_FILTER_PREFIX}_{i}")
-        
-            self.usd_filter_eof_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
-                    MOM_HOST,
-                    EOF_CONTROL_EXCHANGE,
-                    [f"{USD_FILTER_PREFIX}_{self.id}"],
-                )
-            self._eof_producer_lock = threading.Lock()
-            self.usd_filter_eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
-                    MOM_HOST,
-                    EOF_CONTROL_EXCHANGE,
-                    usd_filters,
-                )
-
-
         self._sigterm_received = False
         self._runtime_error = False
 
-        if (self._is_leader()):
-            self.total_eof_received_by_client = {}
-            self._leader_eof_lock = threading.Lock()
-
-        self._is_pending_to_finalize_client = set()
-        self._is_pending_to_finalize_client_lock = threading.Lock()
-        self._finalized_clients = set()
-        self._finalized_clients_lock = threading.Lock()
-        self._inflight_messages = {}
-        self._inflight_message_lock = threading.Lock()
         self._stop_lock = threading.Lock()
         self._stopping = False
-    
-    def _is_leader(self):
-        return self.id == 0
+
+        self.eof_controller = EOFController(MOM_HOST, self.id, USD_FILTER_PREFIX, USD_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None, AUXILIARY_INPUT)
+
     
     def _run_date_filter_consumer(self):
         try:
@@ -85,25 +60,16 @@ class USDFilterQ4:
         except Exception as e:
             self._handle_runtime_failure(e, "Date filter consumer crashed")
 
-    
-    def _run_control_consumer(self):
-        try:
-            self.usd_filter_eof_exchange_consumer.start_consuming(self.process_eof_control_message)
-        except Exception as e:
-            self._handle_runtime_failure(e, "Control consumer crashed")
-    
     def process_date_filter_messages(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q4:
-                self._add_inflight_message(message.source_client_uuid)
                 client_id = message.source_client_uuid
                 self._process_transaction(message.data, client_id, message.data_id)
-                self._decrease_inflight_message(message.source_client_uuid)
-                self._check_and_finalize_client_if_pending(client_id)
-            case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
+                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
                 client_id = message.source_client_uuid
-                self._process_datefilter_eof(client_id)
+                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
         ack()
         
 
@@ -114,108 +80,17 @@ class USDFilterQ4:
         if receiving_currency == "US Dollar" and payment_currency == "US Dollar":
             with self.producer_lock:
                 self.average_per_pay_format_mapper_queue.send(USDFilterMessageHandler.serialize_average_per_pay_format_mapper_message(client_id, data_id, transaction_data))
+                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
                 self.scather_gather_queue.send(USDFilterMessageHandler.serialize_scatter_gather_message(client_id, data_id, transaction_data))
+                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
             logging.debug(f"Transaction for client {client_id} sent to average per pay format mapper and scatter gather mapper")
 
         
-
-    def send_final_eof(self, client_id):
+    def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         with self.producer_lock:
-            self.average_per_pay_format_mapper_queue.send(USDFilterMessageHandler.serialize_eof_message(client_id))
-            self.scather_gather_queue.send(USDFilterMessageHandler.serialize_eof_message(client_id))
-        logging.debug(f"Sent final EOF for client {client_id} to all downstream queues")
-    
-    def _process_datefilter_eof(self, client_id):
-        logging.debug(f"Received EOF for client {client_id}")
-
-        if USD_FILTER_AMOUNT > 1:
-            with self._eof_producer_lock:
-                self.usd_filter_eof_exchange_producer.send(USDFilterMessageHandler.serialize_eof_message(client_id))
-            logging.debug(f"Sent EOF for client {client_id} to other usd filters")
-
-        self._finalize_client(client_id)
-    
-    def _check_and_finalize_client_if_pending(self, client_id):
-        should_finalize = False
-
-        with self._is_pending_to_finalize_client_lock:
-            is_pending = client_id in self._is_pending_to_finalize_client
-
-        if is_pending:
-            with self._inflight_message_lock:
-                should_finalize = self._inflight_messages.get(client_id, 0) == 0
-
-        if should_finalize:
-            logging.debug(f"Finalizando cliente {client_id} que estaba pendiente")
-            self._finalize_client(client_id)
-                        
-    def _finalize_client(self, client_id):
-
-        with self._finalized_clients_lock:
-            if client_id in self._finalized_clients:
-                return
-            logging.debug(f"Finalizando cliente {client_id}")
-            self._finalized_clients.add(client_id)
-
-        if self._is_leader():
-            self._leader_count_eof_for_client(client_id)
-        else:
-            self.send_eof_leader_message(client_id)
-
-        with self._is_pending_to_finalize_client_lock:
-            if client_id in self._is_pending_to_finalize_client:
-                self._is_pending_to_finalize_client.remove(client_id)
-        
-
-    def send_eof_leader_message(self, client_id):
-        with self._eof_producer_lock:
-            self.usd_filter_eof_exchange_producer.send(USDFilterMessageHandler.serialize_eof_leader_message(client_id))
-        logging.debug(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
-
-    def _add_inflight_message(self, client_id):
-        with self._inflight_message_lock:
-            self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) + 1
-    
-    def _decrease_inflight_message(self, client_id):
-        with self._inflight_message_lock:
-            if client_id in self._inflight_messages:
-                self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) - 1
-
-    def process_eof_control_message(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
-                logging.debug(f"Received EOF_GENERIC_MESSAGE for client {message.source_client_uuid}")
-                self._process_eof_from_control_exchange(message.source_client_uuid)
-            case message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE:
-                if self._is_leader():
-                    logging.debug(f"Received EOF_LEADER_MESSAGE for client {message.source_client_uuid}")
-                    self._leader_count_eof_for_client(message.source_client_uuid)
-                
-        ack()
-    def _leader_count_eof_for_client(self, client_id):
-        should_send_final_eof = False
-        with self._leader_eof_lock:
-            self.total_eof_received_by_client[client_id] = self.total_eof_received_by_client.get(client_id, 0) + 1
-            
-            if self.total_eof_received_by_client[client_id] == USD_FILTER_AMOUNT:
-                logging.debug(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
-                should_send_final_eof = True
-                del self.total_eof_received_by_client[client_id]
-        
-        if should_send_final_eof:
-            self.send_final_eof(client_id)
-
-    def _process_eof_from_control_exchange(self, client_id):
-        with self._inflight_message_lock:
-            if self._inflight_messages.get(client_id, 0) > 0:
-                logging.debug(f"EOF received for client {client_id} but there are still inflight messages. Marking client as finalized but waiting for inflight messages to finish.")
-                with self._is_pending_to_finalize_client_lock:
-                    self._is_pending_to_finalize_client.add(client_id)
-            else:
-                logging.debug(f"EOF received for client {client_id} and no inflight messages. Finalizing client.")
-                self._finalize_client(client_id)
-
+            self.average_per_pay_format_mapper_queue.send(EOFMessageHandler.serialize_eof_message(client_id,totals_by_output.get(OUTPUT_PREFIX_2, 0), origin_worker_prefix, amount_origin_workers))
+            self.scather_gather_queue.send(EOFMessageHandler.serialize_eof_message(client_id,totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers))
+        logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
 
 
     def stop(self):
@@ -225,8 +100,6 @@ class USDFilterQ4:
             self._stopping = True
 
         consumers = [self.date_filter_queue]
-        if self.usd_filter_eof_exchange_consumer is not None:
-            consumers.append(self.usd_filter_eof_exchange_consumer)
 
         for consumer in consumers:
             try:
@@ -236,14 +109,10 @@ class USDFilterQ4:
 
     def _close_resources(self):
         resources = [self.date_filter_queue]
-        if self.usd_filter_eof_exchange_consumer is not None:
-            resources.append(self.usd_filter_eof_exchange_consumer)
         if self.average_per_pay_format_mapper_queue is not None:
             resources.append(self.average_per_pay_format_mapper_queue)
         if self.scather_gather_queue is not None:
             resources.append(self.scather_gather_queue)
-        if self.usd_filter_eof_exchange_producer is not None:
-            resources.append(self.usd_filter_eof_exchange_producer)
 
         for resource in resources:
             try:
@@ -252,55 +121,46 @@ class USDFilterQ4:
                 logging.error(f"Error closing resource: {e}")
 
     def notify_sigterm(self):
-            self._sigterm_received = True
-            self.stop()
+        self._sigterm_received = True
+        self.stop()
+        self.eof_controller.on_sigterm()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
+        self.eof_controller.on_stop()
     
     def start(self):
 
-        datefilter_thread = threading.Thread(
-        target=self._run_date_filter_consumer,
-        name="date-filter-consumer-thread",
+        process_thread = threading.Thread(
+            target=self._run_date_filter_consumer,
+            name="date-filter-consumer-thread",
         )
 
-
-        if USD_FILTER_AMOUNT > 1:
-            control_thread = threading.Thread(
-                target=self._run_control_consumer,
-                name="usd-control-consumer-thread",
-            )
-
-        datefilter_started = False
-        control_started = False
+        processing_thread_started = False
+        eof_exit_code=0
 
         try:
-            datefilter_thread.start()
-            datefilter_started = True
-            if USD_FILTER_AMOUNT > 1:
-                control_thread.start()
-                control_started = True
+            process_thread.start()
+            processing_thread_started = True
+            eof_exit_code = self.eof_controller.start()
+
+            if processing_thread_started:
+                process_thread.join()
 
         except Exception as e:
             logging.error(e)
             self.stop()
+            return max(eof_exit_code, 2)
+
+        finally:
             self._close_resources()
-            return 2
-
-        if datefilter_started:
-            datefilter_thread.join()
-        if control_started:
-            control_thread.join()
-
-        self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
-            return 1
+            return max(eof_exit_code, 1)
 
-        return 0
+        return max(eof_exit_code, 0)
 
 
 def main():
@@ -316,4 +176,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

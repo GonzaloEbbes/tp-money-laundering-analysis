@@ -39,7 +39,6 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 		self._consuming = False
 		self._consumer_tag = None
 		self._consumer_queue_declared = False
-		logging.getLogger("pika").setLevel(logging.WARNING) 
 		try:
 			self._connection = pika.BlockingConnection(rabbitmq_connection_parameters(host))
 			self._channel = self._connection.channel()

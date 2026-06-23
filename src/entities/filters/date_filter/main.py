@@ -120,7 +120,7 @@ class DateFilter:
             self.usd_filters_q3_queue.send(EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers))
             self.usd_filters_q4_queue.send(EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_2, 0), origin_worker_prefix, amount_origin_workers))
             self.pay_format_filter_queue.send(EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_3, 0), origin_worker_prefix, amount_origin_workers))
-        logging.debug(f"Sent final EOF for client {client_id} to all downstream queues")
+        logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
 
 
 
@@ -178,16 +178,16 @@ class DateFilter:
             processing_thread_started = True
             eof_exit_code = self.eof_controller.start()
 
+            if processing_thread_started:
+                process_thread.join()
+
         except Exception as e:
             logging.error(e)
             self.stop()
-            self._close_resources()
             return max(eof_exit_code, 2)
 
-        self._close_resources()
-
-        if processing_thread_started:
-            process_thread.join()
+        finally:
+            self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
             return max(eof_exit_code, 1)

@@ -92,7 +92,7 @@ class AmountFilterQ3:
             with self.averages_by_client_lock:
                 self.averages_by_client.setdefault(client_id, {})[payment_format] = data["average"] * 0.01
 
-    def on_consensus_ok_reception_for_client_callback(self, client_id):
+    def on_consensus_ok_callback(self, client_id):
         with self.all_averages_received_for_client_lock: #actualizo que ya tengo todas las medias para el cliente, 
             self.all_averages_received_for_client[client_id] = True
         
@@ -209,11 +209,11 @@ class AmountFilterQ3:
         eof_exit_code=0
 
         try:
-            eof_exit_code = self.eof_controller.start()
             usd_filter_q3_thread.start()
             usd_q3_filter_thread_started = True
             average_per_pay_format_thread.start()
             average_per_pay_format_thread_started = True
+            eof_exit_code = self.eof_controller.start()
 
         except Exception as e:
             logging.error(e)
@@ -221,12 +221,13 @@ class AmountFilterQ3:
             self._close_resources()
             return max(eof_exit_code, 2)
 
-        if usd_q3_filter_thread_started:
-            usd_filter_q3_thread.join()
-        if average_per_pay_format_thread_started:
-            average_per_pay_format_thread.join()
+        finally: 
+            if usd_q3_filter_thread_started:
+                usd_filter_q3_thread.join()
+            if average_per_pay_format_thread_started:
+                average_per_pay_format_thread.join()
 
-        self._close_resources()
+            self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
             return max(eof_exit_code, 1)

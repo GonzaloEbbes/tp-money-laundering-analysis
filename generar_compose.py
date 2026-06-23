@@ -151,6 +151,11 @@ def set_usd_filter_q1q2_config(id,total, log_level):
         "      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange",
         "      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue",
         "      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=gateway",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=amount_filter_q1",
+        "      - OUTPUT_PREFIX_2=data_per_bank_redirector",
         "",
     ]
 
@@ -174,6 +179,10 @@ def set_amount_filter_q1_config(id,total, log_level):
         f"      - AMOUNT_FILTER_AMOUNT={total}",
         "      - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange",
         "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=usd_filter_q1q2",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=gateway",
         "",
     ]
 
@@ -197,6 +206,10 @@ def set_usd_filter_q3_config(id,total, log_level):
         f"      - USD_FILTER_AMOUNT={total}",
         "      - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange",
         "      - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=date_filter",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=amount_filter_q3",
         "",
     ]
 
@@ -221,6 +234,11 @@ def set_usd_filter_q4_config(id,total, log_level):
         "      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange",
         "      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue",
         "      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=date_filter",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=scather_gather_mapper",
+        "      - OUTPUT_PREFIX_2=average_per_pay_format_mapper",
         "",
     ]
 
@@ -248,6 +266,11 @@ def set_pay_format_filter_config(id,total,total_usd_currency_converters, log_lev
         "      - CONVERSION_ROUTING_KEY_PREFIX=conversion",
         f"      - TOTAL_CONVERSION_WORKERS={total_usd_currency_converters}",
         "      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=date_filter",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=amount_filter_q5",
+        "      - OUTPUT_PREFIX_2=currency_converter",
         "",
     ]
 
@@ -272,6 +295,9 @@ def set_average_per_pay_format_mapper_config(id,total, log_level):
         f"      - MAPPER_FILTER_AMOUNT={total}",
         f"      - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange",
         f"      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=usd_filter_q4",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=average_per_pay_format_joiner",
         "",
     ]
 
@@ -296,6 +322,9 @@ def set_average_pay_format_joiner_config(id, log_level):
         "      - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue",
         f"      - EXPECTED_INPUT_EOFS=1",
         "      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange",
+        "      - INPUT_PREFIX_1=average_per_pay_format_mapper",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=amount_filter_q3",
     ]
 
 def set_amount_filter_q3_config(id,total, log_level):
@@ -319,6 +348,11 @@ def set_amount_filter_q3_config(id,total, log_level):
         f"      - AMOUNT_FILTER_AMOUNT={total}",
         "      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange",
         "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "      - EXPECTED_INPUT_EOFS=2",
+        "      - INPUT_PREFIX_1=usd_filter_q3",
+        "      - INPUT_PREFIX_2=average_per_pay_format_joiner",
+        "      - AUXILIARY_INPUT=true",
+        "      - OUTPUT_PREFIX_1=gateway",
         "",
     ]
 
@@ -340,9 +374,13 @@ def set_amount_filter_q5_config(id,total,total_usd_currency_converters, log_leve
         "      - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue",
         "      - AMOUNT_FILTER_PREFIX=amount_filter_q5",
         f"      - AMOUNT_FILTER_AMOUNT={total}",
-        f"      - EXPECTED_INPUT_EOFS={total_usd_currency_converters+1}",
+        f"      - EXPECTED_INPUT_EOFS={total_usd_currency_converters+1}", #DEBERIAN SER 2
         "      - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange",
         "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "      - INPUT_PREFIX_1=pay_format_filter",
+        "      - INPUT_PREFIX_2=currency_converter",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=gateway",
         "",
     ]
 

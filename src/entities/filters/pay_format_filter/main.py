@@ -158,14 +158,9 @@ class PayFormatFilter:
                 eof_message,
                 routing_key=self._conversion_routing_key(shard),
             )
-        logging.info(
-            "Q5 route: sending EOF directly to amount filter client=%s queue=%s",
-            client_id,
-            AMOUNT_FILTER_Q5_QUEUE,
-        )
         eof_message = EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers)
         self.amount_filter_q5_queue.send(eof_message)
-        logging.debug(f"Sent final EOF for client {client_id} to all downstream queues")
+        logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
 
     def _conversion_routing_key(self, shard):
         return f"{CONVERSION_ROUTING_KEY_PREFIX}.{shard}"
@@ -224,16 +219,16 @@ class PayFormatFilter:
             processing_thread_started = True
             eof_exit_code = self.eof_controller.start()
 
+            if processing_thread_started:
+                process_thread.join()
+
         except Exception as e:
             logging.error(e)
             self.stop()
-            self._close_resources()
             return max(eof_exit_code, 2)
 
-        self._close_resources()
-
-        if processing_thread_started:
-            process_thread.join()
+        finally:
+            self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
             return max(eof_exit_code, 1)

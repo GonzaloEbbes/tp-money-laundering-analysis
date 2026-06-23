@@ -34,7 +34,7 @@ services:
       - PYTHONUNBUFFERED=1
       - SERVER_HOST=gateway
       - SERVER_PORT=5678
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=gateway_results_queue
       - BANK_DEDUPLICATOR_QUEUE=bank_deduplicator_queue
@@ -54,7 +54,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -80,7 +80,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -106,7 +106,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -132,7 +132,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -158,7 +158,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -184,7 +184,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -210,7 +210,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -236,7 +236,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -262,7 +262,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -288,7 +288,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -314,7 +314,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -340,7 +340,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -366,7 +366,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=12
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
@@ -392,7 +392,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -401,6 +401,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_1:
     build:
@@ -412,7 +417,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -421,6 +426,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_2:
     build:
@@ -432,7 +442,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -441,6 +451,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_3:
     build:
@@ -452,7 +467,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -461,6 +476,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_4:
     build:
@@ -472,7 +492,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -481,6 +501,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_5:
     build:
@@ -492,7 +517,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -501,6 +526,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_6:
     build:
@@ -512,7 +542,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -521,6 +551,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_7:
     build:
@@ -532,7 +567,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -541,6 +576,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_8:
     build:
@@ -552,7 +592,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -561,6 +601,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_9:
     build:
@@ -572,7 +617,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -581,6 +626,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_10:
     build:
@@ -592,7 +642,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -601,6 +651,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_11:
     build:
@@ -612,7 +667,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -621,6 +676,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_12:
     build:
@@ -632,7 +692,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=12
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -641,6 +701,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_13:
     build:
@@ -652,7 +717,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=13
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -661,6 +726,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_14:
     build:
@@ -672,7 +742,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=14
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -681,6 +751,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_15:
     build:
@@ -692,7 +767,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=15
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
@@ -701,6 +776,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   amount_filter_q1_0:
     build:
@@ -712,7 +792,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
@@ -720,6 +800,10 @@ services:
       - AMOUNT_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q1q2
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q1_1:
     build:
@@ -731,7 +815,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
@@ -739,6 +823,10 @@ services:
       - AMOUNT_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q1q2
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q1_2:
     build:
@@ -750,7 +838,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
@@ -758,6 +846,10 @@ services:
       - AMOUNT_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q1q2
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q1_3:
     build:
@@ -769,7 +861,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
@@ -777,6 +869,10 @@ services:
       - AMOUNT_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q1q2
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   usd_filter_q3_0:
     build:
@@ -788,7 +884,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
@@ -796,6 +892,10 @@ services:
       - USD_FILTER_AMOUNT=6
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
 
   usd_filter_q3_1:
     build:
@@ -807,7 +907,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
@@ -815,6 +915,10 @@ services:
       - USD_FILTER_AMOUNT=6
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
 
   usd_filter_q3_2:
     build:
@@ -826,7 +930,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
@@ -834,6 +938,10 @@ services:
       - USD_FILTER_AMOUNT=6
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
 
   usd_filter_q3_3:
     build:
@@ -845,7 +953,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
@@ -853,6 +961,10 @@ services:
       - USD_FILTER_AMOUNT=6
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
 
   usd_filter_q3_4:
     build:
@@ -864,7 +976,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
@@ -872,6 +984,10 @@ services:
       - USD_FILTER_AMOUNT=6
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
 
   usd_filter_q3_5:
     build:
@@ -883,7 +999,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
@@ -891,6 +1007,10 @@ services:
       - USD_FILTER_AMOUNT=6
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
 
   usd_filter_q4_0:
     build:
@@ -902,7 +1022,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -911,6 +1031,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_1:
     build:
@@ -922,7 +1047,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -931,6 +1056,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_2:
     build:
@@ -942,7 +1072,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -951,6 +1081,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_3:
     build:
@@ -962,7 +1097,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -971,6 +1106,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_4:
     build:
@@ -982,7 +1122,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -991,6 +1131,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_5:
     build:
@@ -1002,7 +1147,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -1011,6 +1156,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_6:
     build:
@@ -1022,7 +1172,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -1031,6 +1181,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_7:
     build:
@@ -1042,7 +1197,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -1051,6 +1206,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_8:
     build:
@@ -1062,7 +1222,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -1071,6 +1231,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_9:
     build:
@@ -1082,7 +1247,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -1091,6 +1256,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_10:
     build:
@@ -1102,7 +1272,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -1111,6 +1281,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_11:
     build:
@@ -1122,7 +1297,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -1131,6 +1306,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_12:
     build:
@@ -1142,7 +1322,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=12
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -1151,6 +1331,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   average_per_pay_format_mapper_0:
     build:
@@ -1162,7 +1347,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=0
       - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
@@ -1171,6 +1356,9 @@ services:
       - MAPPER_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q4
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=average_per_pay_format_joiner
 
   average_per_pay_format_mapper_1:
     build:
@@ -1182,7 +1370,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=1
       - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
@@ -1191,6 +1379,9 @@ services:
       - MAPPER_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q4
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=average_per_pay_format_joiner
 
   average_per_pay_format_mapper_2:
     build:
@@ -1202,7 +1393,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=2
       - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
@@ -1211,6 +1402,9 @@ services:
       - MAPPER_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q4
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=average_per_pay_format_joiner
 
   average_per_pay_format_mapper_3:
     build:
@@ -1222,7 +1416,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=3
       - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
@@ -1231,6 +1425,9 @@ services:
       - MAPPER_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q4
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=average_per_pay_format_joiner
 
   average_per_pay_format_joiner_0:
     build:
@@ -1242,7 +1439,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=0
       - JOINER_PREFIX=average_per_pay_format_joiner
@@ -1251,6 +1448,9 @@ services:
       - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue
       - EXPECTED_INPUT_EOFS=1
       - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange
+      - INPUT_PREFIX_1=average_per_pay_format_mapper
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
   amount_filter_q3_0:
     build:
       context: ./src
@@ -1261,7 +1461,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
@@ -1270,6 +1470,11 @@ services:
       - AMOUNT_FILTER_AMOUNT=5
       - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
+      - INPUT_PREFIX_1=usd_filter_q3
+      - INPUT_PREFIX_2=average_per_pay_format_joiner
+      - AUXILIARY_INPUT=true
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q3_1:
     build:
@@ -1281,7 +1486,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
@@ -1290,6 +1495,11 @@ services:
       - AMOUNT_FILTER_AMOUNT=5
       - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
+      - INPUT_PREFIX_1=usd_filter_q3
+      - INPUT_PREFIX_2=average_per_pay_format_joiner
+      - AUXILIARY_INPUT=true
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q3_2:
     build:
@@ -1301,7 +1511,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
@@ -1310,6 +1520,11 @@ services:
       - AMOUNT_FILTER_AMOUNT=5
       - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
+      - INPUT_PREFIX_1=usd_filter_q3
+      - INPUT_PREFIX_2=average_per_pay_format_joiner
+      - AUXILIARY_INPUT=true
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q3_3:
     build:
@@ -1321,7 +1536,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
@@ -1330,6 +1545,11 @@ services:
       - AMOUNT_FILTER_AMOUNT=5
       - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
+      - INPUT_PREFIX_1=usd_filter_q3
+      - INPUT_PREFIX_2=average_per_pay_format_joiner
+      - AUXILIARY_INPUT=true
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q3_4:
     build:
@@ -1341,7 +1561,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
@@ -1350,6 +1570,11 @@ services:
       - AMOUNT_FILTER_AMOUNT=5
       - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
+      - INPUT_PREFIX_1=usd_filter_q3
+      - INPUT_PREFIX_2=average_per_pay_format_joiner
+      - AUXILIARY_INPUT=true
+      - OUTPUT_PREFIX_1=gateway
 
   pay_format_filter_0:
     build:
@@ -1361,7 +1586,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1373,6 +1598,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_1:
     build:
@@ -1384,7 +1614,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1396,6 +1626,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_2:
     build:
@@ -1407,7 +1642,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1419,6 +1654,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_3:
     build:
@@ -1430,7 +1670,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1442,6 +1682,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_4:
     build:
@@ -1453,7 +1698,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1465,6 +1710,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_5:
     build:
@@ -1476,7 +1726,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1488,6 +1738,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_6:
     build:
@@ -1499,7 +1754,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1511,6 +1766,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_7:
     build:
@@ -1522,7 +1782,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1534,6 +1794,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_8:
     build:
@@ -1545,7 +1810,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1557,6 +1822,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_9:
     build:
@@ -1568,7 +1838,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1580,6 +1850,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_10:
     build:
@@ -1591,7 +1866,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1603,6 +1878,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_11:
     build:
@@ -1614,7 +1894,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1626,6 +1906,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_12:
     build:
@@ -1637,7 +1922,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=12
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
@@ -1649,6 +1934,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   amount_filter_q5_0:
     build:
@@ -1660,7 +1950,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
@@ -1669,6 +1959,10 @@ services:
       - EXPECTED_INPUT_EOFS=6
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - INPUT_PREFIX_1=pay_format_filter
+      - INPUT_PREFIX_2=currency_converter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q5_1:
     build:
@@ -1680,7 +1974,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
@@ -1689,6 +1983,10 @@ services:
       - EXPECTED_INPUT_EOFS=6
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - INPUT_PREFIX_1=pay_format_filter
+      - INPUT_PREFIX_2=currency_converter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q5_2:
     build:
@@ -1700,7 +1998,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
@@ -1709,6 +2007,10 @@ services:
       - EXPECTED_INPUT_EOFS=6
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - INPUT_PREFIX_1=pay_format_filter
+      - INPUT_PREFIX_2=currency_converter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q5_3:
     build:
@@ -1720,7 +2022,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
@@ -1729,6 +2031,10 @@ services:
       - EXPECTED_INPUT_EOFS=6
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - INPUT_PREFIX_1=pay_format_filter
+      - INPUT_PREFIX_2=currency_converter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   scather_gather_mapper_0:
     build:
@@ -1740,7 +2046,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1760,7 +2066,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1780,7 +2086,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1800,7 +2106,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1820,7 +2126,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_MAPPER_AMOUNT=4
@@ -1838,7 +2144,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_MAPPER_AMOUNT=4
@@ -1856,7 +2162,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_MAPPER_AMOUNT=4
@@ -1874,7 +2180,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_MAPPER_AMOUNT=4
@@ -1892,7 +2198,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
@@ -1910,7 +2216,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
@@ -1928,7 +2234,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
@@ -1946,7 +2252,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
@@ -1964,7 +2270,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
@@ -1984,7 +2290,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
@@ -2004,7 +2310,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
@@ -2024,7 +2330,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
@@ -2044,7 +2350,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
@@ -2074,7 +2380,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
@@ -2104,7 +2410,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
@@ -2134,7 +2440,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
@@ -2164,7 +2470,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
@@ -2194,7 +2500,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
       - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
@@ -2215,7 +2521,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
       - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
@@ -2236,7 +2542,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
       - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
@@ -2257,7 +2563,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=3
       - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
@@ -2278,7 +2584,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=4
       - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
@@ -2299,7 +2605,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=5
       - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
@@ -2320,7 +2626,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=6
       - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
@@ -2341,7 +2647,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=7
       - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
@@ -2362,7 +2668,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=8
       - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
@@ -2383,7 +2689,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
       - BANK_FILTERS_AMOUNT=7
@@ -2405,7 +2711,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
       - BANK_FILTERS_AMOUNT=7
@@ -2427,7 +2733,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
       - BANK_FILTERS_AMOUNT=7
@@ -2449,7 +2755,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=3
       - BANK_FILTERS_AMOUNT=7
@@ -2471,7 +2777,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=4
       - BANK_FILTERS_AMOUNT=7
@@ -2493,7 +2799,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=5
       - BANK_FILTERS_AMOUNT=7
@@ -2515,7 +2821,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=6
       - BANK_FILTERS_AMOUNT=7
@@ -2537,7 +2843,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
       - MAP_AMOUNT=11
@@ -2559,7 +2865,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
       - MAP_AMOUNT=11
@@ -2581,7 +2887,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
       - MAP_AMOUNT=11
@@ -2603,7 +2909,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=3
       - MAP_AMOUNT=11
@@ -2625,7 +2931,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=4
       - MAP_AMOUNT=11
@@ -2647,7 +2953,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=5
       - MAP_AMOUNT=11
@@ -2669,7 +2975,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=6
       - MAP_AMOUNT=11
@@ -2691,7 +2997,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=7
       - MAP_AMOUNT=11
@@ -2713,7 +3019,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=8
       - MAP_AMOUNT=11
@@ -2735,7 +3041,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=9
       - MAP_AMOUNT=11
@@ -2757,7 +3063,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=10
       - MAP_AMOUNT=11
@@ -2779,7 +3085,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
       - JOIN_AMOUNT=3
@@ -2800,7 +3106,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
       - JOIN_AMOUNT=3
@@ -2821,7 +3127,7 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
       - JOIN_AMOUNT=3
@@ -2974,7 +3280,7 @@ services:
       - ./output:/output
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - SERVER_HOST=gateway
       - SERVER_PORT=5678
       - MESSAGE=mensaje de prueba

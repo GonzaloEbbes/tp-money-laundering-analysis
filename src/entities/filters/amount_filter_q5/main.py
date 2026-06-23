@@ -173,16 +173,16 @@ class AmountFilterQ5:
             processing_thread_started = True
             eof_exit_code = self.eof_controller.start()
 
+            if processing_thread_started:
+                process_thread.join()
+
         except Exception as e:
             logging.error(e)
             self.stop()
-            self._close_resources()
             return max(eof_exit_code, 2)
 
-        self._close_resources()
-
-        if processing_thread_started:
-            process_thread.join()
+        finally:
+            self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
             return max(eof_exit_code, 1)

@@ -20,12 +20,12 @@ AMOUNT_FILTER_AMOUNT = int(os.environ["AMOUNT_FILTER_AMOUNT"])
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
 OUTPUT_QUEUE = os.environ["GATEWAY_FINAL_QUERY_QUEUE"]
-EXPECTED_INPUT_EOFS = int(os.environ["EXPECTED_INPUT_EOFS"])
+EXPECTED_INPUT_EOFS = int(os.environ["EXPECTED_INPUT_EOFS"]) #1
 INPUT_PREFIX_1 = os.environ["INPUT_PREFIX_1"] #que es el prefix del usd filter q1q2
 AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true"
-OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] 
+OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #GATEWAY
 
-class AmountFilterQ1:
+class AmountFilterQ1: 
 
     def __init__(self):
         self.usd_filter_q1q2_queue = middleware.MessageMiddlewareQueueRabbitMQ(
@@ -133,16 +133,16 @@ class AmountFilterQ1:
             processing_thread_started = True
             eof_exit_code = self.eof_controller.start()
 
+            if processing_thread_started:
+                process_thread.join()
+
         except Exception as e:
             logging.error(e)
             self.stop()
-            self._close_resources()
             return max(eof_exit_code, 2)
 
-        self._close_resources()
-
-        if processing_thread_started:
-            process_thread.join()
+        finally:
+            self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
             return max(eof_exit_code, 1)
@@ -163,4 +163,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main()) 
