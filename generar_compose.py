@@ -44,6 +44,43 @@ configurations = {
     }
 }
 
+
+chaos_monkey_config = {
+    "disabled": None,
+    "easy": { 
+        "min_wait": 15,
+        "max_wait": 30,
+        "dead_duration": 10,
+        "min_kill": 1,
+        "max_kill": 1,
+        "test_mode": 1
+    },
+    "test": { 
+        "min_wait": 10,
+        "max_wait": 20,
+        "dead_duration": 15,
+        "min_kill": 2,
+        "max_kill": 4,
+        "test_mode": 1
+    },
+    "fast": { 
+        "min_wait": 5,
+        "max_wait": 10,
+        "dead_duration": 10,
+        "min_kill": 4,
+        "max_kill": 8,
+        "test_mode": 1
+    },
+    "prod": {
+        "min_wait": 20,
+        "max_wait": 40,
+        "dead_duration": 0,
+        "min_kill": 1,
+        "max_kill": 3,
+        "test_mode": 0
+    }
+}
+
 # pone aquellas lineas que son iguales siempre
 def set_rabbitmq():
     return [
@@ -603,7 +640,29 @@ def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_a
         "",
     ]
 
-def generate_compose(config_id,log_level):
+def set_chaos_monkey_config(config):
+    return [
+        "  chaos_monkey:",
+        "    container_name: chaos_monkey",
+        "    build:",
+        "      context: ./src/chaos_monkey",
+        "      dockerfile: Dockerfile",
+        "    environment:",
+        f"      - MIN_WAIT={config['min_wait']}",
+        f"      - MAX_WAIT={config['max_wait']}",
+        f"      - DEAD_DURATION={config['dead_duration']}",
+        f"      - MIN_KILL_COUNT={config['min_kill']}",
+        f"      - MAX_KILL_COUNT={config['max_kill']}",
+        f"      - TEST_MODE={config['test_mode']}",
+        "      - WHITELIST=rabbitmq,gateway,client,chaos_monkey",
+        "    volumes:",
+        "      - /var/run/docker.sock:/var/run/docker.sock",
+        "    depends_on:",
+        "      - rabbitmq",
+        ""
+    ]
+
+def generate_compose(config_id,log_level, chaos_profile):
     if config_id not in configurations or log_level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
         raise ValueError("Configuración no encontrada")
 
@@ -658,21 +717,24 @@ def generate_compose(config_id,log_level):
 if __name__ == "__main__":
     import sys
 
-    # Uso: python3 generar_compose.py [config_id] [log_level]
+    # Uso: python3 generar_compose.py [config_id] [log_level] [chaos_profile]
     if len(sys.argv) > 4:
-        print("Usage: python3 generar_compose.py [config_id] [log_level]")
+        print("Usage: python3 generar_compose.py [config_id] [log_level] [chaos_profile]")
         sys.exit(1)
 
-    if len(sys.argv) == 3:
+    config_id = 1
+    log_level = "INFO"
+    chaos_profile = "disabled"
+
+    if len(sys.argv) >= 2:
         try:
             config_id = int(sys.argv[1])
-            log_level = sys.argv[2].upper()
         except ValueError:
-            print(f"Invalid config id: {sys.argv[1]} or log level: {sys.argv[2]}")
-            print("Usage: python3 generar_compose.py [config_id] [log_level]")
+            print("Invalid config id")
             sys.exit(1)
-    else:
-        config_id = 1
-        log_level = "INFO"
+    if len(sys.argv) >= 3:
+        log_level = sys.argv[2].upper()
+    if len(sys.argv) == 4:
+        chaos_profile = sys.argv[3]
 
-    generate_compose(config_id,log_level)
+    generate_compose(config_id, log_level, chaos_profile)
