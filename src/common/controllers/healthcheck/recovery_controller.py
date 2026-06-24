@@ -14,16 +14,17 @@ from common.message_protocol.internal import HealthCheckData
 
 class RecoveryController: 
 
-    def __init__(self, mom_host, heartbeat_exchange, id: str, prefix: str, recovery_prefix: str, recovery_amount: int):
+    def __init__(self, mom_host, heartbeat_exchange, id: str, prefix: str, recovery_prefix: str, recovery_amount: int, heartbeat_interval: int):
 
         self.id = int(id)
         self.prefix_worker = prefix
+        self.heartbeat_interval_secs = heartbeat_interval
 
         self.heartbeat_producer = middleware.MessageMiddlewareExchangePublisherRabbitMQ(
             mom_host,
             heartbeat_exchange
         )
-        self.heartbeat_exchange_routing_key = f"{recovery_prefix}_{recovery_node_id_responsible_of_recovery(self.id, prefix, recovery_prefix, recovery_amount)}"   
+        self.heartbeat_recovery_routing_key = f"{recovery_prefix}_{recovery_node_id_responsible_of_recovery(self.id, prefix, recovery_prefix, recovery_amount)}"   
 
         self.producer_lock = threading.Lock()
 
@@ -48,9 +49,17 @@ class RecoveryController:
 
     def _run_heartbeat_sender(self):
         try:
-            self.heartbeat_producer.start_consuming(self._process_heartbeat_message)
+            while not self._sigterm_received and not self._runtime_error:
+                heartbeat_message = HealthCheckingMessageHandler.serialize_heartbeat_message(self.prefix_worker, self.id)
+                with self.producer_lock:
+                    self.heartbeat_producer.send(heartbeat_message, routing_key=self.heartbeat_recovery_routing_key)
+                sleep(self.heartbeat_interval_secs)
         except Exception as e:
-            self._handle_runtime_failure(e, "Error in heartbeat sender")
+            self._handle_runtime_failure(e, "Heartbeat timer crashed")
+            return 2
+        if self._runtime_error and not self._sigterm_received:
+            return 1
+        return 0
 
     def start_recovery_controller(self):
 

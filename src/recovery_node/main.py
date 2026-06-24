@@ -136,14 +136,16 @@ class RecoveryNode:
         except Exception as e:
             self._handle_runtime_failure(e, "Heartbeat consumer crashed")
 
-    def _run_heartbeat_timer(self):
+    def _run_heartbeat_checker(self):
         try:
             while not self._sigterm_received and not self._runtime_error:
                 sleep(HEALTHCHECK_INTERVAL)
                 self._check_heartbeats()
         except Exception as e:
-            self._handle_runtime_failure(e, "Heartbeat timer crashed")
+            self._handle_runtime_failure(e, "Heartbeat checker crashed")
             return 2
+        if self._runtime_error and not self._sigterm_received:
+            return 1
         return 0
 
     def _check_heartbeats(self):
@@ -232,7 +234,7 @@ class RecoveryNode:
         )
 
         timer_thread = threading.Thread(
-        target=self._run_heartbeat_timer,
+        target=self._run_heartbeat_checker,
         name="heartbeat-timer-thread",
         )
 
