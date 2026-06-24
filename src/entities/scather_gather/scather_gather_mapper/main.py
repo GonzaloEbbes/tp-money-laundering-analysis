@@ -94,7 +94,7 @@ class ScatherGatherMapper:
             #EL EOF SE ENVIA A UNA INSTANCIA ALEATORIA
             eof_random_instance = randint(0, SCATHER_GATHER_AGGREGATOR_AMOUNT - 1)
             self.scather_gather_aggregator_exchanges[eof_random_instance].send(eof_message)
-        logging.info(f"Sent final EOFs for client {client_id} to scather gather aggregators")
+        logging.info(f"Sent final EOF for client {client_id} to scather gather aggregators")
 
     def on_consensus_ok_callback(self, client_id):
         #extraigo los datos del cliente,

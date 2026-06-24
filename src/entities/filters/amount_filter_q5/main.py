@@ -34,7 +34,7 @@ class AmountFilterQ5:
         self.pay_format_filter_and_currency_converter_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE
         )
-        logging.info(
+        logging.debug(
             "AmountFilterQ5 wiring: input_queue=%s output_queue=%s amount_filter_prefix=%s "
             "amount_filter_amount=%s expected_input_eofs=%s",
             PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE,
