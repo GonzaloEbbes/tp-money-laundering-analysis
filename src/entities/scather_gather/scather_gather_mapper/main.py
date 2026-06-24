@@ -95,8 +95,8 @@ class ScatherGatherMapper:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_SCATHER_GATHER_MAPPER:
-                self._add_inflight_message(message.source_client_uuid)
                 client_id = message.source_client_uuid
+                self._add_inflight_message(message.source_client_uuid)
                 self._process_transaction(message.data, client_id, message.data_id)
                 self._decrease_inflight_message(message.source_client_uuid)
                 self._check_and_finalize_client_if_pending(client_id)

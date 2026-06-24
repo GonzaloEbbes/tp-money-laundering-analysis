@@ -14,3 +14,7 @@ down:
 logs:
 	docker compose -f docker-compose.yaml logs
 .PHONY: logs
+
+test-battery:
+	./scripts/run_test_battery.py
+.PHONY: test-battery

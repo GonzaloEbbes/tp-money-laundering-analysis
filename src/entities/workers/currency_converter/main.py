@@ -94,6 +94,7 @@ class CurrencyConverter:
                 message.source_client_uuid,
                 message.data_id,
                 message_protocol.internal.TransactionData(output_payload),
+                message_id=message.message_id,
             )
         )
 
@@ -104,6 +105,7 @@ class CurrencyConverter:
                 message.source_client_uuid,
                 message.data_id,
                 message.data,
+                message_id=message.message_id,
             )
         )
 

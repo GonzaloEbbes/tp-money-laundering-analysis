@@ -7,7 +7,7 @@ import zlib
 
 from common import message_protocol
 from common.logging.logging_config import configure_logging_from_env
-from common.middleware.middleware_rabbitmq import MessageMiddlewareExchangePublisherRabbitMQ, MessageMiddlewareQueueRabbitMQ
+from common.middleware import MessageMiddlewareExchangePublisherRabbitMQ, MessageMiddlewareQueueRabbitMQ
 from message_handler import message_handler
 
 SERVER_HOST = os.environ["SERVER_HOST"]
