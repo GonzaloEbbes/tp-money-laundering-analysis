@@ -3,9 +3,12 @@ import logging
 import signal
 import threading
 import zlib
+import sys
 from common import middleware, message_protocol
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
+from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.eof_controller.message_handler import EOFMessageHandler
 from message_handler import MessageHandler as DataPerBankRedirectorMessageHandler
 
 ID = int(os.environ.get("ID", 0))
@@ -16,6 +19,11 @@ EOF_CONTROL_EXCHANGE = os.environ.get("EOF_CONTROL_EXCHANGE", "data_per_bank_con
 MAP_MAX_EXCHANGE = os.environ.get("MAP_MAX_EXCHANGE", "map_max_exchange")
 MAP_MAX_ROUTING_KEY_PREFIX = os.environ.get("MAP_MAX_ROUTING_KEY_PREFIX", "map_max_partition")
 TOTAL_MAPPERS = int(os.environ.get("TOTAL_MAPPERS", 1))
+
+PREFIX_WORKER = os.environ.get("PREFIX_WORKER", "data_per_bank_redirector")
+INPUT_PREFIX = os.environ.get("INPUT_PREFIX", "usd_filter_q1q2")
+EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", 1))
+MAPPER_PREFIX = os.environ.get("MAPPER_PREFIX", "mapper")
 
 
 def stable_hash(value):
@@ -29,173 +37,110 @@ class DataPerBankRedirector:
     def __init__(self):
         self.input_queue = middleware.MessageMiddlewareQueueRabbitMQ(MOM_HOST, INPUT_QUEUE)
         self.map_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(MOM_HOST, MAP_MAX_EXCHANGE)
-
         self.id = ID
-        self.total = DATA_PER_BANK_REDIRECTOR_AMOUNT
-        self.eof_consumer = None
-        self.eof_producer = None
-        self._is_leader = (self.id == 0)
-        if self.total > 1:
-            
-            all_routing_keys = [f"dpb_redirector_{i}" for i in range(self.total)]
-            self.eof_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
-                MOM_HOST, EOF_CONTROL_EXCHANGE, all_routing_keys
-            )
-
-            self.eof_producer = middleware.MessageMiddlewareExchangePublisherRabbitMQ(
-                MOM_HOST, EOF_CONTROL_EXCHANGE
-            )
-        self.total_eof = {}
-        self._eof_lock = threading.Lock()
-        self._pending = set()
-        self._pending_lock = threading.Lock()
-        self._finalized = set()
-        self._finalized_lock = threading.Lock()
-        self._inflight = {}
-        self._inflight_lock = threading.Lock()
-        self._stop = False
-        self._stop_lock = threading.Lock()
-        self._sigterm = False
+        self._sigterm_received = False
         self._map_exchange_lock = threading.Lock()
-        self._eof_producer_lock = threading.Lock()
 
-    def _add_inflight(self, cid):
-        with self._inflight_lock:
-            self._inflight[cid] = self._inflight.get(cid, 0) + 1
+        self.eof_controller = EOFController(
+            mom_host=MOM_HOST,
+            id_worker=self.id,
+            prefix_worker=PREFIX_WORKER,
+            amount_workers=DATA_PER_BANK_REDIRECTOR_AMOUNT,
+            eof_control_exchange_name=EOF_CONTROL_EXCHANGE,
+            input_eofs_quantities=EXPECTED_INPUT_EOFS,
+            on_consensus_ok_callback=None, 
+            on_send_eof_to_next_stage_callback=self._on_send_eof_to_mappers,
+            on_clean_client_in_main_thread_callback=None
+        )
 
-    def _dec_inflight(self, cid):
-        with self._inflight_lock:
-            if cid in self._inflight:
-                self._inflight[cid] -= 1
+    def _on_send_eof_to_mappers(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
+        total_sent_to_mappers = totals_by_output.get(MAPPER_PREFIX, 0)
+        
+        eof_bytes = EOFMessageHandler.serialize_eof_message(
+            client_id, total_sent_to_mappers, origin_worker_prefix, amount_origin_workers
+        )
+        
+        for i in range(TOTAL_MAPPERS):
+            routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{i}"
+            with self._map_exchange_lock:
+                self.map_exchange.send(eof_bytes, routing_key=routing_key)
+        logging.info(f"Redirector worker {self.id} (Líder) envió EOF final a mappers para cliente {client_id}")
 
-    def _try_finalize(self, cid):
-        pending = False
-        with self._pending_lock:
-            pending = cid in self._pending
-        if pending:
-            with self._inflight_lock:
-                if self._inflight.get(cid, 0) == 0:
-                    self._finalize_client(cid)
-
-    def _finalize_client(self, cid):
-        with self._finalized_lock:
-            if cid in self._finalized:
-                return
-            self._finalized.add(cid)
-
-        if self._is_leader:
-            with self._eof_lock:
-                self.total_eof[cid] = self.total_eof.get(cid, 0) + 1
-                logging.info(f"Redirector leader {self.id} received EOF leader message for client {cid} ({self.total_eof[cid]}/{self.total})")
-                if self.total_eof[cid] == self.total:
-                    eof_msg = DataPerBankRedirectorMessageHandler.serialize_eof_message(cid)
-                    for i in range(TOTAL_MAPPERS):
-                        routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{i}"
-                        with self._map_exchange_lock:
-                            self.map_exchange.send(eof_msg, routing_key=routing_key)
-                    del self.total_eof[cid]
-        else:
-            if self.eof_producer:
-                with self._eof_producer_lock:
-                    self.eof_producer.send(DataPerBankRedirectorMessageHandler.serialize_eof_leader_message(cid), routing_key=f"dpb_redirector_{self.id}")
-
-        with self._pending_lock:
-            if cid in self._pending:
-                self._pending.remove(cid)
-
-    def _process_eof_from_control_exchange(self, cid):
-        with self._inflight_lock:
-            if self._inflight.get(cid, 0) > 0:
-                with self._pending_lock:
-                    self._pending.add(cid)
-                logging.debug(f"Redirector {self.id} marked client {cid} as pending (inflight >0)")
-            else:
-                self._finalize_client(cid)
-                logging.debug(f"Redirector {self.id} finalized client {cid} immediately (inflight=0)")
+    def _run_input_consumer(self):
+        self.input_queue.start_consuming(self.process_message)
 
     def process_message(self, raw_msg, ack, nack):
         try:
             msg = message_protocol.internal.deserialize(raw_msg)
             cid = msg.source_client_uuid
-            if msg.type == InternalMessageType.EOF_GENERIC_MESSAGE:
-                logging.info(f"Redirector {self.id} received EOF for client {cid}")
-                self._add_inflight(cid)
-                if self.eof_producer:
-                    with self._eof_producer_lock:
-                        self.eof_producer.send(DataPerBankRedirectorMessageHandler.serialize_eof_message(cid), routing_key=f"dpb_redirector_{self.id}")
-                self._dec_inflight(cid)
-                with self._inflight_lock:
-                    inflight = self._inflight.get(cid, 0)
-                if inflight == 0:
-                    self._finalize_client(cid)
-                else:
-                    with self._pending_lock:
-                        self._pending.add(cid)
-                ack()
-                return
+            match msg.type:
+                case InternalMessageType.EOF_MESSAGE | InternalMessageType.EOF_FINAL_MESSAGE:
+                    self._handle_eof_message(cid, msg.data)
+                    
+                case InternalMessageType.USD_FILTER_Q1Q2_TO_DATA_PER_BANK_SHUFFLER:
+                    self._handle_data_message(cid, msg)
+                    
+                case _:
+                    logging.debug(f"Redirector {self.id} ignorando mensaje de tipo no soportado o de control en la cola de datos: {msg.type}")
 
-            if msg.type != InternalMessageType.USD_FILTER_Q1Q2_TO_DATA_PER_BANK_SHUFFLER:
-                ack()
-                return
-
-            self._add_inflight(cid)
-            from_bank = msg.data.get("from_bank")
-            if from_bank is not None:
-                partition = stable_hash(from_bank) % TOTAL_MAPPERS
-                logging.debug(f"Redirector {self.id} calculated partition {partition} for bank {from_bank}")
-                routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{partition}"
-                account_origin = msg.data.get("account_origin")
-                amount_received = msg.data.get("amount_received")
-                logging.debug(f"Redirector {self.id} redirecting message for client {cid} to mapper partition {partition}")
-                msg = DataPerBankRedirectorMessageHandler.serialize_redirect(cid, msg.data_id, from_bank, account_origin, amount_received)
-                with self._map_exchange_lock:
-                    self.map_exchange.send(msg, routing_key=routing_key)
-            self._dec_inflight(cid)
-            self._try_finalize(cid)
             ack()
         except Exception as e:
-            logging.exception(e)
+            logging.exception(f"Error procesando mensaje: {e}")
             nack()
 
-    def control_loop(self):
-        try:
-            self.eof_consumer.start_consuming(self.process_control)
-        except Exception as e:
-            logging.error(f"Control consumer error: {e}")
+    def _handle_eof_message(self, cid, data):
+        """Maneja la recepción de mensajes de Fin de Flujo (EOF) delegándolo al controlador."""
+        logging.info(f"Redirector {self.id} recibió mensaje EOF para el cliente {cid}")
+        self.eof_controller.on_input_queue_eof_reception(cid, data)
 
-    def process_control(self, raw_msg, ack, nack):
-        msg = message_protocol.internal.deserialize(raw_msg)
-        cid = msg.source_client_uuid
-        if msg.type == InternalMessageType.EOF_GENERIC_MESSAGE:
-            self._process_eof_from_control_exchange(cid)
-        elif msg.type == InternalMessageType.EOF_LEADER_MESSAGE and self._is_leader:
-            with self._eof_lock:
-                self.total_eof[cid] = self.total_eof.get(cid, 0) + 1
-                if self.total_eof[cid] == self.total:
-                    eof_msg = DataPerBankRedirectorMessageHandler.serialize_eof_message(cid)
-                    for i in range(TOTAL_MAPPERS):
-                        routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{i}"
-                        with self._map_exchange_lock:
-                            self.map_exchange.send(eof_msg, routing_key=routing_key)
-                        logging.info(f"Redirector leader {self.id} sent final EOF to mapper partition {i}")
-                    del self.total_eof[cid]
-        ack()
+    def _handle_data_message(self, cid, msg):
+        from_bank = None
+        raw_bank_id = msg.data.get("from_bank")
+        if raw_bank_id is not None:
+            from_bank = str(int(raw_bank_id))
+        
+        if from_bank is not None:
+            partition = stable_hash(from_bank) % TOTAL_MAPPERS
+            routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{partition}"
+            account_origin = msg.data.get("account_origin")
+            amount_received = msg.data.get("amount_received")
+            
+            redirect_msg = DataPerBankRedirectorMessageHandler.serialize_redirect(
+                cid, msg.data_id, from_bank, account_origin, amount_received
+            )
+            
+            with self._map_exchange_lock:
+                self.map_exchange.send(redirect_msg, routing_key=routing_key)
+            
+            self.eof_controller.on_packet_sent_by_client_to(MAPPER_PREFIX, cid)
+
+        self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX)
 
     def start(self):
-        if self.eof_consumer:
-            threading.Thread(target=self.control_loop, daemon=True).start()
-        self.input_queue.start_consuming(self.process_message)
+        input_thread = threading.Thread(
+            target=self._run_input_consumer, 
+            name=f"redirector-{self.id}-input-consumer"
+        )
+        input_thread.start()
+        eof_exit_code = self.eof_controller.start()
+        input_thread.join()
+
+        self.input_queue.close()
+        if hasattr(self, 'map_exchange'):
+            self.map_exchange.close()
+        
+        return eof_exit_code
 
     def stop(self):
-        with self._stop_lock:
-            if self._stop:
-                return
-            self._stop = True
-        self.input_queue.stop_consuming()
-        if self.eof_consumer:
-            self.eof_consumer.stop_consuming()
-        self.input_queue.close()
-        self.map_exchange.close()
+        self._sigterm_received = True
+        try:
+            self.input_queue._connection.add_callback_threadsafe(
+                self.input_queue.stop_consuming
+            )
+        except Exception as e:
+            logging.error(f"Error al detener consumidor: {e}")
+            
+        self.eof_controller.on_sigterm()
 
 def main():
     configure_logging_from_env()
@@ -204,7 +149,9 @@ def main():
         logging.info("SIGTERM received")
         w.stop()
     signal.signal(signal.SIGTERM, _sigterm)
-    w.start()
+    exit_code = w.start()
+
+    sys.exit(exit_code)
 
 if __name__ == "__main__":
     main()
