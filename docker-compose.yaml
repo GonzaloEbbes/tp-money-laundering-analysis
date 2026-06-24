@@ -2586,7 +2586,7 @@ services:
   data_per_bank_redirector_0:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_0
     depends_on:
       rabbitmq:
@@ -2611,7 +2611,7 @@ services:
   data_per_bank_redirector_1:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_1
     depends_on:
       rabbitmq:
@@ -2636,7 +2636,7 @@ services:
   data_per_bank_redirector_2:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_2
     depends_on:
       rabbitmq:
@@ -2661,7 +2661,7 @@ services:
   data_per_bank_redirector_3:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_3
     depends_on:
       rabbitmq:
@@ -2686,7 +2686,7 @@ services:
   data_per_bank_redirector_4:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_4
     depends_on:
       rabbitmq:
@@ -2711,7 +2711,7 @@ services:
   data_per_bank_redirector_5:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_5
     depends_on:
       rabbitmq:
@@ -2736,7 +2736,7 @@ services:
   data_per_bank_redirector_6:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_6
     depends_on:
       rabbitmq:
@@ -2761,7 +2761,7 @@ services:
   data_per_bank_redirector_7:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_7
     depends_on:
       rabbitmq:
@@ -2786,7 +2786,7 @@ services:
   data_per_bank_redirector_8:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_8
     depends_on:
       rabbitmq:
@@ -2993,7 +2993,7 @@ services:
   map_max_amount_per_bank_0:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_0
     depends_on:
       rabbitmq:
@@ -3019,7 +3019,7 @@ services:
   map_max_amount_per_bank_1:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_1
     depends_on:
       rabbitmq:
@@ -3045,7 +3045,7 @@ services:
   map_max_amount_per_bank_2:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_2
     depends_on:
       rabbitmq:
@@ -3071,7 +3071,7 @@ services:
   map_max_amount_per_bank_3:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_3
     depends_on:
       rabbitmq:
@@ -3097,7 +3097,7 @@ services:
   map_max_amount_per_bank_4:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_4
     depends_on:
       rabbitmq:
@@ -3123,7 +3123,7 @@ services:
   map_max_amount_per_bank_5:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_5
     depends_on:
       rabbitmq:
@@ -3149,7 +3149,7 @@ services:
   map_max_amount_per_bank_6:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_6
     depends_on:
       rabbitmq:
@@ -3175,7 +3175,7 @@ services:
   map_max_amount_per_bank_7:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_7
     depends_on:
       rabbitmq:
@@ -3201,7 +3201,7 @@ services:
   map_max_amount_per_bank_8:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_8
     depends_on:
       rabbitmq:
@@ -3227,7 +3227,7 @@ services:
   map_max_amount_per_bank_9:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_9
     depends_on:
       rabbitmq:
@@ -3253,7 +3253,7 @@ services:
   map_max_amount_per_bank_10:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_10
     depends_on:
       rabbitmq:
@@ -3279,7 +3279,7 @@ services:
   join_max_amount_per_bank_0:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_0
     depends_on:
       rabbitmq:
@@ -3305,7 +3305,7 @@ services:
   join_max_amount_per_bank_1:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_1
     depends_on:
       rabbitmq:
@@ -3331,7 +3331,7 @@ services:
   join_max_amount_per_bank_2:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_2
     depends_on:
       rabbitmq:
