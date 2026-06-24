@@ -16,22 +16,3 @@ class MessageHandler:
             data_id,
             data,
         )
-
-    @staticmethod
-    def serialize_eof_message(client_uuid):
-        return message_protocol.internal.serialize(
-            InternalMessageType.EOF_GENERIC_MESSAGE,
-            client_uuid,
-            None,
-            None,
-        )
-    
-
-    @staticmethod
-    def serialize_eof_leader_message(client_uuid):
-        return message_protocol.internal.serialize(
-            InternalMessageType.EOF_LEADER_MESSAGE,
-            client_uuid,
-            None,
-            None,
-        )

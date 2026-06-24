@@ -2603,6 +2603,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_1:
     build:
@@ -2624,6 +2628,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_2:
     build:
@@ -2645,6 +2653,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_3:
     build:
@@ -2666,6 +2678,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_4:
     build:
@@ -2687,6 +2703,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_5:
     build:
@@ -2708,6 +2728,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_6:
     build:
@@ -2729,6 +2753,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_7:
     build:
@@ -2750,6 +2778,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_8:
     build:
@@ -2771,6 +2803,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   bank_filter_0:
     build:
@@ -2793,6 +2829,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_1:
     build:
@@ -2815,6 +2855,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_2:
     build:
@@ -2837,6 +2881,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_3:
     build:
@@ -2859,6 +2907,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_4:
     build:
@@ -2881,6 +2933,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_5:
     build:
@@ -2903,6 +2959,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_6:
     build:
@@ -2925,6 +2985,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_0:
     build:
@@ -2947,6 +3011,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_1:
     build:
@@ -2969,6 +3037,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_2:
     build:
@@ -2991,6 +3063,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_3:
     build:
@@ -3013,6 +3089,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_4:
     build:
@@ -3035,6 +3115,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_5:
     build:
@@ -3057,6 +3141,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_6:
     build:
@@ -3079,6 +3167,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_7:
     build:
@@ -3101,6 +3193,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_8:
     build:
@@ -3123,6 +3219,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_9:
     build:
@@ -3145,6 +3245,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_10:
     build:
@@ -3167,6 +3271,10 @@ services:
       - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   join_max_amount_per_bank_0:
     build:
@@ -3188,6 +3296,11 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   join_max_amount_per_bank_1:
     build:
@@ -3209,6 +3322,11 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   join_max_amount_per_bank_2:
     build:
@@ -3230,6 +3348,11 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   client:
     build:

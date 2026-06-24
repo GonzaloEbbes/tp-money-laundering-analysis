@@ -590,6 +590,10 @@ def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers, log_
         "      - EXCHANGE_NAME=map_max_exchange",
         "      - OUTPUT_ROUTING_KEY_PREFIX=map_partition",
         "      - EOF_CONTROL_EXCHANGE=dpb_control_exchange",
+        "      - PREFIX_WORKER=data_per_bank_redirector",
+        "      - INPUT_PREFIX=usd_filter_q1q2",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - MAPPER_PREFIX=map_max_amount_per_bank",
         "",
     ]
 
@@ -616,6 +620,10 @@ def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank,
         f"      - JOIN_AMOUNT={total_join_max_amount_per_bank}",
         "      - JOIN_ROUTING_KEY_PREFIX=join_partition",
         "      - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange",
+        "      - PREFIX_WORKER=bank_filter",
+        "      - INPUT_PREFIX=gateway",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - NEXT_STAGE_PREFIX=join_max_amount_per_bank",
         "",
     ]
 
@@ -642,6 +650,10 @@ def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_am
         f"      - JOIN_AMOUNT={total_join_amount_per_bank}",
         "      - JOIN_ROUTING_KEY_PREFIX=join_partition",
         "      - EOF_CONTROL_EXCHANGE=map_control_exchange",
+        "      - PREFIX_WORKER=map_max_amount_per_bank",
+        "      - INPUT_PREFIX=data_per_bank_redirector",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - NEXT_STAGE_PREFIX=join_max_amount_per_bank",
         "",
     ]
 
@@ -667,6 +679,11 @@ def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_a
         "      - JOIN_ROUTING_KEY_PREFIX=join_partition",
         "      - OUTPUT_QUEUE=gateway_results_queue",
         "      - EOF_CONTROL_EXCHANGE=join_control_exchange",
+        "      - PREFIX_WORKER=join_max_amount_per_bank",
+        "      - INPUT_PREFIX_1=bank_filter",
+        "      - INPUT_PREFIX_2=map_max_amount_per_bank",
+        "      - EXPECTED_INPUT_EOFS=2",
+        "      - NEXT_STAGE_PREFIX=gateway",
         "",
     ]
 

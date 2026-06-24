@@ -1,6 +1,7 @@
 import os
 import logging
 import signal
+import sys
 import threading
 from common import middleware, message_protocol
 from common.logging.logging_config import configure_logging_from_env
@@ -84,7 +85,7 @@ class JoinMaxAmountPerBank:
             nack()
 
     def _handle_eof_message(self, cid, data):
-        logging.info(f"Joiner {self.id} recibió mensaje EOF para el cliente {cid}")
+        logging.debug(f"Joiner {self.id} recibió mensaje EOF para el cliente {cid}")
         self.eof_controller.on_input_queue_eof_reception(cid, data)
 
     def _handle_bank_filter_data(self, cid, msg):
@@ -121,7 +122,7 @@ class JoinMaxAmountPerBank:
         if client_id not in self.pending_results:
             return
 
-        logging.info(f"Joiner {self.id} procesando JOIN final para cliente {client_id}")
+        logging.debug(f"Joiner {self.id} procesando JOIN final para cliente {client_id}")
 
         for from_bank, (amount, origin, data_id) in self.pending_results[client_id].items():
             bank_name = self.bank_cache.get(client_id, {}).get(from_bank, "Unknown")
@@ -148,7 +149,7 @@ class JoinMaxAmountPerBank:
         
         with self._output_queue_lock:
             self.output_queue.send(eof_bytes)
-        logging.info(f"Joiner {self.id} (Líder) envió EOF final para cliente {client_id}")
+        logging.info(f"Joiner envió EOF final al gateway para el cliente {client_id}")
 
     def _clean_client_memory(self, client_id):
         """Limpieza segura de memoria."""
@@ -156,7 +157,7 @@ class JoinMaxAmountPerBank:
             del self.bank_cache[client_id]
         if client_id in self.pending_results:
             del self.pending_results[client_id]
-        logging.info(f"Memoria liberada en Joiner {self.id} para cliente {client_id}")
+        logging.debug(f"Memoria liberada en Joiner {self.id} para cliente {client_id}")
 
     def _run_input_consumer(self):
         self.input_exchange.start_consuming(self.process_message)
@@ -203,4 +204,5 @@ def main():
     sys.exit(exit_code)
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
+

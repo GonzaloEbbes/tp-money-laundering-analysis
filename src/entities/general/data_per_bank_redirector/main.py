@@ -90,7 +90,7 @@ class DataPerBankRedirector:
 
     def _handle_eof_message(self, cid, data):
         """Maneja la recepción de mensajes de Fin de Flujo (EOF) delegándolo al controlador."""
-        logging.info(f"Redirector {self.id} recibió mensaje EOF para el cliente {cid}")
+        logging.debug(f"Redirector {self.id} recibió mensaje EOF para el cliente {cid}")
         self.eof_controller.on_input_queue_eof_reception(cid, data)
 
     def _handle_data_message(self, cid, msg):
@@ -154,4 +154,5 @@ def main():
     sys.exit(exit_code)
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
+

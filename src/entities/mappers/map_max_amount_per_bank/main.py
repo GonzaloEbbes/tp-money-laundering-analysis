@@ -2,6 +2,7 @@
 import os
 import logging
 import signal
+import sys
 import threading
 import zlib
 from common import middleware, message_protocol
@@ -97,12 +98,12 @@ class MapMaxAmountPerBank:
             routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{i}"
             with self._join_exchange_lock:
                 self.join_exchange.send(eof_bytes, routing_key=routing_key)
-        logging.info(f"Mapper {self.id} (Líder) envió EOF final al Joiner para cliente {client_id}")
+        logging.info(f"Se envió EOF al map_max_amount_per_bank_joiner para cliente {client_id}")
 
     def _clean_client_memory(self, client_id):
         if client_id in self.bank_max:
             del self.bank_max[client_id]
-            logging.info(f"Memoria limpiada para el cliente {client_id} en el Mapper {self.id}")
+            logging.debug(f"Memoria limpiada para el cliente {client_id} en el Mapper {self.id}")
 
     def process_message(self, raw_msg, ack, nack):
         try:
@@ -126,7 +127,7 @@ class MapMaxAmountPerBank:
             nack()
 
     def _handle_eof_message(self, cid, data):
-        logging.info(f"Mapper {self.id} recibió mensaje EOF para el cliente {cid}")
+        logging.debug(f"Mapper {self.id} recibió mensaje EOF para el cliente {cid}")
         self.eof_controller.on_input_queue_eof_reception(cid, data)
 
     def _handle_data_message(self, cid, msg):
@@ -185,4 +186,5 @@ def main():
     sys.exit(exit_code)
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
+    
