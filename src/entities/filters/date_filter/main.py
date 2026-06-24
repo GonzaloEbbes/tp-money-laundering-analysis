@@ -1,13 +1,12 @@
-import hashlib
 import os
 import logging
 import re
 import signal
 import sys
 import threading
-from time import sleep
 
 from common import middleware, message_protocol
+from common.snapshots.recoverable_worker import RecoverableWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
@@ -34,7 +33,7 @@ OUTPUT_PREFIX_3 = os.environ["OUTPUT_PREFIX_3"] #que es el prefix del PAY FORMAT
 
 
 
-class DateFilter:
+class DateFilter(RecoverableWorker):
 
     def __init__(self):
         self.gateway_queue = middleware.MessageMiddlewareQueueRabbitMQ(
@@ -62,7 +61,20 @@ class DateFilter:
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_controller = EOFController(MOM_HOST, self.id, DATE_FILTER_PREFIX, DATE_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None,AUXILIARY_INPUT)
+        self.eof_controller = EOFController(
+            MOM_HOST,
+            self.id,
+            DATE_FILTER_PREFIX,
+            DATE_FILTER_AMOUNT,
+            EOF_CONTROL_EXCHANGE,
+            EXPECTED_INPUT_EOFS,
+            None,
+            self.on_send_eof_to_next_stage_callback,
+            None,
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
+            )
     
     def _run_gateway_consumer(self):
         try:
@@ -72,48 +84,55 @@ class DateFilter:
 
     
     def process_gateway_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.GATEWAY_TO_DATE_FILTER:
-                client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
+        try:
+            message = message_protocol.internal.deserialize(message)
+            client_id = message.source_client_uuid
+            match message.type:
+                case message_protocol.internal.InternalMessageType.GATEWAY_TO_DATE_FILTER:
+                    self._process_transaction(message.data, client_id, message.data_id)
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+            self.append_to_batch(None, self.gateway_queue._connection, ack)
+        except Exception as e:
+            logging.exception("Error en filtro: %s", e)
+            nack()
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        timestamp = transaction_data.get("timestamp")
+        if self.ensure_idempotent(client_id, data_id):
+            timestamp = transaction_data.get("timestamp")
 
-        if not re.match(r'^\d{4}/\d{2}/\d{2} \d{2}:\d{2}$', timestamp[:16]):
-            logging.warning(f"Timestamp inválido para cliente {client_id}: {timestamp}")
-            return
-        
-        (anio,mes,dia) = (timestamp[0:4], timestamp[5:7], timestamp[8:10])
+            if not re.match(r'^\d{4}/\d{2}/\d{2} \d{2}:\d{2}$', timestamp[:16]):
+                logging.warning(f"Timestamp inválido para cliente {client_id}: {timestamp}")
+                return
+            
+            (anio,mes,dia) = (timestamp[0:4], timestamp[5:7], timestamp[8:10])
 
-        if anio == "2022" and mes == "09":
-            if dia in ["01", "02", "03", "04", "05"]:
+            if anio == "2022" and mes == "09":
+                if dia in ["01", "02", "03", "04", "05"]:
 
-                with self.producer_lock:
-                    self.usd_filters_q4_queue.send(
-                        DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
-                    ) 
-                    self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
+                    with self.producer_lock:
+                        self.usd_filters_q4_queue.send(
+                            DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
+                        ) 
+                        self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
+                    
+                    with self.producer_lock:
+                        self.pay_format_filter_queue.send(
+                            DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, transaction_data)
+                        )
+                        self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_3, client_id)
+
+                elif dia in ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
+                    with self.producer_lock:
+                        self.usd_filters_q3_queue.send(
+                            DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
+                        )
+                    self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
                 
-                with self.producer_lock:
-                    self.pay_format_filter_queue.send(
-                        DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, transaction_data)
-                    )
-                    self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_3, client_id)
-
-            elif dia in ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
-                with self.producer_lock:
-                    self.usd_filters_q3_queue.send(
-                        DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
-                    )
-                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
+            self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+        else:
+            logging.debug(f"Data ID {data_id} already processed for client {client_id}, skipping")
 
     def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         with self.producer_lock:
@@ -157,12 +176,16 @@ class DateFilter:
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
+
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
         self.eof_controller.on_stop()
+        self.stop_recoverable_worker()
+
     
     def start(self):
         process_thread = threading.Thread(

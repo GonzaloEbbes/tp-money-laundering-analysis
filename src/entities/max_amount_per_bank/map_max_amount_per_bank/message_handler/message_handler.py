@@ -9,6 +9,7 @@ class MessageHandler:
             "from_bank": from_bank,
             "amount_received": amount_received,
             "account_origin": account_origin,
+            "data_id":data_id
         }
         return message_protocol.internal.serialize(
             InternalMessageType.MAX_AMOUNT_PER_BANK_RESULT,

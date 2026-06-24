@@ -7,6 +7,7 @@ import sys
 import threading
 
 from common import middleware, message_protocol
+from common.snapshots.stateful_worker import StatefulWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
@@ -26,9 +27,14 @@ INPUT_PREFIX_1 = os.environ["INPUT_PREFIX_1"] #que es el prefix del usd filter q
 AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true" #false
 OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #al aggregator
 
-class ScatherGatherMapper:
+class ScatherGatherMapper(StatefulWorker):
 
     def __init__(self):
+        super().__init__(
+            data_dir=f"/data/snapshots/scather_gather_mapper_{ID}",
+            set_keys=['partial_fanout_by_client', 'partial_fanin_by_client']
+            )
+
         self.usd_filter_q4_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, USD_FILTER_Q4_QUEUE
         )
@@ -47,9 +53,17 @@ class ScatherGatherMapper:
         self.producer_lock = threading.Lock()
 
         self.partial_dicts_lock = threading.Lock()
-        self.partial_fanout_by_client : dict[str, dict[str, set[str]]] = {}
-        self.partial_fanin_by_client : dict[str, dict[str, set[str]]] = {}
+        self.partial_fanout_by_client = self.state.setdefault('partial_fanout_by_client', {})
+        self.partial_fanin_by_client = self.state.setdefault('partial_fanin_by_client', {})
 
+        for cid, fanout in self.partial_fanout_by_client.items():
+            for origin, dests in fanout.items():
+                if isinstance(dests, list):
+                    fanout[origin] = set(dests)
+        for cid, fanin in self.partial_fanin_by_client.items():
+            for dest, origins in fanin.items():
+                if isinstance(origins, list):
+                    fanin[dest] = set(origins)
 
         #Control de shutdown y estado de clientes
         self._sigterm_received = False
@@ -57,7 +71,20 @@ class ScatherGatherMapper:
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_controller = EOFController(MOM_HOST, self.id, SCATHER_GATHER_MAPPER_PREFIX, SCATHER_GATHER_MAPPER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,self.on_consensus_ok_callback,self.on_send_eof_to_next_stage_callback, self.on_clean_client_callback, AUXILIARY_INPUT)
+        self.eof_controller = EOFController(
+            MOM_HOST,
+            self.id,
+            SCATHER_GATHER_MAPPER_PREFIX,
+            SCATHER_GATHER_MAPPER_AMOUNT,
+            EOF_CONTROL_EXCHANGE,
+            EXPECTED_INPUT_EOFS,
+            self.on_consensus_ok_callback,
+            self.on_send_eof_to_next_stage_callback,
+            self.on_clean_client_callback,
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
+        )
 
 
     def _run_usd_filter_q4_consumer(self):
@@ -67,26 +94,41 @@ class ScatherGatherMapper:
             self._handle_runtime_failure(e, "USD filter Q4 consumer crashed")
 
     def process_usd_filter_q4_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_SCATHER_GATHER_MAPPER:
-                client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
-        
+        try:
+            message = message_protocol.internal.deserialize(message)
+            client_id = message.source_client_uuid
+            match message.type:
+                case message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_SCATHER_GATHER_MAPPER:
+                    self._process_transaction(message.data, client_id, message.data_id)
+                    
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+            self.append_to_batch(None, self.usd_filter_q4_queue._connection, ack)
+        except Exception as e:
+            logging.error(f"Error processing message: {e}")
+            nack()
+            
 
     def _process_transaction(self, transaction_data, client_id, data_id):
+        if not self.ensure_idempotent(client_id, data_id):
+            logging.debug(f"Data ID {data_id} already processed for client {client_id}, skipping")
+            return
         logging.debug(f"Received USD_FILTER_Q4_TO_SCATHER_GATHER_MAPPER for client {client_id}")
         origin = transaction_data.get("account_origin")
         destination = transaction_data.get("account_destination")
 
-        with self.partial_dicts_lock:
-            self.partial_fanin_by_client.setdefault(client_id, {}).setdefault(destination, set()).add(origin)
-            self.partial_fanout_by_client.setdefault(client_id, {}).setdefault(origin, set()).add(destination)
+        fanout_by_client = self.partial_fanout_by_client.setdefault(client_id, {})
+        dest_set = fanout_by_client.setdefault(origin, set())
+        if destination not in dest_set:
+            dest_set.add(destination)
+            self.state_add_to_set(['partial_fanout_by_client', client_id, origin], destination)
+
+        fanin_by_client = self.partial_fanin_by_client.setdefault(client_id, {})
+        origin_set = fanin_by_client.setdefault(destination, set())
+        if origin not in origin_set:
+            origin_set.add(origin)
+            self.state_add_to_set(['partial_fanin_by_client', client_id, destination], origin)
+        self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
 
     def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         eof_message = EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers)
@@ -131,12 +173,7 @@ class ScatherGatherMapper:
         return value % SCATHER_GATHER_AGGREGATOR_AMOUNT
 
     def on_clean_client_callback(self, client_id):
-
-        with self.partial_dicts_lock:
-            if client_id in self.partial_fanout_by_client:
-                del self.partial_fanout_by_client[client_id]
-            if client_id in self.partial_fanin_by_client:
-                del self.partial_fanin_by_client[client_id]
+        self.clean_client_data(client_id, ['partial_fanout_by_client', 'partial_fanin_by_client'])
 
     def stop(self):
         with self._stop_lock:
@@ -167,12 +204,14 @@ class ScatherGatherMapper:
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
         self.eof_controller.on_stop()
+        self.stop_recoverable_worker()
     
     def start(self):
 

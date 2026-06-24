@@ -5,7 +5,9 @@ import signal
 import sys
 import threading
 import zlib
+
 from common import middleware, message_protocol
+from common.snapshots.stateful_worker import StatefulWorker
 from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
@@ -33,8 +35,12 @@ def stable_hash(value):
         norm_val = str(value).strip()
     return zlib.crc32(str(norm_val).encode())
 
-class MapMaxAmountPerBank:
+class MapMaxAmountPerBank(StatefulWorker):
     def __init__(self):
+        super().__init__(
+            data_dir=f"/data/snapshots/map_max_{ID}",
+            set_keys=['bank_max'] 
+            )
         self.id = ID
         self.input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
             MOM_HOST,
@@ -46,8 +52,8 @@ class MapMaxAmountPerBank:
         self.join_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(
             MOM_HOST, JOIN_EXCHANGE
         )
-        #{cid: {from_bank: (amount, origin)}}
-        self.bank_max = {}
+
+        self.bank_max = self.state.setdefault('bank_max', {})
         self._join_exchange_lock = threading.Lock()
         self._sigterm_received = False
 
@@ -101,9 +107,7 @@ class MapMaxAmountPerBank:
         logging.info(f"Se envió EOF al map_max_amount_per_bank_joiner para cliente {client_id}")
 
     def _clean_client_memory(self, client_id):
-        if client_id in self.bank_max:
-            del self.bank_max[client_id]
-            logging.debug(f"Memoria limpiada para el cliente {client_id} en el Mapper {self.id}")
+        self.clean_client_data(client_id, ['bank_max'])
 
     def process_message(self, raw_msg, ack, nack):
         try:
@@ -120,8 +124,7 @@ class MapMaxAmountPerBank:
                     self._handle_data_message(cid, msg)
                 case _:
                     logging.debug(f"Mapper {self.id} ignorando mensaje: {msg.type}")
-            ack()
-            
+            self.append_to_batch(op=None, conn=self.input_queue._connection, ack_func=ack)
         except Exception as e:
             logging.exception(e)
             nack()
@@ -131,17 +134,29 @@ class MapMaxAmountPerBank:
         self.eof_controller.on_input_queue_eof_reception(cid, data)
 
     def _handle_data_message(self, cid, msg):
-        raw_from_bank = msg.data.get("from_bank")
-        amount = msg.data.get("amount_received")
+        data_id = msg.data_id
+        if not self.ensure_idempotent(cid, data_id):
+            logging.debug(f"Data ID {data_id} already processed for client {cid}, skipping")
+            return
+        bank_id = int(msg.data.get("bank_id"))
+        amount = float(msg.data.get("amount_received"))
+        origin = msg.data.get("account_origin")
+
+        client_dict = self.bank_max.setdefault(cid, {})
+        current_max = client_dict.get(bank_id)
         
-        if amount is not None and raw_from_bank is not None:
-            from_bank = int(raw_from_bank)
-            origin = msg.data.get("account_origin")
-            
-            current = self.bank_max[cid].get(from_bank)
-            if current is None or amount > current[0]:
-                self.bank_max[cid][from_bank] = (amount, origin)
-                
+        if current_max is None or amount > current_max[0]:
+            new_val = (amount, origin)
+            client_dict[bank_id] = new_val
+            self.state_update(['bank_max', cid, str(bank_id)], new_val)
+            # Re-envío al joiner (si fuera necesario actualizar el máximo)
+            serialized = MapperMessageHandler.serialize_result(cid, data_id, bank_id, amount, origin)
+            partition = stable_hash(bank_id) % JOIN_AMOUNT
+            routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{partition}"
+
+            self.join_exchange.send(serialized, routing_key=routing_key)
+            self.eof_controller.on_packet_sent_by_client_to("joiner", cid)
+        
         self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX)
 
     def _run_input_consumer(self):
@@ -172,6 +187,7 @@ class MapMaxAmountPerBank:
             logging.error(f"Error al detener consumidor: {e}")
             
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -180,10 +196,8 @@ def main():
         logging.info("SIGTERM received")
         w.stop()
     signal.signal(signal.SIGTERM, _sigterm)
-    exit_code = w.start()
+    return w.start()
     
-    import sys
-    sys.exit(exit_code)
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -3,9 +3,9 @@ import logging
 import signal
 import sys
 import threading
-from time import sleep
 
 from common import middleware, message_protocol
+from common.snapshots.recoverable_worker import RecoverableWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from message_handler import MessageHandler as AmountFilterQ1MessageHandler
@@ -25,9 +25,10 @@ INPUT_PREFIX_1 = os.environ["INPUT_PREFIX_1"] #que es el prefix del usd filter q
 AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true"
 OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #GATEWAY
 
-class AmountFilterQ1: 
+class AmountFilterQ1(RecoverableWorker): 
 
     def __init__(self):
+        super().__init__(data_dir=f"/data/snapshots/amount_filter_q1_{ID}")
         self.usd_filter_q1q2_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, USD_FILTER_Q1Q2_QUEUE
         )
@@ -43,7 +44,20 @@ class AmountFilterQ1:
         self._runtime_error = False
         self._stop_lock = threading.Lock()
         self._stopping = False
-        self.eof_controller = EOFController(MOM_HOST, self.id, AMOUNT_FILTER_PREFIX, AMOUNT_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None, AUXILIARY_INPUT)
+        self.eof_controller = EOFController(
+            MOM_HOST, 
+            self.id, 
+            AMOUNT_FILTER_PREFIX, 
+            AMOUNT_FILTER_AMOUNT, 
+            EOF_CONTROL_EXCHANGE, 
+            EXPECTED_INPUT_EOFS,
+            None,
+            self.on_send_eof_to_next_stage_callback, 
+            None, 
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
+            )
 
     
     def _run_usd_filter_q1q2_consumer(self):
@@ -54,18 +68,19 @@ class AmountFilterQ1:
 
     
     def process_usd_filter_q1q2_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1:
-                client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
-        
-        
+        try:
+            message = message_protocol.internal.deserialize(message)
+            client_id = message.source_client_uuid
+            match message.type:
+                case message_protocol.internal.InternalMessageType.USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1:
+                    self._process_transaction(message.data, client_id, message.data_id)
+                    self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+            self.append_to_batch(None, self.usd_filter_q1q2_queue._connection, ack)
+        except Exception as e:
+            logging.exception("Error en filtro: %s", e)
+            nack()
 
     def _process_transaction(self, transaction_data, client_id, data_id):
         logging.debug(f"Received USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1 for client {client_id}")
@@ -96,6 +111,7 @@ class AmountFilterQ1:
                 consumer.stop_consuming()
             except Exception as e:
                 logging.error(f"Error stopping consumer: {e}")
+        self.stop_stateful_worker()
 
     def _close_resources(self):
         resources = [self.usd_filter_q1q2_queue]
@@ -112,12 +128,14 @@ class AmountFilterQ1:
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
         self.eof_controller.on_stop()
+        self.stop_recoverable_worker()
     
     def start(self):
 

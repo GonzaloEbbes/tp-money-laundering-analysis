@@ -1,18 +1,15 @@
-import hashlib
 import os
 import logging
-import re
 import signal
 import sys
 import threading
-from time import sleep
 import uuid
 
 from common import middleware, message_protocol
+from common.snapshots.stateful_worker import StatefulWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
-from common.message_protocol.internal import TransactionData
 from message_handler import MessageHandler as AveragePerPayFormatMapperMessageHandler
 
 ID = os.environ["ID"]
@@ -29,9 +26,13 @@ OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #el joiner
 OUTPUT_QUEUE = os.environ["OUTPUT_QUEUE"] #average_per_pay_format_mapper_to_average_per_pay_format_aggregator_queue
 
 
-class AveragePerPayFormatMapper:
+class AveragePerPayFormatMapper(StatefulWorker):
 
     def __init__(self):
+        super().__init__(
+            data_dir=f"/data/snapshots/average_per_pay_format_mapper_{ID}",
+            set_keys=['averages_per_client']
+            )
         self.usd_filter_q4_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, USD_FILTER_Q4_TO_AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE
         )
@@ -48,14 +49,25 @@ class AveragePerPayFormatMapper:
         self._sigterm_received = False
         self._runtime_error = False
 
-        self.averages_per_client : dict[str, dict[str, dict[str,float]]] = {}
-        self.averages_per_client_lock = threading.Lock()
+        self.averages_per_client = self.state.setdefault('averages_per_client', {})
 
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_controller = EOFController(MOM_HOST, self.id, MAPPER_FILTER_PREFIX, MAPPER_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,self.on_consensus_ok_callback,self.on_send_eof_to_next_stage_callback, self.on_clean_client_callback, AUXILIARY_INPUT)
-
+        self.eof_controller = EOFController(
+            MOM_HOST,
+            self.id,
+            MAPPER_FILTER_PREFIX,
+            MAPPER_FILTER_AMOUNT,
+            EOF_CONTROL_EXCHANGE,
+            EXPECTED_INPUT_EOFS,
+            self.on_consensus_ok_callback,
+            self.on_send_eof_to_next_stage_callback,
+            self.on_clean_client_callback,
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
+        )
 
     def _run_usd_filter_q4_consumer(self):
         try:
@@ -69,16 +81,20 @@ class AveragePerPayFormatMapper:
 
 
     def process_usd_filter_q4_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_AVERAGE_PER_PAY_FORMAT_MAPPER:
-                client_id = message.source_client_uuid
-                self._process_usd_filter_q4_message(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
+        try:
+            message = message_protocol.internal.deserialize(message)
+            client_id = message.source_client_uuid
+            match message.type:
+                case message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_AVERAGE_PER_PAY_FORMAT_MAPPER:
+                    self._process_usd_filter_q4_message(message.data, client_id, message.data_id)
+                    self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+
+            self.append_to_batch(None, self.usd_filter_q4_queue._connection, ack)
+        except Exception as e:
+            logging.error(f"Error processing message: {e}")
+            nack()
 
     def _process_usd_filter_q4_message(self, transaction_data, client_id, data_id): 
         payment_format = transaction_data.get("payment_format")
@@ -89,32 +105,30 @@ class AveragePerPayFormatMapper:
             amount = float(transaction_data.get("amount_received", 0))
         except (TypeError, ValueError):
             return
+        
+        if not self.ensure_idempotent(client_id, data_id):
+            return
 
-        with self.averages_per_client_lock:
-            if client_id not in self.averages_per_client:
-                self.averages_per_client[client_id] = {}
-            if payment_format not in self.averages_per_client[client_id]:
-                self.averages_per_client[client_id][payment_format] = {"sum_total": 0, "count": 0}
-            self.averages_per_client[client_id][payment_format]["sum_total"] += amount
-            self.averages_per_client[client_id][payment_format]["count"] += 1
-
+        client_averages = self.averages_per_client.setdefault(client_id, {})
+        if payment_format not in client_averages:
+            client_averages[payment_format] = {"sum_total": 0.0, "count": 0}
+        client_averages[payment_format]["sum_total"] += amount
+        client_averages[payment_format]["count"] += 1
+        self.state_update(['averages_per_client', client_id, payment_format], client_averages[payment_format])
 
     def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         with self.producer_lock:
             self.output_queue.send(EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers))
         logging.info(f"Sent final EOF for client {client_id} to average per pay format joiner")
 
-
     def on_consensus_ok_callback(self, client_id):
         data_id = str(uuid.uuid4())
         self._send_data_to_joiner(client_id, data_id)
 
     def _send_data_to_joiner(self, client_id, data_id):
-        with self.averages_per_client_lock:
-            averages_in_client = dict(self.averages_per_client.get(client_id, {}))
+        averages_in_client = dict(self.averages_per_client.get(client_id, {}))
 
         for payment_format, values in averages_in_client.items():
-    
             with self.producer_lock:
                 self.output_queue.send(
                     AveragePerPayFormatMapperMessageHandler.serialize_average_per_pay_joiner_message(client_id, data_id, payment_format, values)
@@ -122,8 +136,7 @@ class AveragePerPayFormatMapper:
                 self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
     
     def on_clean_client_callback(self, client_id):
-        with self.averages_per_client_lock:
-            self.averages_per_client.pop(client_id, None)
+        self.clean_client_data(client_id, ['averages_per_client'])
 
     def stop(self):
         with self._stop_lock:
@@ -155,12 +168,14 @@ class AveragePerPayFormatMapper:
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
         self.eof_controller.on_stop()
+        self.stop_recoverable_worker()
 
     def start(self):
 

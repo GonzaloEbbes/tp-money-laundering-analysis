@@ -7,6 +7,7 @@ import sys
 import threading
 
 from common import middleware, message_protocol
+from common.snapshots.stateful_worker import StatefulWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
@@ -26,9 +27,19 @@ AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true" #false
 OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #al pair joiner
 
 
-class ScatherGatherAggregator:
+class ScatherGatherAggregator(StatefulWorker):
 
     def __init__(self):
+        super().__init__(
+            data_dir=f"/data/snapshots/scather_gather_aggregator_{ID}",
+            set_keys=[
+                'posible_fanin_by_client',
+                'posible_fanout_by_client',
+                'fanin_by_client',
+                'fanout_by_client'
+            ]
+        )
+
         self.scather_gather_agg_input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
             MOM_HOST, SCATHER_GATHER_AGG_PREFIX, [f"{SCATHER_GATHER_AGG_PREFIX}_{ID}"]
         )
@@ -46,11 +57,12 @@ class ScatherGatherAggregator:
             self.scather_gather_pair_joiner_exchanges.append(scather_gather_pair_joiner_exchange)
 
 
-        self.dicts_lock = threading.Lock()
-        self.posible_fanin_by_client: dict[str, dict[str, set[str]]] = {}
-        self.posible_fanout_by_client: dict[str, dict[str, set[str]]] = {}
-        self.fanout_by_client : dict[str, dict[str, set[str]]] = {}
-        self.fanin_by_client : dict[str, dict[str, set[str]]] = {}
+        self.posible_fanin_by_client = self.state.setdefault('posible_fanin_by_client', {})
+        self.posible_fanout_by_client = self.state.setdefault('posible_fanout_by_client', {})
+        self.fanin_by_client = self.state.setdefault('fanin_by_client', {})
+        self.fanout_by_client = self.state.setdefault('fanout_by_client', {})
+        self.processed_ids = self.state.setdefault('processed_ids', {})  # {client_id: set(data_id)}
+
 
         #Control de shutdown y estado de clientes
         self._sigterm_received = False
@@ -58,8 +70,22 @@ class ScatherGatherAggregator:
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_controller = EOFController(MOM_HOST, self.id, SCATHER_GATHER_AGG_PREFIX, SCATHER_GATHER_AGG_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,self.on_consensus_ok_callback,self.on_send_eof_to_next_stage_callback, self.on_clean_client_callback, AUXILIARY_INPUT)
-    
+        self.eof_controller = EOFController(
+            MOM_HOST,
+            self.id,
+            SCATHER_GATHER_AGG_PREFIX,
+            SCATHER_GATHER_AGG_AMOUNT,
+            EOF_CONTROL_EXCHANGE,
+            EXPECTED_INPUT_EOFS,
+            self.on_consensus_ok_callback,
+            self.on_send_eof_to_next_stage_callback,
+            self.on_clean_client_callback,
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
+        )
+
+
     def _run_input_exchange_consumer(self):
         try:
             self.scather_gather_agg_input_exchange.start_consuming(self.process_scather_gather_mapper_messages)
@@ -67,19 +93,26 @@ class ScatherGatherAggregator:
             self._handle_runtime_failure(e, "Scather Gather aggregator consumer crashed")
     
     def process_scather_gather_mapper_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.SCATHER_GATHER_MAPPER_TO_SCATHER_GATHER_AGGREGATOR:
-                client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
-        
+        try:
+            message = message_protocol.internal.deserialize(message)
+            client_id = message.source_client_uuid
+            match message.type:
+                case message_protocol.internal.InternalMessageType.SCATHER_GATHER_MAPPER_TO_SCATHER_GATHER_AGGREGATOR:
+                    self._process_transaction(message.data, client_id, message.data_id)
+                    
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+            self.append_to_batch(None, self.scather_gather_agg_input_exchange._connection, ack)
+        except Exception as e:
+            logging.error(f"Error processing message: {e}")
+            nack()
 
     def _process_transaction(self, transaction_data, client_id, data_id):
+
+        if not self.ensure_idempotent(client_id, data_id):
+            logging.debug(f"Data ID {data_id} already processed for client {client_id}, skipping")
+            return
+
         type = transaction_data.get("type")
         key = transaction_data.get("key")
         value = transaction_data.get("value")
@@ -91,23 +124,35 @@ class ScatherGatherAggregator:
             self._process_fanout_transaction(client_id, key, value)
         else:
             logging.warning(f"Received unknown transaction type {type} for client {client_id}")
+        self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
 
 
     def _process_fanin_transaction(self, client_id, destination, new_origins):
-        with self.dicts_lock:
-            origins = self.posible_fanin_by_client.setdefault(client_id, {}).setdefault(destination, set())
-            origins.update(new_origins)
-        
-            if len(origins) >= FANIN_FANOUT_THRESHOLD:
-                self._save_in_final_fanin(client_id, destination,origins)
+        dest_dict = self.posible_fanin_by_client.setdefault(client_id, {})
+        origins_set = dest_dict.setdefault(destination, set())
+        for origin in new_origins:
+            if origin not in origins_set:
+                origins_set.add(origin)
+                self.state_add_to_set(['posible_fanin_by_client', client_id, destination], origin)
+
+        if len(origins_set) >= FANIN_FANOUT_THRESHOLD:
+            self.fanin_by_client.setdefault(client_id, {})[destination] = set(origins_set)
+            self.state_update(['fanin_by_client', client_id, destination], list(origins_set))
 
     def _process_fanout_transaction(self, client_id, origin, new_destinations):
-        with self.dicts_lock:
-            destinations = self.posible_fanout_by_client.setdefault(client_id, {}).setdefault(origin, set())
-            destinations.update(new_destinations)
+        origin_dict = self.posible_fanout_by_client.setdefault(client_id, {})
+        destination_set = origin_dict.setdefault(origin, set())
+        if not isinstance(new_destinations, (list, set, tuple)):
+            new_destinations = [new_destinations]
         
-            if len(destinations) >= FANIN_FANOUT_THRESHOLD:
-                self._save_in_final_fanout(client_id, origin,destinations)
+        for destino in new_destinations:
+            if destino not in destination_set:
+                destination_set.add(destino)
+                self.state_add_to_set(['posible_fanout_by_client', client_id, origin], destino)
+        
+        if len(destination_set) >= FANIN_FANOUT_THRESHOLD:
+            self.fanout_by_client.setdefault(client_id, {})[origin] = set(destination_set)
+            self.state_update(['fanout_by_client', client_id, origin], list(destination_set))
 
     def _save_in_final_fanin(self, client_id, destination, origins):
         self.fanin_by_client.setdefault(client_id, {})[destination] = set(origins)
@@ -124,15 +169,14 @@ class ScatherGatherAggregator:
         logging.info(f"Sent final EOF for client {client_id} to scather gather pair joiners")
 
     def _send_data_to_pair_joiners(self, client_id):
-        with self.dicts_lock:
-            fanout_data = {
-                origen: sorted(destinos)
-                for origen, destinos in self.fanout_by_client.get(client_id, {}).items()
-            }
-            fanin_data = {
-                destino: sorted(origenes)
-                for destino, origenes in self.fanin_by_client.get(client_id, {}).items()
-            }
+        fanout_data = {
+            origen: sorted(destinos)
+            for origen, destinos in self.fanout_by_client.get(client_id, {}).items()
+        }
+        fanin_data = {
+            destino: sorted(origenes)
+            for destino, origenes in self.fanin_by_client.get(client_id, {}).items()
+        }
         #buclea por las cuentas del medio del fanout para enviar un mensaje por cada middle account a los pair joiners correspondientes
         for (origen,destinos) in fanout_data.items():
             for destino_middle in destinos: 
@@ -165,23 +209,15 @@ class ScatherGatherAggregator:
 
 
     def _discard_below_threshold_candidates(self, client_id):
-        with self.dicts_lock:
-            if client_id in self.posible_fanout_by_client:
-                del self.posible_fanout_by_client[client_id]
-            if client_id in self.posible_fanin_by_client:
-                del self.posible_fanin_by_client[client_id]
+        self.clean_client_data(client_id, ['posible_fanin_by_client', 'posible_fanout_by_client'])
     
     def on_clean_client_callback(self, client_id):
-
-        with self.dicts_lock:
-            if client_id in self.posible_fanout_by_client:
-                del self.posible_fanout_by_client[client_id]
-            if client_id in self.posible_fanin_by_client:
-                del self.posible_fanin_by_client[client_id]
-            if client_id in self.fanout_by_client:
-                del self.fanout_by_client[client_id]
-            if client_id in self.fanin_by_client:
-                del self.fanin_by_client[client_id]
+        self.clean_client_data(client_id, [
+        'posible_fanin_by_client',
+        'posible_fanout_by_client',
+        'fanin_by_client',
+        'fanout_by_client'
+        ])
 
     def stop(self):
         with self._stop_lock:

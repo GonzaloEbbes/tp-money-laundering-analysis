@@ -6,6 +6,7 @@ import threading
 import uuid
 
 from common import middleware, message_protocol
+from common.snapshots.recoverable_worker import RecoverableWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
@@ -25,9 +26,9 @@ INPUT_PREFIX_2 = os.environ["INPUT_PREFIX_2"] #que es el prefix del currency con
 AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true" #va en false
 OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] 
 
-class AmountFilterQ5:
-
+class AmountFilterQ5(RecoverableWorker):
     def __init__(self):
+        super().__init__(data_dir=f"/data/snapshots/amount_filter_q5_{ID}")
         self.pay_format_filter_and_currency_converter_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, PAY_FORMAT_FILTER_AND_CURRENCY_CONVERTER_QUEUE
         )
@@ -66,7 +67,9 @@ class AmountFilterQ5:
             None,
             self.on_send_eof_to_next_stage_callback, 
             None,
-            AUXILIARY_INPUT
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
         )
 
 
@@ -83,41 +86,48 @@ class AmountFilterQ5:
 
     
     def process_pay_format_and_currency_converter_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5:
-                client_id = message.source_client_uuid
-                self._process_q5_transaction_message(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_2)
-                
-            case message_protocol.internal.InternalMessageType.PAY_FORMAT_FILTER_TO_AMOUNT_FILTER_Q5:
-                client_id = message.source_client_uuid
-                self._process_q5_transaction_message(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-                
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
-        
+        try:
+            message = message_protocol.internal.deserialize(message)
+            match message.type:
+                case message_protocol.internal.InternalMessageType.USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5:
+                    client_id = message.source_client_uuid
+                    self._process_q5_transaction_message(message.data, client_id, message.data_id, INPUT_PREFIX_2)
+                case message_protocol.internal.InternalMessageType.PAY_FORMAT_FILTER_TO_AMOUNT_FILTER_Q5:
+                    client_id = message.source_client_uuid
+                    self._process_q5_transaction_message(message.data, client_id, message.data_id, INPUT_PREFIX_1)
+                    
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    client_id = message.source_client_uuid
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+                    
+            self.append_to_batch(None, self.pay_format_filter_and_currency_converter_queue._connection, ack)
 
-    def _process_q5_transaction_message(self, transaction_data, client_id, data_id):
+        except Exception as e:
+            logging.error("Error in process_messages: %s", e)
+            nack()
+
+    def _process_q5_transaction_message(self, transaction_data, client_id, data_id, prefix):
+        if not self.ensure_idempotent(client_id, data_id):
+            logging.debug(f"Data ID {data_id} already processed for client {client_id}, skipping")
+            return
         amount_paid = float(transaction_data.get("amount_paid"))
 
         if amount_paid > 0 and amount_paid < 1:
             self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id) 
             #simulo como que se envió paquete para que el total de paquetes se transforme en el total de transacciones que pasarían a la siguiente capa
+        self.eof_controller.on_processed_packet_by_client(client_id, prefix)
         
 
     def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         data_id = str(uuid.uuid4())
+        count = totals_by_output.get(OUTPUT_PREFIX_1, 0)
 
         with self.producer_lock:
             self.gateway_final_query_queue.send(
                 AmountFilterQ5MessageHandler.serialize_gateway_query_message(
                     client_id,
                     data_id,
-                    {"cantTrx": totals_by_output.get(OUTPUT_PREFIX_1, 0)},
+                    {"cantTrx": count},
                 )
             )
             self.gateway_final_query_queue.send(EOFMessageHandler.serialize_eof_message(client_id, 1, origin_worker_prefix, amount_origin_workers, None))
@@ -128,6 +138,8 @@ class AmountFilterQ5:
             if self._stopping:
                 return
             self._stopping = True
+        
+        self.stop_recoverable_worker()
 
         consumers = [self.pay_format_filter_and_currency_converter_queue]
 
@@ -152,12 +164,14 @@ class AmountFilterQ5:
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
         self.eof_controller.on_stop()
+        self.stop_recoverable_worker()
     
     def start(self):
 

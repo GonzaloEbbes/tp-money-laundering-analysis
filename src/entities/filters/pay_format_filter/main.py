@@ -1,14 +1,12 @@
-import hashlib
 import os
 import logging
 from random import randint
-import re
 import signal
 import sys
 import threading
-from time import sleep
 
 from common import middleware, message_protocol
+from common.snapshots.recoverable_worker import RecoverableWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.conversions import (
@@ -38,7 +36,7 @@ AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true" #va en false
 OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #al amount filter q5
 OUTPUT_PREFIX_2 = os.environ["OUTPUT_PREFIX_2"] #al currency converter
 
-class PayFormatFilter:
+class PayFormatFilter(RecoverableWorker):
 
     def __init__(self):
         self.date_filter_queue = middleware.MessageMiddlewareQueueRabbitMQ(
@@ -75,7 +73,20 @@ class PayFormatFilter:
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_controller = EOFController(MOM_HOST, self.id, PAY_FORMAT_FILTER_PREFIX, PAY_FORMAT_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None,AUXILIARY_INPUT)
+        self.eof_controller = EOFController(
+            MOM_HOST,
+            self.id,
+            PAY_FORMAT_FILTER_PREFIX,
+            PAY_FORMAT_FILTER_AMOUNT,
+            EOF_CONTROL_EXCHANGE, 
+            EXPECTED_INPUT_EOFS,
+            None,
+            self.on_send_eof_to_next_stage_callback,
+            None,
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
+            )
     
     def _run_date_filter_consumer(self):
         try:
@@ -85,63 +96,71 @@ class PayFormatFilter:
 
     
     def process_date_filter_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.DATE_FILTER_TO_PAY_FORMAT_FILTER:
-                client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
+        try:
+            message = message_protocol.internal.deserialize(message)
+            match message.type:
+                case message_protocol.internal.InternalMessageType.DATE_FILTER_TO_PAY_FORMAT_FILTER:
+                    client_id = message.source_client_uuid
+                    self._process_transaction(message.data, client_id, message.data_id)
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    client_id = message.source_client_uuid
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+            self.append_to_batch(None, self.date_filter_queue._connection, ack)
+        except Exception as e:
+            logging.exception("Error en filtro: %s", e)
+            nack()
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.debug(f"Received DATE_FILTER_TO_PAY_FORMAT_FILTER for client {client_id}")
-        payment_format = transaction_data.get("payment_format")
+        if self.ensure_idempotent(client_id, data_id):
+            logging.debug(f"Received DATE_FILTER_TO_PAY_FORMAT_FILTER for client {client_id}")
+            payment_format = transaction_data.get("payment_format")
 
-        if payment_format in ["ACH", "Wire"]:
-            try:
-                currency = to_frankfurter_currency(transaction_data.get("payment_currency"))
-            except ConversionRateProviderError:
-                logging.exception("Could not normalize payment currency. payload=%s", transaction_data)
-                return
+            if payment_format in ["ACH", "Wire"]:
+                try:
+                    currency = to_frankfurter_currency(transaction_data.get("payment_currency"))
+                except ConversionRateProviderError:
+                    logging.exception("Could not normalize payment currency. payload=%s", transaction_data)
+                    return
 
-            if currency == "USD":
+                if currency == "USD":
+                    with self.producer_lock:
+                        self.amount_filter_q5_queue.send(
+                            PayFormatFilterMessageHandler.serialize_amount_filter_q5_queue_message(
+                                client_id,
+                                data_id,
+                                transaction_data,
+                            )
+                        )
+                    self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
+                    return
+
+                try:
+                    key = conversion_key(currency, transaction_data.get("timestamp"))
+                    shard = conversion_shard(key, TOTAL_CONVERSION_WORKERS)
+                except ConversionRateProviderError:
+                    logging.exception("Could not route currency conversion. payload=%s", transaction_data)
+                    return
+                routing_key = self._conversion_routing_key(shard)
+                transaction_data = dict(transaction_data)
+                transaction_data["payment_currency"] = currency
+                transaction_data["conversion_key"] = key
+                transaction_data["conversion_shard"] = shard
                 with self.producer_lock:
-                    self.amount_filter_q5_queue.send(
-                        PayFormatFilterMessageHandler.serialize_amount_filter_q5_queue_message(
+                    self.usd_currency_converter_exchange.send(
+                        PayFormatFilterMessageHandler.serialize_usd_currency_converter_queue_message(
                             client_id,
                             data_id,
                             transaction_data,
-                        )
+                        ),
+                        routing_key=routing_key,
                     )
-                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
-                return
-
-            try:
-                key = conversion_key(currency, transaction_data.get("timestamp"))
-                shard = conversion_shard(key, TOTAL_CONVERSION_WORKERS)
-            except ConversionRateProviderError:
-                logging.exception("Could not route currency conversion. payload=%s", transaction_data)
-                return
-            routing_key = self._conversion_routing_key(shard)
-            transaction_data = dict(transaction_data)
-            transaction_data["payment_currency"] = currency
-            transaction_data["conversion_key"] = key
-            transaction_data["conversion_shard"] = shard
-            with self.producer_lock:
-                self.usd_currency_converter_exchange.send(
-                    PayFormatFilterMessageHandler.serialize_usd_currency_converter_queue_message(
-                        client_id,
-                        data_id,
-                        transaction_data,
-                    ),
-                    routing_key=routing_key,
-                )
-            self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
-            logging.debug(f"Transaction for client {client_id} sent to USD Currency Converter shard {shard}")
+                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
+                logging.debug(f"Transaction for client {client_id} sent to USD Currency Converter shard {shard}")
+                
+            self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+        else:
+            logging.debug(f"Data ID {data_id} already processed for client {client_id}, skipping")
 
         
 
@@ -193,12 +212,15 @@ class PayFormatFilter:
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
         self.eof_controller.on_stop()
+        self.stop_recoverable_worker()
+
     
     def start(self):
 

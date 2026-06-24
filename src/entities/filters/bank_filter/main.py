@@ -9,6 +9,7 @@ from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as BankFilterMessageHandler
 from common.controllers.eof_controller.EOF_controller import EOFController
+from common.snapshots.stateful_worker import StatefulWorker
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 
 ID = int(os.environ["ID"])
@@ -25,6 +26,7 @@ PREFIX_WORKER = os.environ.get("PREFIX_WORKER", "bank_filter")
 INPUT_PREFIX = os.environ.get("INPUT_PREFIX", "gateway")
 EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", 1))
 NEXT_STAGE_PREFIX = os.environ.get("NEXT_STAGE_PREFIX", "query2_joiner")
+AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true"
 
 def stable_hash(value):
     try:
@@ -33,8 +35,12 @@ def stable_hash(value):
         norm_val = str(value).strip()
     return zlib.crc32(str(norm_val).encode())
 
-class BankFilter:
+class BankFilter(StatefulWorker):
     def __init__(self):
+        super().__init__(
+            data_dir=f"/data/snapshots/bank_filter_{ID}",
+            set_keys=['seen_banks']
+            )
         self.id = ID
         self.routing_key = f"{BANK_ROUTING_KEY_PREFIX}_{ID}"
         self.input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
@@ -49,21 +55,22 @@ class BankFilter:
         )
         self._sigterm_received = False
         
-        self.seen_banks = {} # {cid: set()}
+        self.seen_banks = self.state.setdefault('seen_banks', {})
         self._join_exchange_lock = threading.Lock()
-
         self.eof_controller = EOFController(
-            mom_host=MOM_HOST,
-            id_worker=self.id,
-            prefix_worker=PREFIX_WORKER,
-            amount_workers=BANK_FILTERS_AMOUNT,
-            eof_control_exchange_name=EOF_CONTROL_EXCHANGE,
-            input_eofs_quantities=EXPECTED_INPUT_EOFS,
-            on_consensus_ok_callback=None, 
-            on_send_eof_to_next_stage_callback=self._on_send_eof_to_joiner,
-            on_clean_client_in_main_thread_callback=self._clean_client_memory
+            MOM_HOST,
+            self.id,
+            PREFIX_WORKER,
+            BANK_FILTERS_AMOUNT,
+            EOF_CONTROL_EXCHANGE,
+            EXPECTED_INPUT_EOFS,
+            None, 
+            self._on_send_eof_to_joiner,
+            self._clean_client_memory,
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
         )
-
     
     def process_message(self, raw_msg, ack, nack):
         try:
@@ -76,9 +83,9 @@ class BankFilter:
                 case InternalMessageType.GATEWAY_TO_BANK_FILTER:
                     self._handle_data_message(cid, msg)
                 case _:
-                    logging.debug(f"BankFilter {self.id} ignorando mensaje: {msg.type}")
+                    logging.debug("Ignoring message type: %s", msg.type)
 
-            ack()
+            self.append_to_batch(None, self.input_exchange._connection, ack)
         except Exception as e:
             logging.exception(e)
             nack()
@@ -88,32 +95,27 @@ class BankFilter:
         self.eof_controller.on_input_queue_eof_reception(cid, data)
     
     def _handle_data_message(self, cid, msg):
+        if not self.ensure_idempotent(cid, msg.data_id):
+            return
         raw_bank_id = msg.data.get("bank_id")
         if raw_bank_id is None:
             raw_bank_id = msg.data.get("id")
-            
         bank_name = msg.data.get("bank_name")
-
         if raw_bank_id is not None:
             bank_id = int(raw_bank_id)
-            
-            if cid not in self.seen_banks:
-                self.seen_banks[cid] = set()
-
-            if bank_id not in self.seen_banks[cid]:
-                self.seen_banks[cid].add(bank_id)
+            client_set = self.seen_banks.setdefault(cid, set())
+            if bank_id not in client_set:
+                client_set.add(bank_id)
+                self.state_add_to_set(['seen_banks', cid], bank_id)
                 partition = stable_hash(bank_id) % JOIN_AMOUNT
                 routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{partition}"
-                
                 serialized = BankFilterMessageHandler.serialize_join_message(
                     cid, msg.data_id, bank_id, bank_name
                 )
-                
                 with self._join_exchange_lock:
                     self.join_exchange.send(serialized, routing_key=routing_key)
-                    
                 self.eof_controller.on_packet_sent_by_client_to(NEXT_STAGE_PREFIX, cid)
-        self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX)
+            self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX)
     
     def _on_send_eof_to_joiner(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         total_sent_to_joiner = totals_by_output.get(NEXT_STAGE_PREFIX, 0)
@@ -129,14 +131,10 @@ class BankFilter:
         logging.info(f"BankFilter envió EOF final al map_max_amount_per_bank_joiner para cliente {client_id}")
 
     def _clean_client_memory(self, client_id):
-        """Callback que el controlador llama una vez que todo el proceso ha finalizado con éxito."""
-        if client_id in self.seen_banks:
-            del self.seen_banks[client_id]
-            logging.debug(f"Memoria de bancos limpiada para el cliente {client_id} en BankFilter {self.id}")
+        self.clean_client_data(client_id, ['seen_banks'])
 
     def _run_input_consumer(self):
         self.input_exchange.start_consuming(self.process_message)
-
 
     def start(self):
         input_thread = threading.Thread(
@@ -163,6 +161,7 @@ class BankFilter:
             logging.error(f"Error al detener consumidor: {e}")
             
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
 
 def main():
     configure_logging_from_env()

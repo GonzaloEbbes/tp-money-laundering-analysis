@@ -1,13 +1,11 @@
-import hashlib
 import os
 import logging
-import re
 import signal
 import sys
 import threading
-from time import sleep
 
 from common import middleware, message_protocol
+from common.snapshots.recoverable_worker import RecoverableWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
@@ -26,9 +24,10 @@ INPUT_PREFIX_1 = os.environ["INPUT_PREFIX_1"] #que es el date filter
 AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true" #false
 OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #amount filter q3
 
-class USDFilterQ3:
+class USDFilterQ3(RecoverableWorker):
 
     def __init__(self):
+        super().__init__(data_dir=f"/data/snapshots/usd_filter_q3_{ID}")
         self.date_filter_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, INPUT_QUEUE
         )
@@ -48,7 +47,20 @@ class USDFilterQ3:
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_controller = EOFController(MOM_HOST, self.id, USD_FILTER_PREFIX, USD_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None, AUXILIARY_INPUT)
+        self.eof_controller = EOFController(
+            MOM_HOST,
+            self.id,
+            USD_FILTER_PREFIX,
+            USD_FILTER_AMOUNT,
+            EOF_CONTROL_EXCHANGE,
+            EXPECTED_INPUT_EOFS,
+            None,
+            self.on_send_eof_to_next_stage_callback,
+            None,
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
+            )
 
     def _run_date_filter_consumer(self):
         try:
@@ -57,29 +69,36 @@ class USDFilterQ3:
             self._handle_runtime_failure(e, "Date filter consumer crashed")
     
     def process_date_filter_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q3:
-                client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
+        try:
+            message = message_protocol.internal.deserialize(message)
+            client_id = message.source_client_uuid
+            match message.type:
+                case message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q3:
+                    self._process_transaction(message.data, client_id, message.data_id)
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+            self.append_to_batch(None, self.date_filter_queue._connection, ack)
+        except Exception as e:
+            logging.exception("Error en filtro USD: %s", e)
+            nack()
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.debug(f"Received DATE_FILTER_TO_USD_FILTER_Q3 for client {client_id}")
-        receiving_currency = transaction_data.get("receiving_currency")
-        payment_currency = transaction_data.get("payment_currency")
+        if self.ensure_idempotent(client_id, data_id):
+            logging.debug(f"Received DATE_FILTER_TO_USD_FILTER_Q3 for client {client_id}")
+            receiving_currency = transaction_data.get("receiving_currency")
+            payment_currency = transaction_data.get("payment_currency")
 
-        if receiving_currency == "US Dollar" and payment_currency == "US Dollar":
-            with self.producer_lock:
-                self.amount_filter_q3_queue.send(USDFilterMessageHandler.serialize_amount_filter_q3_message(client_id, data_id, transaction_data))
-            self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
-            logging.debug(f"Transaction for client {client_id} sent amount Q3 filter")
-        
+            if receiving_currency == "US Dollar" and payment_currency == "US Dollar":
+                with self.producer_lock:
+                    self.amount_filter_q3_queue.send(USDFilterMessageHandler.serialize_amount_filter_q3_message(client_id, data_id, transaction_data))
+                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
+                logging.debug(f"Transaction for client {client_id} sent amount Q3 filter")
+            self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+        else:
+            logging.debug(f"Data ID {data_id} already processed for client {client_id}, skipping")
+
+
     def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         with self.producer_lock:
             self.amount_filter_q3_queue.send(EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers))
@@ -109,6 +128,8 @@ class USDFilterQ3:
                 resource.close()
             except Exception as e:
                 logging.error(f"Error closing resource: {e}")
+        self.stop_recoverable_worker()
+        
 
     def notify_sigterm(self):
         self._sigterm_received = True

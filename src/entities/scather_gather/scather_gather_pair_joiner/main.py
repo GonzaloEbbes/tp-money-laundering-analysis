@@ -7,6 +7,7 @@ import sys
 import threading
 
 from common import middleware, message_protocol
+from common.snapshots.stateful_worker import StatefulWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
@@ -28,9 +29,14 @@ AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true" #false
 OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #al joiner
 
 
-class ScatherGatherPairJoiner:
+class ScatherGatherPairJoiner(StatefulWorker):
 
     def __init__(self):
+        super().__init__(
+            data_dir=f"/data/snapshots/scather_gather_pair_joiner_{ID}",
+            set_keys=['middle_accounts_by_client']
+        )
+
         self.scather_gather_pair_joiner_input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
             MOM_HOST, SCATHER_GATHER_PAIR_JOINER_PREFIX, [f"{SCATHER_GATHER_PAIR_JOINER_PREFIX}_{ID}"]
         )
@@ -48,8 +54,20 @@ class ScatherGatherPairJoiner:
             self.scather_gather_joiner_exchanges.append(scather_gather_joiner_exchange)
 
 
-        self.dicts_lock = threading.Lock()
-        self.middle_accounts_by_client : dict[str, dict[str, (set[str],set[str])]] = {} 
+        self.middle_accounts_by_client = self.state.setdefault('middle_accounts_by_client', {})
+        self.processed_ids = self.state.setdefault('processed_ids', {})
+
+        for cid, middle_dict in self.middle_accounts_by_client.items():
+            for middle_account, (origenes, destinos) in middle_dict.items():
+                if isinstance(origenes, list):
+                    middle_dict[middle_account] = (set(origenes), set(destinos) if not isinstance(destinos, set) else destinos)
+                if isinstance(destinos, list):
+                    middle_dict[middle_account] = (set(origenes) if not isinstance(origenes, set) else origenes, set(destinos))
+
+        for cid, ids in self.processed_ids.items():
+            if isinstance(ids, list):
+                self.processed_ids[cid] = set(ids)
+
 
         #Control de shutdown y estado de clientes
         self._sigterm_received = False
@@ -57,7 +75,20 @@ class ScatherGatherPairJoiner:
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_controller = EOFController(MOM_HOST, self.id, SCATHER_GATHER_PAIR_JOINER_PREFIX, SCATHER_GATHER_PAIR_JOINER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,self.on_consensus_ok_callback,self.on_send_eof_to_next_stage_callback, self.on_clean_client_callback, AUXILIARY_INPUT)
+        self.eof_controller = EOFController(
+            MOM_HOST,
+            self.id,
+            SCATHER_GATHER_PAIR_JOINER_PREFIX,
+            SCATHER_GATHER_PAIR_JOINER_AMOUNT,
+            EOF_CONTROL_EXCHANGE,
+            EXPECTED_INPUT_EOFS,
+            self.on_consensus_ok_callback,
+            self.on_send_eof_to_next_stage_callback,
+            self.on_clean_client_callback,
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
+        )
 
     
     def _run_input_exchange_consumer(self):
@@ -67,39 +98,50 @@ class ScatherGatherPairJoiner:
             self._handle_runtime_failure(e, "Scather Gather pair joiner consumer crashed")
     
     def process_scather_gather_agg_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.SCATHER_GATHER_AGGREGATOR_TO_SCATHER_GATHER_PAIR_JOINER:
-                client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
+        try:
+            message = message_protocol.internal.deserialize(message)
+            client_id = message.source_client_uuid
+            match message.type:
+                case message_protocol.internal.InternalMessageType.SCATHER_GATHER_AGGREGATOR_TO_SCATHER_GATHER_PAIR_JOINER:
+                    self._process_transaction(message.data, client_id, message.data_id)
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+            self.append_to_batch(None, self.scather_gather_pair_joiner_input_exchange._connection, ack)
+        except Exception as e:
+            logging.error(f"Error processing message: {e}")
+            nack()
         
-
     def _process_transaction(self, transaction_data, client_id, data_id):
+        if not self.ensure_idempotent(client_id, data_id):
+            logging.debug(f"Data ID {data_id} already processed for client {client_id}, skipping")
+            return
+
         type = transaction_data.get("type")
         key = transaction_data.get("key")
         value = transaction_data.get("value")
         if type == "FANIN_MIDDLE":
-            logging.debug(f"Received FANIN MIDDLE message for client {client_id}")
-            self._process_fanin_transaction_in_middle_structure(client_id, key, value)
+            logging.debug(f"Received FANIN_MIDDLE message for client {client_id}")
+            self._process_fanin_transaction_in_middle_structure(client_id, key, value, data_id)
         elif type == "FANOUT_MIDDLE":
-            logging.debug(f"Received FANOUT MIDDLE message for client {client_id}")
-            self._process_fanout_transaction_in_middle_structure(client_id, key, value)
+            logging.debug(f"Received FANOUT_MIDDLE message for client {client_id}")
+            self._process_fanout_transaction_in_middle_structure(client_id, key, value, data_id)
         else:
             logging.warning(f"Received unknown transaction type {type} for client {client_id}")
-
+        self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
 
     def _process_fanin_transaction_in_middle_structure(self, client_id, destination, middle_account):
-        with self.dicts_lock:
-            self.middle_accounts_by_client.setdefault(client_id, {}).setdefault(middle_account, (set(), set()))[1].add(destination)
+        middle_dict = self.middle_accounts_by_client.setdefault(client_id, {})
+        origenes, destinos = middle_dict.setdefault(middle_account, (set(), set()))
+        if destination not in destinos:
+            destinos.add(destination)
+            self.state_add_to_set(['middle_accounts_by_client', client_id, middle_account, 'destinos'], destination)
 
     def _process_fanout_transaction_in_middle_structure(self, client_id, origin, middle_account):
-        with self.dicts_lock:
-            self.middle_accounts_by_client.setdefault(client_id, {}).setdefault(middle_account, (set(), set()))[0].add(origin)
+        middle_dict = self.middle_accounts_by_client.setdefault(client_id, {})
+        origenes, destinos = middle_dict.setdefault(middle_account, (set(), set()))
+        if origin not in origenes:
+            origenes.add(origin)
+            self.state_add_to_set(['middle_accounts_by_client', client_id, middle_account, 'origenes'], origin)
 
     def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         eof_message = EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers)
@@ -110,39 +152,33 @@ class ScatherGatherPairJoiner:
         logging.info(f"Sent final EOF for client {client_id} to scather gather joiners")
 
     def on_consensus_ok_callback(self, client_id):
-        with self.dicts_lock:
-            middle_data = { #Descarta si origen o destino son vacíos
-                middle_account: (origenes, destinos)
-                for middle_account, (origenes, destinos) in self.middle_accounts_by_client.get(client_id, {}).items()
-                if origenes and destinos
-            }
-        
-        for middle_account, (origenes, destinos) in middle_data.items():
+        client_data = self.middle_accounts_by_client.get(client_id, {})
+        for middle_account, data in client_data.items():
+            origenes = data.get('origenes', set())
+            destinos = data.get('destinos', set())
+            if not origenes or not destinos:
+                continue
             for origen in origenes:
                 for destino in destinos:
-                    msg = ScatherGatherMessageHandler.serialize_scather_gather_pair_middle_message(client_id, origen, destino, middle_account)
+                    msg = ScatherGatherMessageHandler.serialize_scather_gather_pair_middle_message(
+                        client_id, origen, destino, middle_account
+                    )
                     joiner_index = self._worker_to_send_data_to_joiners(origen, destino)
                     with self.producer_lock:
                         self.scather_gather_joiner_exchanges[joiner_index].send(msg)
                         self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
-                    logging.debug(f"Sent message for client {client_id} with origin {origen}, destination {destino} and middle account {middle_account} to joiner worker {joiner_index}")
-
+                    logging.debug(f"Sent PAIR_MIDDLE for client {client_id}: {origen} -> {destino} via {middle_account}")
         logging.info(f"Sent all data for client {client_id} to scather gather joiners")
         
 
     def _worker_to_send_data_to_joiners(self, origen, destino):
-
         hashkey=("".join([origen, destino])).encode("utf-8")
         digest=hashlib.sha256(hashkey).digest()
         value = int.from_bytes(digest, byteorder="big")
         return value % SCATHER_GATHER_JOINER_AMOUNT
 
     def on_clean_client_callback(self, client_id):
-
-        with self.dicts_lock:
-            if client_id in self.middle_accounts_by_client:
-                del self.middle_accounts_by_client[client_id]
-
+        self.clean_client_data(client_id, ['middle_accounts_by_client'])
 
     def stop(self):
         with self._stop_lock:
@@ -173,12 +209,14 @@ class ScatherGatherPairJoiner:
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
         self.eof_controller.on_stop()
+        self.stop_recoverable_worker()
     
     def start(self):
 

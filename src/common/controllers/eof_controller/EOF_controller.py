@@ -17,7 +17,19 @@ class EOFController:
     
     BACKOFF_TIME_SECONDS_BEFORE_RESENDING_CONSENSUS_REQUEST = 2
 
-    def __init__(self, mom_host, id_worker, prefix_worker, amount_workers,eof_control_exchange_name,input_eofs_quantities,on_consensus_ok_callback,on_send_eof_to_next_stage_callback,on_clean_client_in_main_thread_callback,auxiliary_input_data=False):
+    def __init__(self,
+                 mom_host,
+                 id_worker,
+                 prefix_worker,
+                 amount_workers,
+                 eof_control_exchange_name,
+                 input_eofs_quantities,
+                 on_consensus_ok_callback,
+                 on_send_eof_to_next_stage_callback,
+                 on_clean_client_in_main_thread_callback,
+                 auxiliary_input_data=False,
+                 recovered_state=None, 
+                 append_batch_callback=None):
 
         
         self.id = int(id_worker)
@@ -27,6 +39,13 @@ class EOFController:
         self.eof_control_exchange_name : str = eof_control_exchange_name
         self.input_eofs_quantities = input_eofs_quantities
         self.auxiliary_input_data = auxiliary_input_data
+
+        self.append_batch_callback = append_batch_callback
+        self.state = recovered_state if recovered_state is not None else {}
+
+        self.eofs_received_by_client = self.state.setdefault('eofs_received', {})
+        self.total_packets_received_by_client = self.state.setdefault('total_packets_received', {})
+        self.packets_processed_by_client = self.state.setdefault('packets_processed', {})
 
         # Por cliente, set de prefixes de los cuales se recibieron EOFs
         self.eofs_received_by_client_lock = threading.Lock()
@@ -100,6 +119,9 @@ class EOFController:
         self._stopping = False
         self._sigterm_received = False
         self._runtime_error = False
+
+        for cid, items in self.eofs_received_by_client.items():
+            self.eofs_received_by_client[cid] = set(items)
     
     def _im_leader(self):
         return self.id == 0
@@ -114,8 +136,17 @@ class EOFController:
     # para ir llevando la cuenta de cuantos paquetes se procesaron por cliente y por flujo (en caso de haber mas de un flujo de entrada)
     def on_processed_packet_by_client(self, client_id, input_flux_prefix):
         with self.packets_processed_by_client_lock:
-            self.packets_processed_by_client.setdefault(client_id, {}).setdefault(input_flux_prefix, 0)
+            client_dict = self.packets_processed_by_client.setdefault(client_id, {})
+            client_dict.setdefault(input_flux_prefix, 0)
             self.packets_processed_by_client[client_id][input_flux_prefix] += 1 #TODO: no tiene validacion de ventana para sumar paquetes
+        
+        #Persisto en disco la operacion
+            if self.append_batch_callback:
+                    self.append_batch_callback({
+                        'type': 'update',
+                        'path': ['eof_state', 'packets_processed', client_id, input_flux_prefix],
+                        'value': client_dict[input_flux_prefix]
+                    })
 
     #Funcion a llamarse para cuando desde alguna de las colas/exchanges de entrada se reciba un EOF. Usar tambien desde fuera del controller para la cola de carga
     def on_input_queue_eof_reception(self, client_id,data):
@@ -148,6 +179,14 @@ class EOFController:
         # Esto es necesario para luego poder comparar con el total informado por los EOFs y alcanzar consenso.
         with self.packets_processed_by_client_lock:
             self.packets_processed_by_client.setdefault(client_id, {}).setdefault(data.origin_worker_prefix, 0)
+
+            #Persisto la operacion.
+            if self.append_batch_callback:
+                self.append_batch_callback({
+                    'type': 'add_to_set',
+                    'path': ['eof_state', 'eofs_received', client_id],
+                    'value': data.origin_worker_prefix
+                })
         
         #Agregar el total de paquetes informados por ese EOF al total de paquetes recibidos para ese cliente
         with self.total_packets_received_by_client_lock:

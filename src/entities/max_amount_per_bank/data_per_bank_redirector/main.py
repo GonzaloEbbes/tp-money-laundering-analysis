@@ -5,6 +5,7 @@ import threading
 import zlib
 import sys
 from common import middleware, message_protocol
+from common.snapshots.recoverable_worker import RecoverableWorker
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
@@ -33,8 +34,9 @@ def stable_hash(value):
         norm_val = str(value).strip()
     return zlib.crc32(str(norm_val).encode())
 
-class DataPerBankRedirector:
+class DataPerBankRedirector(RecoverableWorker):
     def __init__(self):
+        super().__init__(data_dir=f"/data/snapshots/redirector_{ID}")
         self.input_queue = middleware.MessageMiddlewareQueueRabbitMQ(MOM_HOST, INPUT_QUEUE)
         self.map_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(MOM_HOST, MAP_MAX_EXCHANGE)
         self.id = ID
@@ -50,7 +52,9 @@ class DataPerBankRedirector:
             input_eofs_quantities=EXPECTED_INPUT_EOFS,
             on_consensus_ok_callback=None, 
             on_send_eof_to_next_stage_callback=self._on_send_eof_to_mappers,
-            on_clean_client_in_main_thread_callback=None
+            on_clean_client_in_main_thread_callback=None,
+            recovered_state=self.state.setdefault('eof_state', {}),
+            append_batch_callback=self.append_to_batch
         )
 
     def _on_send_eof_to_mappers(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
@@ -76,14 +80,12 @@ class DataPerBankRedirector:
             match msg.type:
                 case InternalMessageType.EOF_MESSAGE | InternalMessageType.EOF_FINAL_MESSAGE:
                     self._handle_eof_message(cid, msg.data)
-                    
                 case InternalMessageType.USD_FILTER_Q1Q2_TO_DATA_PER_BANK_SHUFFLER:
                     self._handle_data_message(cid, msg)
-                    
                 case _:
                     logging.debug(f"Redirector {self.id} ignorando mensaje de tipo no soportado o de control en la cola de datos: {msg.type}")
 
-            ack()
+            self.append_to_batch(None, self.input_queue._connection, ack)
         except Exception as e:
             logging.exception(f"Error procesando mensaje: {e}")
             nack()
@@ -94,6 +96,8 @@ class DataPerBankRedirector:
         self.eof_controller.on_input_queue_eof_reception(cid, data)
 
     def _handle_data_message(self, cid, msg):
+        if not self.ensure_idempotent(cid, msg.data_id):
+            return
         from_bank = None
         raw_bank_id = msg.data.get("from_bank")
         if raw_bank_id is not None:
@@ -141,6 +145,7 @@ class DataPerBankRedirector:
             logging.error(f"Error al detener consumidor: {e}")
             
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
 
 def main():
     configure_logging_from_env()
@@ -149,9 +154,7 @@ def main():
         logging.info("SIGTERM received")
         w.stop()
     signal.signal(signal.SIGTERM, _sigterm)
-    exit_code = w.start()
-
-    sys.exit(exit_code)
+    return w.start()
 
 if __name__ == "__main__":
     sys.exit(main())

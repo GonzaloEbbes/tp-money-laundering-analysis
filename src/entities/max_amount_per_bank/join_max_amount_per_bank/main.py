@@ -4,6 +4,7 @@ import signal
 import sys
 import threading
 from common import middleware, message_protocol
+from common.snapshots.stateful_worker import StatefulWorker
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
@@ -27,8 +28,13 @@ NEXT_STAGE_PREFIX = os.environ.get("NEXT_STAGE_PREFIX", "gateway")
 # El Joiner espera EOFs de ambas fuentes: 1 del bank_filter + 1 de los mappers
 EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", 2))
 
-class JoinMaxAmountPerBank:
+class JoinMaxAmountPerBank(StatefulWorker):
     def __init__(self):
+        super().__init__(
+            data_dir=f"/data/snapshots/join_max_amount_per_bank_{ID}",
+            set_keys=['bank_cache', 'pending_results']
+        )
+
         self.id = ID
         self.routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{ID}"
         self.input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
@@ -41,8 +47,9 @@ class JoinMaxAmountPerBank:
         self.output_queue = middleware.MessageMiddlewareQueueRabbitMQ(MOM_HOST, OUTPUT_QUEUE)
         self._output_queue_lock = threading.Lock()
 
-        self.bank_cache = {}     
-        self.pending_results = {}
+        self.bank_cache = self.state.setdefault('bank_cache', {})
+        self.pending_results = self.state.setdefault('pending_results', {})
+
         self._sigterm_received = False
 
         self.eof_controller = EOFController(
@@ -66,20 +73,18 @@ class JoinMaxAmountPerBank:
             match msg.type:
                 case InternalMessageType.EOF_MESSAGE | InternalMessageType.EOF_FINAL_MESSAGE:
                     self._handle_eof_message(cid, msg.data)
-
                 case InternalMessageType.BANK_FILTER_TO_JOINER:
                     if msg.data is None:
                         self._handle_eof_message(cid, msg.data)
                     else:
                         self._handle_bank_filter_data(cid, msg)
-
                 case InternalMessageType.MAX_AMOUNT_PER_BANK_RESULT:
                     self._handle_mapper_result_data(cid, msg)
 
                 case _:
                     logging.debug(f"Joiner {self.id} ignorando mensaje: {msg.type}")
 
-            ack()
+            self.append_to_batch(op=None, conn=self.input_exchange._connection, ack_func=ack)
         except Exception as e:
             logging.exception(e)
             nack()
@@ -89,32 +94,32 @@ class JoinMaxAmountPerBank:
         self.eof_controller.on_input_queue_eof_reception(cid, data)
 
     def _handle_bank_filter_data(self, cid, msg):
+        if not self.ensure_idempotent(cid, msg.data_id):
+            logging.debug(f"Data ID {msg.data_id} already processed for client {cid}, skipping")
+            return
         raw_bank_id = msg.data.get("bank_id")
-        if raw_bank_id is None:
-            raw_bank_id = msg.data.get("id")
-            
-        bank_name = msg.data.get("bank_name") or msg.data.get("name")
-        
+        bank_name = msg.data.get("bank_name")
         if raw_bank_id is not None and bank_name is not None:
             bank_id = int(raw_bank_id)
             self.bank_cache.setdefault(cid, {})[bank_id] = bank_name
-            
+            self.state_update(['bank_cache', cid, str(bank_id)], bank_name)
         self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX_ACCOUNTS)
 
     def _handle_mapper_result_data(self, cid, msg):
+        if not self.ensure_idempotent(cid, msg.data_id):
+            logging.debug(f"Data ID {msg.data_id} already processed for client {cid}, skipping")
+            return
         raw_from_bank = msg.data.get("from_bank")
         amount = msg.data.get("amount_received")
         origin = msg.data.get("account_origin")
         
         if raw_from_bank is not None and amount is not None:
             from_bank = int(raw_from_bank)
-            
-            self.pending_results.setdefault(cid, {})
-            current = self.pending_results[cid].get(from_bank)
-            
+            current = self.pending_results.setdefault(cid, {}).get(from_bank)
             if current is None or amount > current[0]:
-                self.pending_results[cid][from_bank] = (amount, origin, msg.data_id)
-                
+                new_value = (amount, origin, msg.data_id)
+                self.pending_results[cid][from_bank] = new_value
+                self.state_update(['pending_results', cid, str(from_bank)], new_value)
         self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX_MAPPERS)
 
     def _on_consensus_ok_process_pending_data(self, client_id):
@@ -152,12 +157,7 @@ class JoinMaxAmountPerBank:
         logging.info(f"Joiner envió EOF final al gateway para el cliente {client_id}")
 
     def _clean_client_memory(self, client_id):
-        """Limpieza segura de memoria."""
-        if client_id in self.bank_cache:
-            del self.bank_cache[client_id]
-        if client_id in self.pending_results:
-            del self.pending_results[client_id]
-        logging.debug(f"Memoria liberada en Joiner {self.id} para cliente {client_id}")
+        self.clean_client_data(client_id, ['bank_cache', 'pending_results'])
 
     def _run_input_consumer(self):
         self.input_exchange.start_consuming(self.process_message)
@@ -187,6 +187,7 @@ class JoinMaxAmountPerBank:
         except Exception as e:
             logging.error(f"Error stopping consumer: {e}")
         self.eof_controller.on_sigterm()
+        self.stop_recoverable_worker()
             
 
 def main():
@@ -198,10 +199,8 @@ def main():
         w.stop()
         
     signal.signal(signal.SIGTERM, _sigterm)
-    exit_code = w.start()
-    
-    import sys
-    sys.exit(exit_code)
+    return w.start()
+
 
 if __name__ == "__main__":
     sys.exit(main())

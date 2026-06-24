@@ -3,8 +3,9 @@ import logging
 import signal
 import sys
 import threading
-from time import sleep
 from decimal import Decimal, InvalidOperation
+
+from common.snapshots.stateful_worker import StatefulWorker
 from common import middleware, message_protocol
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
@@ -40,10 +41,13 @@ CONVERSION_OUTPUT_AMOUNT_FIELD = os.environ.get("CONVERSION_OUTPUT_AMOUNT_FIELD"
 STATIC_CONVERSION_RATES_PATH = os.environ.get("STATIC_CONVERSION_RATES_PATH")
 CURRENCY_CONVERTER_QUEUE = CURRENCY_CONVERTER_PREFIX+"_queue_"+str(ID)
 
-class CurrencyConverter: 
+class CurrencyConverter(StatefulWorker): 
 
     def __init__(self):
-
+        super().__init__(
+            data_dir=f"/data/snapshots/currency_converter_{ID}",
+            set_keys=['rate_cache']
+            )
         self.pay_format_filter_exchange = MessageMiddlewareExchangeRabbitMQ(
                 MOM_HOST,
                 CONVERSION_INPUT_EXCHANGE,
@@ -60,17 +64,31 @@ class CurrencyConverter:
         
         self.provider = build_conversion_rate_provider()
         self.static_fallback_provider = self._build_static_fallback_provider()
-        self.cache = {}
         self.amount_field = CONVERSION_AMOUNT_FIELD
         self.currency_field = CONVERSION_CURRENCY_FIELD
         self.date_field = CONVERSION_DATE_FIELD
         self.output_amount_field = CONVERSION_OUTPUT_AMOUNT_FIELD
+        self.cache = self.state.setdefault('rate_cache', {})
+
 
         self._sigterm_received = False
         self._runtime_error = False
         self._stop_lock = threading.Lock()
         self._stopping = False
-        self.eof_controller = EOFController(MOM_HOST, self.id, CURRENCY_CONVERTER_PREFIX, CURRENCY_CONVERTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None, AUXILIARY_INPUT)
+        self.eof_controller = EOFController(
+            MOM_HOST,
+            self.id,
+            CURRENCY_CONVERTER_PREFIX,
+            CURRENCY_CONVERTER_AMOUNT,
+            EOF_CONTROL_EXCHANGE,
+            EXPECTED_INPUT_EOFS,
+            None,
+            self.on_send_eof_to_next_stage_callback,
+            None,
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
+        )
 
     
     def _run_pay_format_filter_consumer(self):
@@ -81,32 +99,40 @@ class CurrencyConverter:
 
     
     def process_usd_filter_q1q2_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.PAY_FORMAT_FILTER_TO_USD_CURRENCY_CONVERTER:
-                client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
+        try:
+            message = message_protocol.internal.deserialize(message)
+            match message.type:
+                case message_protocol.internal.InternalMessageType.PAY_FORMAT_FILTER_TO_USD_CURRENCY_CONVERTER:
+                    client_id = message.source_client_uuid
+                    self._process_transaction(message.data, client_id, message.data_id)
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    client_id = message.source_client_uuid
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+            self.append_to_batch(None, self.pay_format_filter_exchange._connection, ack)
+        except Exception as e:
+            logging.error(f"Error processing message: {e}")
+            nack()
         
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.debug(f"Received PAY_FORMAT_FILTER_TO_USD_CURRENCY_CONVERTER for client {client_id}")
+        if self.ensure_idempotent(client_id, data_id):
+            logging.debug(f"Received PAY_FORMAT_FILTER_TO_USD_CURRENCY_CONVERTER for client {client_id}")
 
-        try:
-            converted_payload = self._convert_payload(transaction_data)
-        except (ConversionRateProviderError, InvalidOperation, ValueError, TypeError) as error:
-            logging.exception("Currency conversion failed. payload=%s", transaction_data)
-            return None
+            try:
+                converted_payload = self._convert_payload(transaction_data)
+            except (ConversionRateProviderError, InvalidOperation, ValueError, TypeError) as _error:
+                logging.exception("Currency conversion failed. payload=%s", transaction_data)
+                return None
 
-        with self.producer_lock:
-            self.amount_filter_q5_queue.send(CurrencyConverterMessageHandler.serialize_amount_filter_q5_message(client_id, data_id, converted_payload,self.output_amount_field))
-            self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
-            logging.debug(f"Transaction for client {client_id} sent to amount filter q5 queue. Converted payload: {converted_payload}")
+            with self.producer_lock:
+                self.amount_filter_q5_queue.send(CurrencyConverterMessageHandler.serialize_amount_filter_q5_message(client_id, data_id, converted_payload,self.output_amount_field))
+                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
+                logging.debug(f"Transaction for client {client_id} sent to amount filter q5 queue. Converted payload: {converted_payload}")
+            self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+        else:
+            logging.debug(f"Data ID {data_id} already processed for client {client_id}, skipping")
+        
 
     def _convert_payload(self, payload):
         currency = to_frankfurter_currency(
@@ -116,11 +142,17 @@ class CurrencyConverter:
         amount = Decimal(str(self._payload_get(payload, self.amount_field, "amount_paid", "AmountPaid")))
         key = payload.get("conversion_key") or conversion_key(currency, date)
 
-        rate = self.cache.get(key)
-        if rate is None:
-            rate = self._get_rate(currency, date)
-            self.cache[key] = rate
-            logging.debug("Conversion cache miss. key=%s rate=%s", key, rate)
+        rate_str = self.cache.get(key)
+        if rate_str is None:
+            rate_decimal = self._get_rate(currency, date)
+            rate_str = str(rate_decimal)
+            self.cache[key] = rate_str
+            self.state_update(['rate_cache', key], rate_str)
+            logging.debug("Conversion cache miss. key=%s rate=%s", key, rate_str)
+        else:
+            logging.debug("Conversion cache hit. key=%s rate=%s", key, rate_str)
+
+        rate = Decimal(rate_str)
 
         converted_payload = dict(payload)
         converted_payload["conversion_key"] = key
@@ -179,12 +211,14 @@ class CurrencyConverter:
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
-
+        self.stop_recoverable_worker()
+        
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
         self.eof_controller.on_stop()
+        self.stop_recoverable_worker()
     
     def start(self):
 

@@ -1,13 +1,11 @@
-import hashlib
 import os
 import logging
-import re
 import signal
 import sys
 import threading
-from time import sleep
 
 from common import middleware, message_protocol
+from common.snapshots.recoverable_worker import RecoverableWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
@@ -30,22 +28,20 @@ AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true" #va false
 OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #amount filter q1
 OUTPUT_PREFIX_2 = os.environ["OUTPUT_PREFIX_2"] #data per bank redirector
  
-class USDFilterQ1Q2:
+class USDFilterQ1Q2(RecoverableWorker):
 
     def __init__(self):
+        super().__init__(data_dir=f"/data/snapshots/usd_filter_q1q2_{ID}")
         self.gateway_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, INPUT_QUEUE
         )
-        
         self.id = int(ID)
-
         self.producer_lock = threading.Lock()
 
         # definicion de working queue exchanges de la instancia posterior
         self.amount_filter_q1_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, AMOUNT_FILTER_Q1_QUEUE
             )
-
         self.data_per_bank_shuffler_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, DATA_PER_BANK_SHUFFLER_QUEUE
             )
@@ -56,7 +52,20 @@ class USDFilterQ1Q2:
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_controller = EOFController(MOM_HOST, self.id, USD_FILTER_PREFIX, USD_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None, AUXILIARY_INPUT)
+        self.eof_controller = EOFController(
+            MOM_HOST,
+            self.id,
+            USD_FILTER_PREFIX,
+            USD_FILTER_AMOUNT,
+            EOF_CONTROL_EXCHANGE,
+            EXPECTED_INPUT_EOFS,
+            None,
+            self.on_send_eof_to_next_stage_callback,
+            None,
+            AUXILIARY_INPUT,
+            self.state.setdefault('eof_state', {}),
+            self.append_to_batch
+            )
 
     
     def _run_gateway_consumer(self):
@@ -67,31 +76,37 @@ class USDFilterQ1Q2:
 
     
     def process_gateway_messages(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.GATEWAY_TO_USD_FILTER_Q1Q2:
-                client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
-                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
-            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
-                client_id = message.source_client_uuid
-                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
-        ack()
+        try:
+            message = message_protocol.internal.deserialize(message)
+            client_id = message.source_client_uuid
+            match message.type:
+                case message_protocol.internal.InternalMessageType.GATEWAY_TO_USD_FILTER_Q1Q2:
+                    self._process_transaction(message.data, client_id, message.data_id)
+                case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                    self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+            self.append_to_batch(None, self.gateway_queue._connection, ack)
+        except Exception as e:
+            logging.exception("Error en filtro USD: %s", e)
+            nack()
         
 
     def _process_transaction(self, transaction_data, client_id, data_id):
-        logging.debug(f"Received GATEWAY_TO_USD_FILTER_Q1Q2 for client {client_id}")
-        payment_currency = transaction_data.get("payment_currency")
-        receiving_currency = transaction_data.get("receiving_currency")
-        
-        if payment_currency == "US Dollar" and receiving_currency == "US Dollar":
-            with self.producer_lock:
-                self.amount_filter_q1_queue.send(USDFilterMessageHandler.serialize_amount_filter_q1_message(client_id, data_id, transaction_data))
-                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
-                self.data_per_bank_shuffler_queue.send(USDFilterMessageHandler.serialize_data_per_bank_redirector_message(client_id, data_id, transaction_data))
-                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
-            logging.debug(f"Transaction for client {client_id} sent to amount filter and data per bank shuffler")
-        
+        if self.ensure_idempotent(client_id, data_id):
+            logging.debug(f"Received GATEWAY_TO_USD_FILTER_Q1Q2 for client {client_id}")
+            payment_currency = transaction_data.get("payment_currency")
+            receiving_currency = transaction_data.get("receiving_currency")
+            
+            if payment_currency == "US Dollar" and receiving_currency == "US Dollar":
+                with self.producer_lock:
+                    self.amount_filter_q1_queue.send(USDFilterMessageHandler.serialize_amount_filter_q1_message(client_id, data_id, transaction_data))
+                    self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
+                    self.data_per_bank_shuffler_queue.send(USDFilterMessageHandler.serialize_data_per_bank_redirector_message(client_id, data_id, transaction_data))
+                    self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
+                logging.debug(f"Transaction for client {client_id} sent to amount filter and data per bank shuffler")
+            self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+        else:
+            logging.debug(f"Data ID {data_id} already processed for client {client_id}, skipping")
+
 
     def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         with self.producer_lock:
@@ -112,6 +127,8 @@ class USDFilterQ1Q2:
                 consumer.stop_consuming()
             except Exception as e:
                 logging.error(f"Error stopping consumer: {e}")
+        self.stop_recoverable_worker()
+        
 
     def _close_resources(self):
         resources = [self.gateway_queue]
