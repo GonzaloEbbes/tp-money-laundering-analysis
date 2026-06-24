@@ -126,6 +126,9 @@ class JoinMaxAmountPerBank:
                 return
 
             if msg.type == InternalMessageType.MAX_AMOUNT_PER_BANK_RESULT:
+                if msg.data is None:
+                    ack()
+                    return
                 self._add_inflight(cid)
                 self.pending_results.setdefault(cid, []).append(msg)
                 self._dec_inflight(cid)
@@ -173,9 +176,10 @@ class JoinMaxAmountPerBank:
             if bank_name == "Unknown":
                 logging.warning(f"Join {self.id} could not find bank name for bank_id {from_bank} in cache for client {cid}")
                 continue
+            result_id = f"{self.id}:{from_bank}"
             with self._output_queue_lock:
                 self.output_queue.send(JoinMessageHandler.serialize_result(
-                    cid, msg.data_id, bank_name, origin, amount
+                    cid, result_id, bank_name, origin, amount, message_id=result_id
                 ))
 
         if cid in self.pending_results:

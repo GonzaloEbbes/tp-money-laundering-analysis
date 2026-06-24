@@ -88,7 +88,7 @@ class PayFormatFilter:
         match message.type:
             case message_protocol.internal.InternalMessageType.DATE_FILTER_TO_PAY_FORMAT_FILTER:
                 client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
+                self._process_transaction(message.data, client_id, message.data_id, message.message_id)
                 self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
             case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
                 client_id = message.source_client_uuid
@@ -96,7 +96,7 @@ class PayFormatFilter:
         ack()
         
 
-    def _process_transaction(self, transaction_data, client_id, data_id):
+    def _process_transaction(self, transaction_data, client_id, data_id, message_id=None):
         logging.debug(f"Received DATE_FILTER_TO_PAY_FORMAT_FILTER for client {client_id}")
         payment_format = transaction_data.get("payment_format")
 
@@ -114,6 +114,7 @@ class PayFormatFilter:
                             client_id,
                             data_id,
                             transaction_data,
+                            message_id=message_id,
                         )
                     )
                 self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
@@ -136,6 +137,7 @@ class PayFormatFilter:
                         client_id,
                         data_id,
                         transaction_data,
+                        message_id=message_id,
                     ),
                     routing_key=routing_key,
                 )

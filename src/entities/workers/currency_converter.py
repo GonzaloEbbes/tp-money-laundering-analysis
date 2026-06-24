@@ -79,6 +79,7 @@ class CurrencyConverter(DeprecatedToEliminateEntity):
             source_client_uuid=message.source_client_uuid,
             data_id=message.data_id,
             data=message_protocol.internal.TransactionData(output_payload),
+            message_id=message.message_id,
         )
 
     def _convert_payload(self, payload):

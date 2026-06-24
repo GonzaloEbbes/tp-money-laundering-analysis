@@ -12,7 +12,7 @@ class MessageHandler:
         parsedMessage = ScatherGatherData()
         parsedMessage.type = "PAIR_MIDDLE"
         parsedMessage.value = [origen, destino, middle_account]
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_PAIR_JOINER_TO_SCATHER_GATHER_JOINER, client, message_id, parsedMessage)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_PAIR_JOINER_TO_SCATHER_GATHER_JOINER, client, message_id, parsedMessage, message_id=message_id)
     
     def deserialize_input_message(message):
         internal_message = message_protocol.internal.deserialize(message)

@@ -65,7 +65,7 @@ class USDFilterQ4:
         match message.type:
             case message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q4:
                 client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
+                self._process_transaction(message.data, client_id, message.data_id, message.message_id)
                 self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
             case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
                 client_id = message.source_client_uuid
@@ -73,15 +73,15 @@ class USDFilterQ4:
         ack()
         
 
-    def _process_transaction(self, transaction_data, client_id, data_id):
+    def _process_transaction(self, transaction_data, client_id, data_id, message_id=None):
         receiving_currency = transaction_data.get("receiving_currency")
         payment_currency = transaction_data.get("payment_currency")
 
         if receiving_currency == "US Dollar" and payment_currency == "US Dollar":
             with self.producer_lock:
-                self.average_per_pay_format_mapper_queue.send(USDFilterMessageHandler.serialize_average_per_pay_format_mapper_message(client_id, data_id, transaction_data))
+                self.average_per_pay_format_mapper_queue.send(USDFilterMessageHandler.serialize_average_per_pay_format_mapper_message(client_id, data_id, transaction_data, message_id=message_id))
                 self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
-                self.scather_gather_queue.send(USDFilterMessageHandler.serialize_scatter_gather_message(client_id, data_id, transaction_data))
+                self.scather_gather_queue.send(USDFilterMessageHandler.serialize_scatter_gather_message(client_id, data_id, transaction_data, message_id=message_id))
                 self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
             logging.debug(f"Transaction for client {client_id} sent to average per pay format mapper and scatter gather mapper")
 

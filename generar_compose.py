@@ -44,6 +44,15 @@ configurations = {
     }
 }
 
+def with_middleware_impl_env(lines):
+    result = []
+    for line in lines:
+        result.append(line)
+        if line == "      - PYTHONUNBUFFERED=1":
+            result.append("      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}")
+            result.append("      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}")
+    return result
+
 # pone aquellas lineas que son iguales siempre
 def set_rabbitmq():
     return [
@@ -713,6 +722,7 @@ def generate_compose(config_id,log_level):
     for i in range(config["join_max_amount_per_bank"]):
         yaml_lines += set_join_max_amount_per_bank_config(i, config["join_max_amount_per_bank"], config["map_max_amount_per_bank"], log_level)
     yaml_lines += set_client(config, log_level)
+    yaml_lines = with_middleware_impl_env(yaml_lines)
 
     with open("docker-compose.yaml", "w", encoding="utf-8") as f:
         f.write("\n".join(yaml_lines))

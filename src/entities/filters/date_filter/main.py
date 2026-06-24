@@ -76,7 +76,7 @@ class DateFilter:
         match message.type:
             case message_protocol.internal.InternalMessageType.GATEWAY_TO_DATE_FILTER:
                 client_id = message.source_client_uuid
-                self._process_transaction(message.data, client_id, message.data_id)
+                self._process_transaction(message.data, client_id, message.data_id, message.message_id)
                 self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
             case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
                 client_id = message.source_client_uuid
@@ -84,7 +84,7 @@ class DateFilter:
         ack()
         
 
-    def _process_transaction(self, transaction_data, client_id, data_id):
+    def _process_transaction(self, transaction_data, client_id, data_id, message_id=None):
         timestamp = transaction_data.get("timestamp")
 
         if not re.match(r'^\d{4}/\d{2}/\d{2} \d{2}:\d{2}$', timestamp[:16]):
@@ -98,20 +98,20 @@ class DateFilter:
 
                 with self.producer_lock:
                     self.usd_filters_q4_queue.send(
-                        DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data)
+                        DateFilterMessageHandler.serialize_usd_filter_q4_message(client_id, data_id, transaction_data, message_id=message_id)
                     ) 
                     self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
                 
                 with self.producer_lock:
                     self.pay_format_filter_queue.send(
-                        DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, transaction_data)
+                        DateFilterMessageHandler.serialize_pay_format_filter_message(client_id, data_id, transaction_data, message_id=message_id)
                     )
                     self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_3, client_id)
 
             elif dia in ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
                 with self.producer_lock:
                     self.usd_filters_q3_queue.send(
-                        DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data)
+                        DateFilterMessageHandler.serialize_usd_filter_q3_message(client_id, data_id, transaction_data, message_id=message_id)
                     )
                 self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
 

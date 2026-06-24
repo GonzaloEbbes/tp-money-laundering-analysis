@@ -19,7 +19,7 @@ class MessageHandler:
         parsedMessage.type = type
         parsedMessage.key = key
         parsedMessage.value = values
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_MAPPER_TO_SCATHER_GATHER_AGGREGATOR, client, message_id, parsedMessage)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_MAPPER_TO_SCATHER_GATHER_AGGREGATOR, client, message_id, parsedMessage, message_id=message_id)
 
     def deserialize_input_message(message):
         internal_message = message_protocol.internal.deserialize(message)

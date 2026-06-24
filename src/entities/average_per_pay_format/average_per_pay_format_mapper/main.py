@@ -117,7 +117,7 @@ class AveragePerPayFormatMapper:
     
             with self.producer_lock:
                 self.output_queue.send(
-                    AveragePerPayFormatMapperMessageHandler.serialize_average_per_pay_joiner_message(client_id, data_id, payment_format, values)
+                    AveragePerPayFormatMapperMessageHandler.serialize_average_per_pay_joiner_message(client_id, data_id, payment_format, values, message_id=data_id)
                 )
                 self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
     
@@ -205,4 +205,4 @@ def main():
     return average_per_pay_format_mapper.start()
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

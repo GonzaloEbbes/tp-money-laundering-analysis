@@ -117,6 +117,7 @@ class AmountFilterQ5:
                     client_id,
                     data_id,
                     {"cantTrx": totals_by_output.get(OUTPUT_PREFIX_1, 0)},
+                    message_id=data_id,
                 )
             )
             self.gateway_final_query_queue.send(EOFMessageHandler.serialize_eof_message(client_id, 1, origin_worker_prefix, amount_origin_workers, None))

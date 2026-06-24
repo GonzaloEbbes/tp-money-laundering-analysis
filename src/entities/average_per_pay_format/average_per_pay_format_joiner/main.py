@@ -123,7 +123,7 @@ class AveragePerPayFormatJoiner:
         data_id = str(uuid.uuid4()) 
         averages = self._build_average_payload(client_id)
         with self.producer_lock:
-            self.output_exchange.send(AveragePerPayFormatJoinerMessageHandler.serialize_amount_filter_q3_exchange_message(averages, client_id, data_id), OUTPUT_EXCHANGE)
+            self.output_exchange.send(AveragePerPayFormatJoinerMessageHandler.serialize_amount_filter_q3_exchange_message(averages, client_id, data_id, message_id=data_id), OUTPUT_EXCHANGE)
             self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
         logging.debug("Sent averages to amount filter q3 for client=%s", client_id)
 

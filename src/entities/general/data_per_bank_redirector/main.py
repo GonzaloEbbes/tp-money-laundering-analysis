@@ -147,9 +147,9 @@ class DataPerBankRedirector:
                 account_origin = msg.data.get("account_origin")
                 amount_received = msg.data.get("amount_received")
                 logging.debug(f"Redirector {self.id} redirecting message for client {cid} to mapper partition {partition}")
-                msg = DataPerBankRedirectorMessageHandler.serialize_redirect(cid, msg.data_id, from_bank, account_origin, amount_received)
+                redirected = DataPerBankRedirectorMessageHandler.serialize_redirect(cid, msg.data_id, from_bank, account_origin, amount_received, message_id=msg.message_id)
                 with self._map_exchange_lock:
-                    self.map_exchange.send(msg, routing_key=routing_key)
+                    self.map_exchange.send(redirected, routing_key=routing_key)
             self._dec_inflight(cid)
             self._try_finalize(cid)
             ack()
