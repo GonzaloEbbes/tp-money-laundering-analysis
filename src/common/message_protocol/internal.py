@@ -134,12 +134,21 @@ class InternalMessage:
 
     type : InternalMessageType
     source_client_uuid : str | None
+    message_id : int | None
     data : TransactionData | AccountData | CantTrxData | ScatherGatherData | None
     
-    def __init__(self, type=None, source_client_uuid=None, data_id=None, data=None):
+    def __init__(
+        self,
+        type=None,
+        source_client_uuid=None,
+        data_id=None,
+        data=None,
+        message_id=None,
+    ):
         self.type = type
         self.source_client_uuid = source_client_uuid
         self.data_id = data_id
+        self.message_id = message_id
         self.data = data
 
     def _serialize(self):
@@ -151,6 +160,9 @@ class InternalMessage:
         if self.data_id is not None:
             msg_dict["data_id"] = self.data_id
 
+        if self.message_id is not None:
+            msg_dict["message_id"] = self.message_id
+
         if self.data is not None:
             msg_dict["data"] = self.data
 
@@ -161,11 +173,18 @@ class InternalMessage:
         self.type = msg["type"] if "type" in msg else None
         self.source_client_uuid = msg["source_client_uuid"] if "source_client_uuid" in msg else None
         self.data_id = msg["data_id"] if "data_id" in msg else None
+        self.message_id = msg["message_id"] if "message_id" in msg else None
         self.data = msg["data"] if "data" in msg else None
 
 
-def serialize(type,client_id,data_id,data) -> bytes:
-    msg = InternalMessage(type=type, source_client_uuid=client_id, data_id=data_id, data=data)
+def serialize(type,client_id,data_id,data,message_id=None) -> bytes:
+    msg = InternalMessage(
+        type=type,
+        source_client_uuid=client_id,
+        data_id=data_id,
+        data=data,
+        message_id=message_id,
+    )
     return msg._serialize()
 
 
@@ -180,5 +199,6 @@ def deserialize(data):
         decoded["source_client_uuid"] if "source_client_uuid" in decoded else None
     )
     msg.data_id = decoded["data_id"] if "data_id" in decoded else None
+    msg.message_id = decoded["message_id"] if "message_id" in decoded else None
     msg.data = decoded["data"] if "data" in decoded else None
     return msg

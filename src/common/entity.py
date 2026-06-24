@@ -20,7 +20,6 @@ class DeprecatedToEliminateEntity(ABC):
             if output_queue
             else None
         )
-
     @abstractmethod
     def entity_type(self):
         pass
@@ -54,7 +53,8 @@ class DeprecatedToEliminateEntity(ABC):
                     msg_to_send.type,
                     msg_to_send.source_client_uuid,
                     msg_to_send.data_id,
-                    msg_to_send.data
+                    msg_to_send.data,
+                    message_id=msg_to_send.message_id,
                 )
                 
                 self.output_queue.send(serialized_bytes)
