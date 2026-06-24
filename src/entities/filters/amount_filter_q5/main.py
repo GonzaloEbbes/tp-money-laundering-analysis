@@ -1,11 +1,8 @@
-import hashlib
 import os
 import logging
-import re
 import signal
 import sys
 import threading
-from time import sleep
 import uuid
 
 from common import middleware, message_protocol
@@ -59,7 +56,18 @@ class AmountFilterQ5:
         self._stop_lock = threading.Lock()
         self._stopping = False
 
-        self.eof_controller = EOFController(MOM_HOST, self.id, AMOUNT_FILTER_PREFIX, AMOUNT_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None ,AUXILIARY_INPUT)
+        self.eof_controller = EOFController(
+            MOM_HOST, 
+            self.id, 
+            AMOUNT_FILTER_PREFIX, 
+            AMOUNT_FILTER_AMOUNT, 
+            EOF_CONTROL_EXCHANGE, 
+            EXPECTED_INPUT_EOFS,
+            None,
+            self.on_send_eof_to_next_stage_callback, 
+            None,
+            AUXILIARY_INPUT
+        )
 
 
     
@@ -79,12 +87,12 @@ class AmountFilterQ5:
         match message.type:
             case message_protocol.internal.InternalMessageType.USD_CURRENCY_CONVERTER_TO_AMOUNT_FILTER_Q5:
                 client_id = message.source_client_uuid
-                self._process_usd_currency_converter_message(message.data, client_id, message.data_id)
+                self._process_q5_transaction_message(message.data, client_id, message.data_id)
                 self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_2)
                 
             case message_protocol.internal.InternalMessageType.PAY_FORMAT_FILTER_TO_AMOUNT_FILTER_Q5:
                 client_id = message.source_client_uuid
-                self._process_pay_format_message(message.data, client_id, message.data_id)
+                self._process_q5_transaction_message(message.data, client_id, message.data_id)
                 self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
                 
             case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
@@ -93,20 +101,13 @@ class AmountFilterQ5:
         ack()
         
 
-    def _process_pay_format_message(self, transaction_data, client_id, data_id):
+    def _process_q5_transaction_message(self, transaction_data, client_id, data_id):
         amount_paid = float(transaction_data.get("amount_paid"))
 
         if amount_paid > 0 and amount_paid < 1:
             self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id) 
             #simulo como que se envió paquete para que el total de paquetes se transforme en el total de transacciones que pasarían a la siguiente capa
         
-
-    def _process_usd_currency_converter_message(self, transaction_data, client_id, data_id): 
-        amount_paid = float(transaction_data.get("amount_paid"))
-
-        if amount_paid > 0 and amount_paid < 1:
-            self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
-            #simulo como que se envió paquete para que el total de paquetes se transforme en el total de transacciones que pasarían a la siguiente capa
 
     def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         data_id = str(uuid.uuid4())

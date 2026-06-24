@@ -3,17 +3,17 @@ import logging
 import signal
 import sys
 import threading
-
 from common import middleware, message_protocol
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.logging.logging_config import configure_logging_from_env
-from message_handler import MessageHandler as AmountFilterQ3MessageHandler
+from common.snapshots.snapshot import SnapshotManager
 from csv_file_manager import CSVFileManager
+from message_handler import MessageHandler as AmountFilterQ3MessageHandler
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
-USD_FILTER_Q3_QUEUE = os.environ["INPUT_QUEUE"] #Es la propia, que conecta con el filtro USD Q3
+USD_FILTER_Q3_QUEUE = os.environ["INPUT_QUEUE"]
 AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE = os.environ["AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE"]
 AMOUNT_FILTER_PREFIX = os.environ["AMOUNT_FILTER_PREFIX"]
 AMOUNT_FILTER_AMOUNT = int(os.environ["AMOUNT_FILTER_AMOUNT"])
@@ -38,7 +38,6 @@ class AmountFilterQ3:
         
         self.id = int(ID)
 
-        # definicion de working queue exchanges de la instancia posterior
         self.gateway_final_query_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, OUTPUT_QUEUE
             )
@@ -49,10 +48,19 @@ class AmountFilterQ3:
 
         self.all_averages_received_for_client : dict[str, bool] = {}
         self.all_averages_received_for_client_lock = threading.Lock()
-        self.averages_by_client : dict[str, dict[str, float]] = {}
-        self.averages_by_client_lock = threading.Lock()
         
-        self.eof_controller = EOFController(MOM_HOST, self.id, AMOUNT_FILTER_PREFIX, AMOUNT_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,self.on_consensus_ok_callback,self.on_send_eof_to_next_stage_callback, self.on_clean_client_in_main_thread_callback,AUXILIARY_INPUT)
+        self.eof_controller = EOFController(
+            MOM_HOST, 
+            self.id, 
+            AMOUNT_FILTER_PREFIX, 
+            AMOUNT_FILTER_AMOUNT, 
+            EOF_CONTROL_EXCHANGE, 
+            EXPECTED_INPUT_EOFS,
+            self.on_consensus_ok_callback,
+            self.on_send_eof_to_next_stage_callback, 
+            self.on_clean_client_in_main_thread_callback,
+            AUXILIARY_INPUT
+        )
         self._sigterm_received = False
         self._runtime_error = False
 
