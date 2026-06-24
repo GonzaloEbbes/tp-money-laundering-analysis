@@ -1596,7 +1596,7 @@ services:
   currency_converter_0:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/workers/currency_converter/Dockerfile
     container_name: currency_converter_0
     depends_on:
       rabbitmq:
@@ -1605,7 +1605,6 @@ services:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_converter_queue_0
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
@@ -1626,7 +1625,7 @@ services:
   currency_converter_1:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/workers/currency_converter/Dockerfile
     container_name: currency_converter_1
     depends_on:
       rabbitmq:
@@ -1635,7 +1634,6 @@ services:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_converter_queue_1
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
@@ -1656,7 +1654,7 @@ services:
   currency_converter_2:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/workers/currency_converter/Dockerfile
     container_name: currency_converter_2
     depends_on:
       rabbitmq:
@@ -1665,7 +1663,6 @@ services:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_converter_queue_2
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
@@ -1686,7 +1683,7 @@ services:
   currency_converter_3:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/workers/currency_converter/Dockerfile
     container_name: currency_converter_3
     depends_on:
       rabbitmq:
@@ -1695,7 +1692,6 @@ services:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_converter_queue_3
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue

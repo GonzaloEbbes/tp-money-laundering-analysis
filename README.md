@@ -95,21 +95,16 @@ RabbitMQ queda expuesto en:
 
 ## Entidades
 
-Cada entidad hereda de `PipelineEntity`, que define el flujo comun de consumo, log y reenvio. Cada una implementa polimorficamente:
-
-```python
-def entity_type(self):
-    return "currency_filter"
-```
-
-Cada entidad concreta vive en su propio archivo dentro de `src/entities/`, separada por categoria:
+Cada entidad define explicitamente su consumo, publicacion, manejo de EOF,
+cierre de recursos y configuracion de logging. Las entidades concretas viven
+dentro de `src/entities/`, separadas por categoria:
 
 - `mappers/`: entidades `Map*`.
 - `joiners/`: entidades `Join*`.
 - `workers/`: filtros, conversores, contadores y agregadores simples.
 - `general/`: entidades que no encajan en las categorias anteriores.
 
-Docker levanta la misma imagen para cada una y `src/entities/main.py` selecciona la clase con `ENTITY_CLASS`.
+Docker levanta cada entidad con su entrypoint y Dockerfile correspondiente.
 
 ## Archivos locales
 
