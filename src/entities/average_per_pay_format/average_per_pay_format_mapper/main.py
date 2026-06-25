@@ -11,6 +11,7 @@ import uuid
 from common import middleware, message_protocol
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import TransactionData
 from message_handler import MessageHandler as AveragePerPayFormatMapperMessageHandler
@@ -50,6 +51,7 @@ class AveragePerPayFormatMapper:
 
         self.averages_per_client : dict[str, dict[str, dict[str,float]]] = {}
         self.averages_per_client_lock = threading.Lock()
+        self.deduplicator = InMemoryDeduplicator()
 
         self._stop_lock = threading.Lock()
         self._stopping = False
@@ -72,9 +74,13 @@ class AveragePerPayFormatMapper:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_AVERAGE_PER_PAY_FORMAT_MAPPER:
+                if not self._should_process_message(message):
+                    ack()
+                    return
                 client_id = message.source_client_uuid
                 self._process_usd_filter_q4_message(message.data, client_id, message.data_id)
                 self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+                self.deduplicator.mark_processed(client_id, self._dedup_key(message))
             case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
                 client_id = message.source_client_uuid
                 self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
@@ -124,6 +130,17 @@ class AveragePerPayFormatMapper:
     def on_clean_client_callback(self, client_id):
         with self.averages_per_client_lock:
             self.averages_per_client.pop(client_id, None)
+        self.deduplicator.remove_client(client_id)
+
+    def _dedup_key(self, message):
+        if message.message_id is None:
+            return None
+        return f"{message.type}:{message.message_id}"
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
 
     def stop(self):
         with self._stop_lock:

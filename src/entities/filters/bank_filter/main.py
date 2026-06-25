@@ -10,6 +10,7 @@ from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as BankFilterMessageHandler
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator
 
 ID = int(os.environ["ID"])
 BANK_FILTERS_AMOUNT = int(os.environ.get("BANK_FILTERS_AMOUNT", 1))
@@ -51,6 +52,7 @@ class BankFilter:
 
         self.seen_banks = {} # {cid: set()}
         self._join_exchange_lock = threading.Lock()
+        self.deduplicator = InMemoryDeduplicator()
 
         self.eof_controller = EOFController(
             mom_host=MOM_HOST,
@@ -74,7 +76,11 @@ class BankFilter:
                 case InternalMessageType.EOF_MESSAGE | InternalMessageType.EOF_FINAL_MESSAGE:
                     self._handle_eof_message(cid, msg.data)
                 case InternalMessageType.GATEWAY_TO_BANK_FILTER:
+                    if not self._should_process_message(msg):
+                        ack()
+                        return
                     self._handle_data_message(cid, msg)
+                    self.deduplicator.mark_processed(cid, self._dedup_key(msg))
                 case _:
                     logging.debug(f"BankFilter {self.id} ignorando mensaje: {msg.type}")
 
@@ -133,6 +139,17 @@ class BankFilter:
         if client_id in self.seen_banks:
             del self.seen_banks[client_id]
             logging.debug(f"Memoria de bancos limpiada para el cliente {client_id} en BankFilter {self.id}")
+        self.deduplicator.remove_client(client_id)
+
+    def _dedup_key(self, message):
+        if message.message_id is None:
+            return None
+        return f"{message.type}:{message.message_id}"
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
 
     def _run_input_consumer(self):
         self.input_exchange.start_consuming(self.process_message)

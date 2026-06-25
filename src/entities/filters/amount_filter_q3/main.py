@@ -7,6 +7,7 @@ import threading
 from common import middleware, message_protocol
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as AmountFilterQ3MessageHandler
 from csv_file_manager import CSVFileManager
@@ -51,6 +52,7 @@ class AmountFilterQ3:
         self.all_averages_received_for_client_lock = threading.Lock()
         self.averages_by_client : dict[str, dict[str, float]] = {}
         self.averages_by_client_lock = threading.Lock()
+        self.deduplicator = InMemoryDeduplicator()
         
         self.eof_controller = EOFController(MOM_HOST, self.id, AMOUNT_FILTER_PREFIX, AMOUNT_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,self.on_consensus_ok_callback,self.on_send_eof_to_next_stage_callback, self.on_clean_client_in_main_thread_callback,AUXILIARY_INPUT)
         self._sigterm_received = False
@@ -77,10 +79,14 @@ class AmountFilterQ3:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3:
+                if not self._should_process_message(message):
+                    ack()
+                    return
                 logging.debug(f"Received AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3 message for client {message.source_client_uuid}")
                 client_id = message.source_client_uuid
                 self._process_average_message(message.data, client_id)
                 self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_2)
+                self.deduplicator.mark_processed(client_id, self._dedup_key(message))
             case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
                 client_id = message.source_client_uuid
                 self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
@@ -106,9 +112,13 @@ class AmountFilterQ3:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.USD_FILTER_Q3_TO_AMOUNT_FILTER_Q3:
+                if not self._should_process_message(message):
+                    ack()
+                    return
                 client_id = message.source_client_uuid
                 self._process_transaction(message.data, client_id, message.data_id, message.message_id)
                 self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+                self.deduplicator.mark_processed(client_id, self._dedup_key(message))
             case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
                 client_id = message.source_client_uuid
                 self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
@@ -146,6 +156,17 @@ class AmountFilterQ3:
         with self.averages_by_client_lock:
             if client_id in self.averages_by_client:
                 del self.averages_by_client[client_id]
+        self.deduplicator.remove_client(client_id)
+
+    def _dedup_key(self, message):
+        if message.message_id is None:
+            return None
+        return f"{message.type}:{message.message_id}"
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
 
 
     def stop(self):

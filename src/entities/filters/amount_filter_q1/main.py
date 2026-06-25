@@ -8,6 +8,7 @@ from time import sleep
 from common import middleware, message_protocol
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator
 from message_handler import MessageHandler as AmountFilterQ1MessageHandler
 from common.logging import configure_logging_from_env
 
@@ -43,6 +44,7 @@ class AmountFilterQ1:
         self._runtime_error = False
         self._stop_lock = threading.Lock()
         self._stopping = False
+        self.deduplicator = InMemoryDeduplicator()
         self.eof_controller = EOFController(MOM_HOST, self.id, AMOUNT_FILTER_PREFIX, AMOUNT_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None, AUXILIARY_INPUT)
 
     
@@ -57,9 +59,13 @@ class AmountFilterQ1:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1:
+                if not self._should_process_message(message):
+                    ack()
+                    return
                 client_id = message.source_client_uuid
                 self._process_transaction(message.data, client_id, message.data_id, message.message_id)
                 self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+                self.deduplicator.mark_processed(client_id, self._dedup_key(message))
             case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
                 client_id = message.source_client_uuid
                 self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
@@ -82,6 +88,16 @@ class AmountFilterQ1:
         with self.producer_lock:
             self.gateway_final_query_queue.send(EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers))
         logging.info(f"Sent final EOF for client {client_id} to gateway final query queue")
+
+    def _dedup_key(self, message):
+        if message.message_id is None:
+            return None
+        return f"{message.type}:{message.message_id}"
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
 
     def stop(self):
         with self._stop_lock:

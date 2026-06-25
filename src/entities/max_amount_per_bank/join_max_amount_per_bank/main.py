@@ -8,6 +8,7 @@ from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator
 from message_handler import MessageHandler as JoinMessageHandler
 
 ID = int(os.environ.get("ID", 0))
@@ -44,6 +45,7 @@ class JoinMaxAmountPerBank:
         self.bank_cache = {}
         self.pending_results = {}
         self._sigterm_received = False
+        self.deduplicator = InMemoryDeduplicator()
 
         self.eof_controller = EOFController(
             mom_host=MOM_HOST,
@@ -71,10 +73,18 @@ class JoinMaxAmountPerBank:
                     if msg.data is None:
                         self._handle_eof_message(cid, msg.data)
                     else:
+                        if not self._should_process_message(msg):
+                            ack()
+                            return
                         self._handle_bank_filter_data(cid, msg)
+                        self.deduplicator.mark_processed(cid, self._dedup_key(msg))
 
                 case InternalMessageType.MAX_AMOUNT_PER_BANK_RESULT:
+                    if not self._should_process_message(msg):
+                        ack()
+                        return
                     self._handle_mapper_result_data(cid, msg)
+                    self.deduplicator.mark_processed(cid, self._dedup_key(msg))
 
                 case _:
                     logging.debug(f"Joiner {self.id} ignorando mensaje: {msg.type}")
@@ -158,6 +168,17 @@ class JoinMaxAmountPerBank:
         if client_id in self.pending_results:
             del self.pending_results[client_id]
         logging.debug(f"Memoria liberada en Joiner {self.id} para cliente {client_id}")
+        self.deduplicator.remove_client(client_id)
+
+    def _dedup_key(self, message):
+        if message.message_id is None:
+            return None
+        return f"{message.type}:{message.message_id}"
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
 
     def _run_input_consumer(self):
         self.input_exchange.start_consuming(self.process_message)

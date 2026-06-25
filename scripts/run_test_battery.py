@@ -53,7 +53,9 @@ class TestRunResult:
     failed: bool
     expected_output_path: Path | None = None
     log_path: Path | None = None
+    compose_state_path: Path | None = None
     result_dir: Path | None = None
+    result_files: tuple[Path, ...] = ()
     failures: list[str] = field(default_factory=list)
 
 
@@ -278,6 +280,10 @@ def run_command(args, *, env=None, capture=False, check=False):
     return completed
 
 
+def artifact_dir(test_name):
+    return LOG_DIR / test_name
+
+
 def list_result_dirs():
     if not RESULTS_DIR.exists():
         return set()
@@ -303,19 +309,58 @@ def find_new_result_dir(before):
     return client_dirs[-1] if client_dirs else None
 
 
+def list_result_files(result_dir):
+    if result_dir is None or not result_dir.exists():
+        return ()
+    return tuple(sorted(path for path in result_dir.iterdir() if path.is_file()))
+
+
+def write_artifact(test_name, file_name, content):
+    test_artifact_dir = artifact_dir(test_name)
+    test_artifact_dir.mkdir(parents=True, exist_ok=True)
+    path = test_artifact_dir / file_name
+    path.write_text(content, encoding="utf-8")
+    return path
+
+
+def capture_command_output(args, *, env=None):
+    completed = run_command(args, env=env, capture=True, check=False)
+    return completed.returncode, completed.stdout or ""
+
+
 def collect_logs(test_name):
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = LOG_DIR / f"{test_name}.log"
-    completed = run_command(
+    _, output = capture_command_output(
         ["docker", "compose", "-f", str(COMPOSE_FILE), "logs", "--no-color"],
-        capture=True,
     )
-    log_path.write_text(completed.stdout or "", encoding="utf-8")
-    return log_path
+    return write_artifact(test_name, "compose.log", output)
+
+
+def collect_compose_state(test_name):
+    exit_code, output = capture_command_output(
+        ["docker", "compose", "-f", str(COMPOSE_FILE), "ps", "-a"]
+    )
+    header = f"exit_code={exit_code}\ncommand=docker compose -f {COMPOSE_FILE} ps -a\n\n"
+    return write_artifact(test_name, "compose_ps.txt", header + output)
+
+
+def collect_result_dir_snapshot(test_name, before_results):
+    after_results = sorted(list_result_dirs(), key=lambda path: path.stat().st_mtime)
+    created_results = sorted(
+        set(after_results) - before_results,
+        key=lambda path: path.stat().st_mtime,
+    )
+    lines = [
+        "Created result directories since test start:",
+        *([str(path) for path in created_results] or ["<none>"]),
+        "",
+        "All result directories after test:",
+        *([str(path) for path in after_results] or ["<none>"]),
+    ]
+    return write_artifact(test_name, "result_dirs.txt", "\n".join(lines) + "\n")
 
 
 def expected_output_path(test_name):
-    return LOG_DIR / test_name / "expected_output.json"
+    return artifact_dir(test_name) / "expected_output.json"
 
 
 def write_expected_output(test_case):
@@ -429,7 +474,9 @@ def run_test_case(test_case, keep_stack, expected_output):
     print(f"\n== {test_case.name} ==")
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     log_path = None
+    compose_state_path = None
     result_dir = None
+    result_files = ()
     print(f"Expected: {expected_output}")
 
     print("Stopping previous compose stack")
@@ -464,7 +511,10 @@ def run_test_case(test_case, keep_stack, expected_output):
         client_exit_code = (client_exit.stdout or "").strip()
 
         log_path = collect_logs(test_case.name)
+        compose_state_path = collect_compose_state(test_case.name)
+        collect_result_dir_snapshot(test_case.name, before_results)
         result_dir = find_new_result_dir(before_results)
+        result_files = list_result_files(result_dir)
 
         failures = []
         if client_exit_code != "0":
@@ -482,8 +532,13 @@ def run_test_case(test_case, keep_stack, expected_output):
             print("FAIL")
             print(f"Expected: {expected_output}")
             print(f"Logs: {log_path}")
+            print(f"Compose state: {compose_state_path}")
             if result_dir is not None:
                 print(f"Results: {result_dir}")
+                print(
+                    "Result files: "
+                    + (", ".join(str(path) for path in result_files) if result_files else "<none>")
+                )
             for failure in failures:
                 print(f"  - {failure}")
             return TestRunResult(
@@ -491,20 +546,59 @@ def run_test_case(test_case, keep_stack, expected_output):
                 failed=True,
                 expected_output_path=expected_output,
                 log_path=log_path,
+                compose_state_path=compose_state_path,
                 result_dir=result_dir,
+                result_files=result_files,
                 failures=failures,
             )
 
         print("OK")
         print(f"Expected: {expected_output}")
         print(f"Logs: {log_path}")
+        print(f"Compose state: {compose_state_path}")
         print(f"Results: {result_dir}")
+        print(
+            "Result files: "
+            + (", ".join(str(path) for path in result_files) if result_files else "<none>")
+        )
         return TestRunResult(
             test_name=test_case.name,
             failed=False,
             expected_output_path=expected_output,
             log_path=log_path,
+            compose_state_path=compose_state_path,
             result_dir=result_dir,
+            result_files=result_files,
+        )
+    except Exception as error:
+        log_path = log_path or collect_logs(test_case.name)
+        compose_state_path = compose_state_path or collect_compose_state(test_case.name)
+        collect_result_dir_snapshot(test_case.name, before_results)
+        result_dir = result_dir or find_new_result_dir(before_results)
+        result_files = list_result_files(result_dir)
+        failures = [str(error)]
+
+        print("FAIL")
+        print(f"Expected: {expected_output}")
+        print(f"Logs: {log_path}")
+        print(f"Compose state: {compose_state_path}")
+        if result_dir is not None:
+            print(f"Results: {result_dir}")
+            print(
+                "Result files: "
+                + (", ".join(str(path) for path in result_files) if result_files else "<none>")
+            )
+        for failure in failures:
+            print(f"  - {failure}")
+        return TestRunResult(
+            test_name=test_case.name,
+            failed=True,
+            expected_output_path=expected_output,
+            log_path=log_path,
+            compose_state_path=compose_state_path,
+            result_dir=result_dir,
+            result_files=result_files,
+            failures=failures,
         )
     finally:
         if keep_stack:
@@ -582,8 +676,20 @@ def main():
             )
             print(f"  Logs: {result.log_path if result.log_path is not None else 'not collected'}")
             print(
+                "  Compose state: "
+                f"{result.compose_state_path if result.compose_state_path is not None else 'not collected'}"
+            )
+            print(
                 "  Results: "
                 f"{result.result_dir if result.result_dir is not None else 'not created'}"
+            )
+            print(
+                "  Result files: "
+                + (
+                    ", ".join(str(path) for path in result.result_files)
+                    if result.result_files
+                    else "not collected"
+                )
             )
 
     return 1 if failures else 0

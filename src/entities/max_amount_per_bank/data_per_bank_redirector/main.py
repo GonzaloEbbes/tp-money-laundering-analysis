@@ -9,6 +9,7 @@ from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator
 from message_handler import MessageHandler as DataPerBankRedirectorMessageHandler
 
 ID = int(os.environ.get("ID", 0))
@@ -40,6 +41,7 @@ class DataPerBankRedirector:
         self.id = ID
         self._sigterm_received = False
         self._map_exchange_lock = threading.Lock()
+        self.deduplicator = InMemoryDeduplicator()
 
         self.eof_controller = EOFController(
             mom_host=MOM_HOST,
@@ -78,7 +80,11 @@ class DataPerBankRedirector:
                     self._handle_eof_message(cid, msg.data)
 
                 case InternalMessageType.USD_FILTER_Q1Q2_TO_DATA_PER_BANK_SHUFFLER:
+                    if not self._should_process_message(msg):
+                        ack()
+                        return
                     self._handle_data_message(cid, msg)
+                    self.deduplicator.mark_processed(cid, self._dedup_key(msg))
 
                 case _:
                     logging.debug(f"Redirector {self.id} ignorando mensaje de tipo no soportado o de control en la cola de datos: {msg.type}")
@@ -120,6 +126,16 @@ class DataPerBankRedirector:
             self.eof_controller.on_packet_sent_by_client_to(MAPPER_PREFIX, cid)
 
         self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX)
+
+    def _dedup_key(self, message):
+        if message.message_id is None:
+            return None
+        return f"{message.type}:{message.message_id}"
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
 
     def start(self):
         input_thread = threading.Thread(
