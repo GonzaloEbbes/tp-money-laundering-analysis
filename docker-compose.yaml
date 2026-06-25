@@ -12,6 +12,7 @@ services:
       - RABBITMQ_BATCH_MAX_SECONDS=2
       - RABBITMQ_BATCH_HEADER=x-middleware-batch
       - RABBITMQ_BATCH_HEADER_VALUE=v1
+      - RABBITMQ_LOG=error
     healthcheck:
       interval: 5s
       retries: 10
@@ -68,7 +69,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_1:
     build:
       context: ./src
@@ -91,7 +97,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_2:
     build:
       context: ./src
@@ -114,7 +125,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_3:
     build:
       context: ./src
@@ -137,7 +153,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_4:
     build:
       context: ./src
@@ -160,7 +181,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_5:
     build:
       context: ./src
@@ -183,7 +209,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_6:
     build:
       context: ./src
@@ -206,7 +237,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_7:
     build:
       context: ./src
@@ -229,7 +265,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_8:
     build:
       context: ./src
@@ -252,7 +293,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_9:
     build:
       context: ./src
@@ -275,7 +321,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_10:
     build:
       context: ./src
@@ -298,7 +349,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   date_filter_11:
     build:
       context: ./src
@@ -321,7 +377,12 @@ services:
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
       - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
-
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
   usd_filter_q1q2_0:
     build:
       context: ./src
@@ -343,6 +404,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_1:
     build:
@@ -365,6 +431,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_2:
     build:
@@ -387,6 +458,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_3:
     build:
@@ -409,6 +485,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_4:
     build:
@@ -431,6 +512,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_5:
     build:
@@ -453,6 +539,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_6:
     build:
@@ -475,6 +566,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_7:
     build:
@@ -497,6 +593,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_8:
     build:
@@ -519,6 +620,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_9:
     build:
@@ -541,6 +647,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_10:
     build:
@@ -563,6 +674,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_11:
     build:
@@ -585,6 +701,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_12:
     build:
@@ -607,6 +728,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_13:
     build:
@@ -629,6 +755,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   usd_filter_q1q2_14:
     build:
@@ -651,6 +782,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
 
   amount_filter_q1_0:
     build:
@@ -672,6 +808,10 @@ services:
       - AMOUNT_FILTER_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q1q2
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q1_1:
     build:
@@ -693,6 +833,10 @@ services:
       - AMOUNT_FILTER_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q1q2
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q1_2:
     build:
@@ -714,6 +858,10 @@ services:
       - AMOUNT_FILTER_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q1q2
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   usd_filter_q3_0:
     build:
@@ -735,6 +883,10 @@ services:
       - USD_FILTER_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
 
   usd_filter_q3_1:
     build:
@@ -756,6 +908,10 @@ services:
       - USD_FILTER_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
 
   usd_filter_q3_2:
     build:
@@ -777,6 +933,10 @@ services:
       - USD_FILTER_AMOUNT=3
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
 
   usd_filter_q4_0:
     build:
@@ -799,6 +959,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_1:
     build:
@@ -821,6 +986,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_2:
     build:
@@ -843,6 +1013,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_3:
     build:
@@ -865,6 +1040,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_4:
     build:
@@ -887,6 +1067,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_5:
     build:
@@ -909,6 +1094,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_6:
     build:
@@ -931,6 +1121,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_7:
     build:
@@ -953,6 +1148,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_8:
     build:
@@ -975,6 +1175,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_9:
     build:
@@ -997,6 +1202,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_10:
     build:
@@ -1019,6 +1229,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   usd_filter_q4_11:
     build:
@@ -1041,6 +1256,11 @@ services:
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
 
   average_per_pay_format_mapper_0:
     build:
@@ -1063,6 +1283,9 @@ services:
       - MAPPER_FILTER_AMOUNT=2
       - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q4
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=average_per_pay_format_joiner
 
   average_per_pay_format_mapper_1:
     build:
@@ -1085,6 +1308,9 @@ services:
       - MAPPER_FILTER_AMOUNT=2
       - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q4
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=average_per_pay_format_joiner
 
   average_per_pay_format_joiner_0:
     build:
@@ -1107,6 +1333,9 @@ services:
       - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue
       - EXPECTED_INPUT_EOFS=1
       - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange
+      - INPUT_PREFIX_1=average_per_pay_format_mapper
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
   amount_filter_q3_0:
     build:
       context: ./src
@@ -1128,6 +1357,11 @@ services:
       - AMOUNT_FILTER_AMOUNT=1
       - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
+      - INPUT_PREFIX_1=usd_filter_q3
+      - INPUT_PREFIX_2=average_per_pay_format_joiner
+      - AUXILIARY_INPUT=true
+      - OUTPUT_PREFIX_1=gateway
 
   pay_format_filter_0:
     build:
@@ -1153,6 +1387,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_1:
     build:
@@ -1178,6 +1417,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_2:
     build:
@@ -1203,6 +1447,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_3:
     build:
@@ -1228,6 +1477,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_4:
     build:
@@ -1253,6 +1507,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_5:
     build:
@@ -1278,6 +1537,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_6:
     build:
@@ -1303,6 +1567,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_7:
     build:
@@ -1328,6 +1597,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_8:
     build:
@@ -1353,6 +1627,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_9:
     build:
@@ -1378,6 +1657,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_10:
     build:
@@ -1403,6 +1687,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   pay_format_filter_11:
     build:
@@ -1428,6 +1717,11 @@ services:
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
       - TOTAL_CONVERSION_WORKERS=4
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
 
   amount_filter_q5_0:
     build:
@@ -1447,9 +1741,13 @@ services:
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
       - AMOUNT_FILTER_AMOUNT=3
-      - EXPECTED_INPUT_EOFS=5
+      - EXPECTED_INPUT_EOFS=2
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - INPUT_PREFIX_1=pay_format_filter
+      - INPUT_PREFIX_2=currency_converter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q5_1:
     build:
@@ -1469,9 +1767,13 @@ services:
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
       - AMOUNT_FILTER_AMOUNT=3
-      - EXPECTED_INPUT_EOFS=5
+      - EXPECTED_INPUT_EOFS=2
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - INPUT_PREFIX_1=pay_format_filter
+      - INPUT_PREFIX_2=currency_converter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   amount_filter_q5_2:
     build:
@@ -1491,9 +1793,13 @@ services:
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
       - AMOUNT_FILTER_AMOUNT=3
-      - EXPECTED_INPUT_EOFS=5
+      - EXPECTED_INPUT_EOFS=2
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - INPUT_PREFIX_1=pay_format_filter
+      - INPUT_PREFIX_2=currency_converter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
 
   scather_gather_mapper_0:
     build:
@@ -1516,6 +1822,10 @@ services:
       - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
       - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
       - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=usd_filter_q4
+      - OUTPUT_PREFIX_1=scather_gather_aggregator
 
   scather_gather_mapper_1:
     build:
@@ -1538,6 +1848,10 @@ services:
       - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
       - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
       - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=usd_filter_q4
+      - OUTPUT_PREFIX_1=scather_gather_aggregator
 
   scather_gather_mapper_2:
     build:
@@ -1560,6 +1874,10 @@ services:
       - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
       - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
       - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=usd_filter_q4
+      - OUTPUT_PREFIX_1=scather_gather_aggregator
 
   scather_gather_aggregator_0:
     build:
@@ -1576,10 +1894,15 @@ services:
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
-      - SCATHER_GATHER_MAPPER_AMOUNT=3
       - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
+      - SCATHER_GATHER_AGG_AMOUNT=3
       - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_aggregator_eof_control_exchange
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_1=scather_gather_pair_joiner
 
   scather_gather_aggregator_1:
     build:
@@ -1596,10 +1919,15 @@ services:
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
-      - SCATHER_GATHER_MAPPER_AMOUNT=3
       - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
+      - SCATHER_GATHER_AGG_AMOUNT=3
       - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_aggregator_eof_control_exchange
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_1=scather_gather_pair_joiner
 
   scather_gather_aggregator_2:
     build:
@@ -1616,10 +1944,15 @@ services:
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
-      - SCATHER_GATHER_MAPPER_AMOUNT=3
       - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
+      - SCATHER_GATHER_AGG_AMOUNT=3
       - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_aggregator_eof_control_exchange
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_1=scather_gather_pair_joiner
 
   scather_gather_pair_joiner_0:
     build:
@@ -1638,8 +1971,14 @@ services:
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_pair_joiner_eof_control_exchange
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_aggregator
+      - OUTPUT_PREFIX_1=scather_gather_joiner
 
   scather_gather_pair_joiner_1:
     build:
@@ -1658,8 +1997,14 @@ services:
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_pair_joiner_eof_control_exchange
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_aggregator
+      - OUTPUT_PREFIX_1=scather_gather_joiner
 
   scather_gather_pair_joiner_2:
     build:
@@ -1678,8 +2023,14 @@ services:
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_pair_joiner_eof_control_exchange
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_aggregator
+      - OUTPUT_PREFIX_1=scather_gather_joiner
 
   scather_gather_joiner_0:
     build:
@@ -1696,12 +2047,15 @@ services:
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
-      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
       - SCATHER_GATHER_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_pair_joiner
+      - OUTPUT_PREFIX_1=gateway
 
   scather_gather_joiner_1:
     build:
@@ -1718,12 +2072,15 @@ services:
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
-      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
       - SCATHER_GATHER_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_pair_joiner
+      - OUTPUT_PREFIX_1=gateway
 
   scather_gather_joiner_2:
     build:
@@ -1740,17 +2097,20 @@ services:
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
-      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
       - SCATHER_GATHER_JOINER_AMOUNT=3
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_pair_joiner
+      - OUTPUT_PREFIX_1=gateway
 
   currency_converter_0:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/filters/currency_converter/Dockerfile
     container_name: currency_converter_0
     depends_on:
       rabbitmq:
@@ -1760,19 +2120,23 @@ services:
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=currency_converter_queue_0
-      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - ID=0
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.0
-      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
-      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CURRENCY_CONVERTER_PREFIX=currency_converter
+      - CURRENCY_CONVERTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=pay_format_filter
+      - OUTPUT_PREFIX_1=amount_filter_q5
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
       - CONVERSION_DATE_FIELD=timestamp
       - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - FRANKFURTER_MAX_RETRIES=10
       - FRANKFURTER_RETRY_DELAY_SECONDS=1
       - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
@@ -1782,7 +2146,7 @@ services:
   currency_converter_1:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/filters/currency_converter/Dockerfile
     container_name: currency_converter_1
     depends_on:
       rabbitmq:
@@ -1792,19 +2156,23 @@ services:
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=currency_converter_queue_1
-      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - ID=1
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.1
-      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
-      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CURRENCY_CONVERTER_PREFIX=currency_converter
+      - CURRENCY_CONVERTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=pay_format_filter
+      - OUTPUT_PREFIX_1=amount_filter_q5
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
       - CONVERSION_DATE_FIELD=timestamp
       - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - FRANKFURTER_MAX_RETRIES=10
       - FRANKFURTER_RETRY_DELAY_SECONDS=1
       - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
@@ -1814,7 +2182,7 @@ services:
   currency_converter_2:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/filters/currency_converter/Dockerfile
     container_name: currency_converter_2
     depends_on:
       rabbitmq:
@@ -1824,19 +2192,23 @@ services:
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=currency_converter_queue_2
-      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - ID=2
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.2
-      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
-      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CURRENCY_CONVERTER_PREFIX=currency_converter
+      - CURRENCY_CONVERTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=pay_format_filter
+      - OUTPUT_PREFIX_1=amount_filter_q5
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
       - CONVERSION_DATE_FIELD=timestamp
       - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - FRANKFURTER_MAX_RETRIES=10
       - FRANKFURTER_RETRY_DELAY_SECONDS=1
       - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
@@ -1846,7 +2218,7 @@ services:
   currency_converter_3:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/filters/currency_converter/Dockerfile
     container_name: currency_converter_3
     depends_on:
       rabbitmq:
@@ -1856,19 +2228,23 @@ services:
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=currency_converter_queue_3
-      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - ID=3
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.3
-      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
-      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CURRENCY_CONVERTER_PREFIX=currency_converter
+      - CURRENCY_CONVERTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=pay_format_filter
+      - OUTPUT_PREFIX_1=amount_filter_q5
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
       - CONVERSION_DATE_FIELD=timestamp
       - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - FRANKFURTER_MAX_RETRIES=10
       - FRANKFURTER_RETRY_DELAY_SECONDS=1
       - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
@@ -1878,7 +2254,7 @@ services:
   data_per_bank_redirector_0:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_0
     depends_on:
       rabbitmq:
@@ -1897,11 +2273,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_1:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_1
     depends_on:
       rabbitmq:
@@ -1920,11 +2300,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_2:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_2
     depends_on:
       rabbitmq:
@@ -1943,11 +2327,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_3:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_3
     depends_on:
       rabbitmq:
@@ -1966,11 +2354,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_4:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_4
     depends_on:
       rabbitmq:
@@ -1989,11 +2381,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_5:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_5
     depends_on:
       rabbitmq:
@@ -2012,11 +2408,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_6:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_6
     depends_on:
       rabbitmq:
@@ -2035,11 +2435,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_7:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_7
     depends_on:
       rabbitmq:
@@ -2058,6 +2462,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   bank_filter_0:
     build:
@@ -2082,6 +2490,10 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_1:
     build:
@@ -2106,6 +2518,10 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_2:
     build:
@@ -2130,6 +2546,10 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_3:
     build:
@@ -2154,6 +2574,10 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_4:
     build:
@@ -2178,6 +2602,10 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_5:
     build:
@@ -2202,11 +2630,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_0:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_0
     depends_on:
       rabbitmq:
@@ -2226,11 +2658,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_1:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_1
     depends_on:
       rabbitmq:
@@ -2250,11 +2686,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_2:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_2
     depends_on:
       rabbitmq:
@@ -2274,11 +2714,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_3:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_3
     depends_on:
       rabbitmq:
@@ -2298,11 +2742,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_4:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_4
     depends_on:
       rabbitmq:
@@ -2322,11 +2770,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_5:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_5
     depends_on:
       rabbitmq:
@@ -2346,11 +2798,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_6:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_6
     depends_on:
       rabbitmq:
@@ -2370,11 +2826,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_7:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_7
     depends_on:
       rabbitmq:
@@ -2394,11 +2854,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_8:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_8
     depends_on:
       rabbitmq:
@@ -2418,11 +2882,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_9:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_9
     depends_on:
       rabbitmq:
@@ -2442,11 +2910,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_10:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_10
     depends_on:
       rabbitmq:
@@ -2466,11 +2938,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_11:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_11
     depends_on:
       rabbitmq:
@@ -2490,11 +2966,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   join_max_amount_per_bank_0:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_0
     depends_on:
       rabbitmq:
@@ -2513,11 +2993,16 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   join_max_amount_per_bank_1:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_1
     depends_on:
       rabbitmq:
@@ -2536,11 +3021,16 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   join_max_amount_per_bank_2:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_2
     depends_on:
       rabbitmq:
@@ -2559,11 +3049,16 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   join_max_amount_per_bank_3:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_3
     depends_on:
       rabbitmq:
@@ -2582,6 +3077,11 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   client:
     build:

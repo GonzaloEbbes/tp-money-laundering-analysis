@@ -2,8 +2,30 @@
 
 import os
 from dataclasses import dataclass
-
+import logging
 import pika
+
+
+_PIKA_LOGGERS = (
+    "pika",
+    "pika.adapters",
+    "pika.adapters.blocking_connection",
+    "pika.adapters.utils.connection_workflow",
+    "pika.adapters.utils.io_services_utils",
+    "pika.connection",
+    "pika.channel",
+    "pika.callback",
+    "pika.heartbeat",
+)
+
+
+def _configure_pika_logging() -> None:
+    # Hardcodeado: Pika solo escribe ERROR y CRITICAL.
+    for logger_name in _PIKA_LOGGERS:
+        logging.getLogger(logger_name).setLevel(logging.ERROR)
+
+
+_configure_pika_logging()
 
 
 def _read_int_env(name, default):

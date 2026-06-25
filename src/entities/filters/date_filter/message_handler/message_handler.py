@@ -33,12 +33,6 @@ class MessageHandler:
         parsedMessage.payment_currency = message["payment_currency"]
         parsedMessage.payment_format = message["payment_format"]
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.DATE_FILTER_TO_PAY_FORMAT_FILTER, client, data_id, parsedMessage, message_id=message_id)
-
-    def serialize_eof_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None, None)
-    
-    def serialize_eof_leader_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE, client, None, None)
     
     def deserialize_gateway_message(message):
         internal_message = message_protocol.internal.deserialize(message)

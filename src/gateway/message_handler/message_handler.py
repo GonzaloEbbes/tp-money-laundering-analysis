@@ -2,6 +2,7 @@ import uuid
 import logging
 
 from common import message_protocol
+from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 
 logging.basicConfig(
             level=logging.INFO,
@@ -98,14 +99,11 @@ class MessageHandler:
             message_id=message_id,
         )
 
-    def serialize_eof(self):
+    def serialize_eof(self,total_packets_sent):
         data_id = self._get_next_data_id()
-        return message_protocol.internal.serialize(
-            message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE,
-            self.client_uuid,
-            data_id,
-            None
-        )
+        amount_of_gateway_workers = 1
+        my_prefix = "gateway"
+        return EOFMessageHandler.serialize_eof_message(self.client_uuid, total_packets_sent, my_prefix, amount_of_gateway_workers, data_id)
     
     def deserialize_result_message(self, message):
         internal_message = message_protocol.internal.deserialize(message)
@@ -117,7 +115,7 @@ class MessageHandler:
                 message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q3_TO_GATEWAY,
                 message_protocol.internal.InternalMessageType.SCATHER_GATHER_JOINER_TO_GATEWAY,
                 message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q5_TO_GATEWAY,
-                message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE
+                message_protocol.internal.InternalMessageType.EOF_MESSAGE
             ]
         ):
             return None

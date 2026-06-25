@@ -1,18 +1,23 @@
 import hashlib
 import os
 import logging
+from random import randint
 import re
 import signal
+import sys
 import threading
 from time import sleep
 
 from common import middleware, message_protocol
+from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.conversions import (
     ConversionRateProviderError,
     conversion_key,
     conversion_shard,
     to_frankfurter_currency,
 )
+from common.dedup import InMemoryDeduplicator
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as PayFormatFilterMessageHandler
 
@@ -28,7 +33,11 @@ CONVERSION_QUEUE_PREFIX = os.environ.get("CONVERSION_QUEUE_PREFIX", "currency_co
 CONVERSION_ROUTING_KEY_PREFIX = os.environ.get("CONVERSION_ROUTING_KEY_PREFIX", "conversion")
 TOTAL_CONVERSION_WORKERS = int(os.environ["TOTAL_CONVERSION_WORKERS"])
 AMOUNT_FILTER_Q5_QUEUE = os.environ["AMOUNT_FILTER_Q5_QUEUE"]
-
+EXPECTED_INPUT_EOFS = int(os.environ["EXPECTED_INPUT_EOFS"]) #son 1
+INPUT_PREFIX_1 = os.environ["INPUT_PREFIX_1"] #que es el prefix del date filter
+AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true" #va en false
+OUTPUT_PREFIX_1 = os.environ["OUTPUT_PREFIX_1"] #al amount filter q5
+OUTPUT_PREFIX_2 = os.environ["OUTPUT_PREFIX_2"] #al currency converter
 
 class PayFormatFilter:
 
@@ -50,7 +59,7 @@ class PayFormatFilter:
         self.amount_filter_q5_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, AMOUNT_FILTER_Q5_QUEUE
             )
-        logging.info(
+        logging.debug(
             "PayFormatFilter wiring: input_queue=%s conversion_exchange=%s conversion_queue_prefix=%s "
             "conversion_workers=%s amount_filter_q5_queue=%s",
             INPUT_QUEUE,
@@ -60,46 +69,15 @@ class PayFormatFilter:
             AMOUNT_FILTER_Q5_QUEUE,
         )
 
-        #Exchange de control EOF
-        self.pay_format_filter_eof_exchange_consumer = None
-        self.pay_format_filter_eof_exchange_producer = None
-        if PAY_FORMAT_FILTER_AMOUNT > 1:
-            pay_format_filters = []
-            for i in range(PAY_FORMAT_FILTER_AMOUNT):
-                if i != self.id:
-                    pay_format_filters.append(f"{PAY_FORMAT_FILTER_PREFIX}_{i}")
-        
-            self.pay_format_filter_eof_exchange_consumer = middleware.MessageMiddlewareExchangeRabbitMQ(
-                    MOM_HOST,
-                    EOF_CONTROL_EXCHANGE,
-                    [f"{PAY_FORMAT_FILTER_PREFIX}_{self.id}"],
-                )
-            self._eof_producer_lock = threading.Lock()
-            self.pay_format_filter_eof_exchange_producer = middleware.MessageMiddlewareExchangeRabbitMQ(
-                    MOM_HOST,
-                    EOF_CONTROL_EXCHANGE,
-                    pay_format_filters,
-                )
-
-
         self._sigterm_received = False
         self._runtime_error = False
 
-        if (self._is_leader()):
-            self.total_eof_received_by_client = {}
-            self._leader_eof_lock = threading.Lock()
-
-        self._is_pending_to_finalize_client = set()
-        self._is_pending_to_finalize_client_lock = threading.Lock()
-        self._finalized_clients = set()
-        self._finalized_clients_lock = threading.Lock()
-        self._inflight_messages = {}
-        self._inflight_message_lock = threading.Lock()
+        self.producer_lock = threading.Lock()
         self._stop_lock = threading.Lock()
         self._stopping = False
-    
-    def _is_leader(self):
-        return self.id == 0
+        self.deduplicator = InMemoryDeduplicator()
+
+        self.eof_controller = EOFController(MOM_HOST, self.id, PAY_FORMAT_FILTER_PREFIX, PAY_FORMAT_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None,AUXILIARY_INPUT)
     
     def _run_date_filter_consumer(self):
         try:
@@ -108,24 +86,20 @@ class PayFormatFilter:
             self._handle_runtime_failure(e, "Date filter consumer crashed")
 
     
-    def _run_control_consumer(self):
-        try:
-            self.pay_format_filter_eof_exchange_consumer.start_consuming(self.process_eof_control_message)
-        except Exception as e:
-            self._handle_runtime_failure(e, "Control consumer crashed")
-    
     def process_date_filter_messages(self, message, ack, nack):
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.DATE_FILTER_TO_PAY_FORMAT_FILTER:
+                if not self._should_process_message(message):
+                    ack()
+                    return
                 client_id = message.source_client_uuid
-                self._add_inflight_message(message.source_client_uuid)
                 self._process_transaction(message.data, client_id, message.data_id, message.message_id)
-                self._decrease_inflight_message(message.source_client_uuid)
-                self._check_and_finalize_client_if_pending(client_id)
-            case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
+                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+                self.deduplicator.mark_processed(client_id, self._dedup_key(message))
+            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
                 client_id = message.source_client_uuid
-                self._process_datefilter_eof(client_id)
+                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
         ack()
         
 
@@ -141,14 +115,16 @@ class PayFormatFilter:
                 return
 
             if currency == "USD":
-                self.amount_filter_q5_queue.send(
-                    PayFormatFilterMessageHandler.serialize_amount_filter_q5_queue_message(
-                        client_id,
-                        data_id,
-                        transaction_data,
-                        message_id=message_id,
+                with self.producer_lock:
+                    self.amount_filter_q5_queue.send(
+                        PayFormatFilterMessageHandler.serialize_amount_filter_q5_queue_message(
+                            client_id,
+                            data_id,
+                            transaction_data,
+                            message_id=message_id,
+                        )
                     )
-                )
+                self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
                 return
 
             try:
@@ -162,135 +138,46 @@ class PayFormatFilter:
             transaction_data["payment_currency"] = currency
             transaction_data["conversion_key"] = key
             transaction_data["conversion_shard"] = shard
-            self.usd_currency_converter_exchange.send(
-                PayFormatFilterMessageHandler.serialize_usd_currency_converter_queue_message(
-                    client_id,
-                    data_id,
-                    transaction_data,
-                    message_id=message_id,
-                ),
-                routing_key=routing_key,
-            )
+            with self.producer_lock:
+                self.usd_currency_converter_exchange.send(
+                    PayFormatFilterMessageHandler.serialize_usd_currency_converter_queue_message(
+                        client_id,
+                        data_id,
+                        transaction_data,
+                        message_id=message_id,
+                    ),
+                    routing_key=routing_key,
+                )
+            self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_2, client_id)
             logging.debug(f"Transaction for client {client_id} sent to USD Currency Converter shard {shard}")
 
         
 
-    def send_final_eof(self, client_id):
-        eof_message = PayFormatFilterMessageHandler.serialize_eof_message(client_id)
-        for shard in range(TOTAL_CONVERSION_WORKERS):
-            logging.info(
-                "Q5 route: sending EOF to converter shard client=%s exchange=%s routing_key=%s expected_converter_queue=%s",
-                client_id,
-                CONVERSION_EXCHANGE,
-                self._conversion_routing_key(shard),
-                f"{CONVERSION_QUEUE_PREFIX}_{shard}",
-            )
+    def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
+        eof_message = EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_2, 0), origin_worker_prefix, amount_origin_workers)
+
+        random_shard = randint(0, TOTAL_CONVERSION_WORKERS - 1)
+        with self.producer_lock:
             self.usd_currency_converter_exchange.send(
                 eof_message,
-                routing_key=self._conversion_routing_key(shard),
+                routing_key=self._conversion_routing_key(random_shard),
             )
-        logging.info(
-            "Q5 route: sending EOF directly to amount filter client=%s queue=%s",
-            client_id,
-            AMOUNT_FILTER_Q5_QUEUE,
-        )
-        self.amount_filter_q5_queue.send(PayFormatFilterMessageHandler.serialize_eof_message(client_id))
-        logging.debug(f"Sent final EOF for client {client_id} to all downstream queues")
+        eof_message = EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers)
+        self.amount_filter_q5_queue.send(eof_message)
+        logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
 
     def _conversion_routing_key(self, shard):
         return f"{CONVERSION_ROUTING_KEY_PREFIX}.{shard}"
-    
-    def _process_datefilter_eof(self, client_id):
-        logging.debug(f"Received EOF for client {client_id}")
 
-        if PAY_FORMAT_FILTER_AMOUNT > 1:
-            with self._eof_producer_lock:
-                self.pay_format_filter_eof_exchange_producer.send(PayFormatFilterMessageHandler.serialize_eof_message(client_id))
-            logging.debug(f"Sent EOF for client {client_id} to other pay format filters")
+    def _dedup_key(self, message):
+        if message.message_id is None:
+            return None
+        return f"{message.type}:{message.message_id}"
 
-        self._finalize_client(client_id)
-    
-    def _check_and_finalize_client_if_pending(self, client_id):
-        should_finalize = False
-
-        with self._is_pending_to_finalize_client_lock:
-            is_pending = client_id in self._is_pending_to_finalize_client
-
-        if is_pending:
-            with self._inflight_message_lock:
-                should_finalize = self._inflight_messages.get(client_id, 0) == 0
-
-        if should_finalize:
-            logging.debug(f"Finalizando cliente {client_id} que estaba pendiente")
-            self._finalize_client(client_id)
-                        
-    def _finalize_client(self, client_id):
-
-        with self._finalized_clients_lock:
-            if client_id in self._finalized_clients:
-                return
-            logging.debug(f"Finalizando cliente {client_id}")
-            self._finalized_clients.add(client_id)
-
-        if self._is_leader():
-            self._leader_count_eof_for_client(client_id)
-        else:
-            self.send_eof_leader_message(client_id)
-
-        with self._is_pending_to_finalize_client_lock:
-            if client_id in self._is_pending_to_finalize_client:
-                self._is_pending_to_finalize_client.remove(client_id)
-        
-
-    def send_eof_leader_message(self, client_id):
-        with self._eof_producer_lock:
-            self.pay_format_filter_eof_exchange_producer.send(PayFormatFilterMessageHandler.serialize_eof_leader_message(client_id))
-        logging.debug(f"Sent EOF_LEADER_MESSAGE for client {client_id} to leader")
-
-    def _add_inflight_message(self, client_id):
-        with self._inflight_message_lock:
-            self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) + 1
-    
-    def _decrease_inflight_message(self, client_id):
-        with self._inflight_message_lock:
-            if client_id in self._inflight_messages:
-                self._inflight_messages[client_id] = self._inflight_messages.get(client_id, 0) - 1
-
-    def process_eof_control_message(self, message, ack, nack):
-        message = message_protocol.internal.deserialize(message)
-        match message.type:
-            case message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE:
-                logging.debug(f"Received EOF_GENERIC_MESSAGE for client {message.source_client_uuid}")
-                self._process_eof_from_control_exchange(message.source_client_uuid)
-            case message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE:
-                if self._is_leader():
-                    logging.debug(f"Received EOF_LEADER_MESSAGE for client {message.source_client_uuid}")
-                    self._leader_count_eof_for_client(message.source_client_uuid)
-                
-        ack()
-    def _leader_count_eof_for_client(self, client_id):
-        should_send_final_eof = False
-        with self._leader_eof_lock:
-            self.total_eof_received_by_client[client_id] = self.total_eof_received_by_client.get(client_id, 0) + 1
-            
-            if self.total_eof_received_by_client[client_id] == PAY_FORMAT_FILTER_AMOUNT:
-                logging.debug(f"Leader ha recibido EOF de todos los filtros para el cliente {client_id}. Enviando EOF a la capa siguiente.")
-                should_send_final_eof = True
-                del self.total_eof_received_by_client[client_id]
-        
-        if should_send_final_eof:
-            self.send_final_eof(client_id)
-
-    def _process_eof_from_control_exchange(self, client_id):
-        with self._inflight_message_lock:
-            if self._inflight_messages.get(client_id, 0) > 0:
-                logging.debug(f"EOF received for client {client_id} but there are still inflight messages. Marking client as finalized but waiting for inflight messages to finish.")
-                with self._is_pending_to_finalize_client_lock:
-                    self._is_pending_to_finalize_client.add(client_id)
-            else:
-                logging.debug(f"EOF received for client {client_id} and no inflight messages. Finalizing client.")
-                self._finalize_client(client_id)
-
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
 
 
     def stop(self):
@@ -300,8 +187,6 @@ class PayFormatFilter:
             self._stopping = True
 
         consumers = [self.date_filter_queue]
-        if self.pay_format_filter_eof_exchange_consumer is not None:
-            consumers.append(self.pay_format_filter_eof_exchange_consumer)
 
         for consumer in consumers:
             try:
@@ -311,14 +196,10 @@ class PayFormatFilter:
 
     def _close_resources(self):
         resources = [self.date_filter_queue]
-        if self.pay_format_filter_eof_exchange_consumer is not None:
-            resources.append(self.pay_format_filter_eof_exchange_consumer)
         if self.usd_currency_converter_exchange is not None:
             resources.append(self.usd_currency_converter_exchange)
         if self.amount_filter_q5_queue is not None:
             resources.append(self.amount_filter_q5_queue)
-        if self.pay_format_filter_eof_exchange_producer is not None:
-            resources.append(self.pay_format_filter_eof_exchange_producer)
 
         for resource in resources:
             try:
@@ -327,44 +208,46 @@ class PayFormatFilter:
                 logging.error(f"Error closing resource: {e}")
 
     def notify_sigterm(self):
-            self._sigterm_received = True
-            self.stop()
+        self._sigterm_received = True
+        self.stop()
+        self.eof_controller.on_sigterm()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
+        self.eof_controller.on_stop()
     
     def start(self):
-        if PAY_FORMAT_FILTER_AMOUNT > 1:
-            control_thread = threading.Thread(
-                target=self._run_control_consumer,
-                name="pay-format    -control-consumer-thread",
-            )
 
-        control_started = False
+        process_thread = threading.Thread(
+            target=self._run_date_filter_consumer,
+            name="date-filter-thread",
+        )
+
+        processing_thread_started = False
+        eof_exit_code=0
 
         try:
-            if PAY_FORMAT_FILTER_AMOUNT > 1:
-                control_thread.start()
-                control_started = True
-            self._run_date_filter_consumer()
+            process_thread.start()
+            processing_thread_started = True
+            eof_exit_code = self.eof_controller.start()
+
+            if processing_thread_started:
+                process_thread.join()
 
         except Exception as e:
             logging.error(e)
             self.stop()
+            return max(eof_exit_code, 2)
+
+        finally:
             self._close_resources()
-            return 2
-
-        if control_started:
-            control_thread.join()
-
-        self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
-            return 1
+            return max(eof_exit_code, 1)
 
-        return 0
+        return max(eof_exit_code, 0)
 
 
 def main():
@@ -380,4 +263,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

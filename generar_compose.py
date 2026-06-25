@@ -70,6 +70,7 @@ def set_rabbitmq():
         "      - RABBITMQ_BATCH_MAX_SECONDS=2",
         "      - RABBITMQ_BATCH_HEADER=x-middleware-batch",
         "      - RABBITMQ_BATCH_HEADER_VALUE=v1",
+        "      - RABBITMQ_LOG=error",
         "    healthcheck:",
         "      interval: 5s",
         "      retries: 10",
@@ -130,6 +131,12 @@ def set_date_filter_config(id,total, log_level):
         "      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue",
         "      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue",
         "      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=gateway",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=usd_filter_q3",
+        "      - OUTPUT_PREFIX_2=usd_filter_q4",
+        "      - OUTPUT_PREFIX_3=pay_format_filter"
         "",
     ]
 
@@ -154,6 +161,11 @@ def set_usd_filter_q1q2_config(id,total, log_level):
         "      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange",
         "      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue",
         "      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=gateway",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=amount_filter_q1",
+        "      - OUTPUT_PREFIX_2=data_per_bank_redirector",
         "",
     ]
 
@@ -177,6 +189,10 @@ def set_amount_filter_q1_config(id,total, log_level):
         f"      - AMOUNT_FILTER_AMOUNT={total}",
         "      - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange",
         "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=usd_filter_q1q2",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=gateway",
         "",
     ]
 
@@ -200,6 +216,10 @@ def set_usd_filter_q3_config(id,total, log_level):
         f"      - USD_FILTER_AMOUNT={total}",
         "      - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange",
         "      - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=date_filter",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=amount_filter_q3",
         "",
     ]
 
@@ -224,6 +244,11 @@ def set_usd_filter_q4_config(id,total, log_level):
         "      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange",
         "      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue",
         "      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=date_filter",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=scather_gather_mapper",
+        "      - OUTPUT_PREFIX_2=average_per_pay_format_mapper",
         "",
     ]
 
@@ -251,6 +276,11 @@ def set_pay_format_filter_config(id,total,total_usd_currency_converters, log_lev
         "      - CONVERSION_ROUTING_KEY_PREFIX=conversion",
         f"      - TOTAL_CONVERSION_WORKERS={total_usd_currency_converters}",
         "      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=date_filter",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=amount_filter_q5",
+        "      - OUTPUT_PREFIX_2=currency_converter",
         "",
     ]
 
@@ -275,6 +305,9 @@ def set_average_per_pay_format_mapper_config(id,total, log_level):
         f"      - MAPPER_FILTER_AMOUNT={total}",
         f"      - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange",
         f"      - EXPECTED_INPUT_EOFS=1",
+        "      - INPUT_PREFIX_1=usd_filter_q4",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=average_per_pay_format_joiner",
         "",
     ]
 
@@ -299,6 +332,9 @@ def set_average_pay_format_joiner_config(id, log_level):
         "      - INPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue",
         f"      - EXPECTED_INPUT_EOFS=1",
         "      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange",
+        "      - INPUT_PREFIX_1=average_per_pay_format_mapper",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=amount_filter_q3",
     ]
 
 def set_amount_filter_q3_config(id,total, log_level):
@@ -322,6 +358,11 @@ def set_amount_filter_q3_config(id,total, log_level):
         f"      - AMOUNT_FILTER_AMOUNT={total}",
         "      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange",
         "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "      - EXPECTED_INPUT_EOFS=2",
+        "      - INPUT_PREFIX_1=usd_filter_q3",
+        "      - INPUT_PREFIX_2=average_per_pay_format_joiner",
+        "      - AUXILIARY_INPUT=true",
+        "      - OUTPUT_PREFIX_1=gateway",
         "",
     ]
 
@@ -343,9 +384,13 @@ def set_amount_filter_q5_config(id,total,total_usd_currency_converters, log_leve
         "      - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue",
         "      - AMOUNT_FILTER_PREFIX=amount_filter_q5",
         f"      - AMOUNT_FILTER_AMOUNT={total}",
-        f"      - EXPECTED_INPUT_EOFS={total_usd_currency_converters+1}",
+        "      - EXPECTED_INPUT_EOFS=2",
         "      - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange",
         "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "      - INPUT_PREFIX_1=pay_format_filter",
+        "      - INPUT_PREFIX_2=currency_converter",
+        "      - AUXILIARY_INPUT=false",
+        "      - OUTPUT_PREFIX_1=gateway",
         "",
     ]
 
@@ -370,10 +415,14 @@ def set_scather_gather_mapper_config(id,total_mappers,total_aggregators, log_lev
         "      - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange",
         f"      - SCATHER_GATHER_AGGREGATOR_AMOUNT={total_aggregators}",
         "      - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - AUXILIARY_INPUT=false",
+        "      - INPUT_PREFIX_1=usd_filter_q4",
+        "      - OUTPUT_PREFIX_1=scather_gather_aggregator",
         "",
     ]
 
-def set_scather_gather_aggregator_config(id,total_mappers,total_pair_joiners, log_level):
+def set_scather_gather_aggregator_config(id,total_aggregators,total_pair_joiners, log_level):
     return [
         f"  scather_gather_aggregator_{id}:",
         "    build:",
@@ -388,14 +437,19 @@ def set_scather_gather_aggregator_config(id,total_mappers,total_pair_joiners, lo
         f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
-        f"      - SCATHER_GATHER_MAPPER_AMOUNT={total_mappers}",
         "      - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator",
+        f"      - SCATHER_GATHER_AGG_AMOUNT={total_aggregators}",
         f"      - SCATHER_GATHER_PAIR_JOINER_AMOUNT={total_pair_joiners}",
         "      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner",
+        "      - EOF_CONTROL_EXCHANGE=scather_gather_aggregator_eof_control_exchange",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - AUXILIARY_INPUT=false",
+        "      - INPUT_PREFIX_1=scather_gather_mapper",
+        "      - OUTPUT_PREFIX_1=scather_gather_pair_joiner",
         "",
     ]
 
-def set_scather_gather_pair_joiner_config(id,total_aggregators,total_joiners, log_level):
+def set_scather_gather_pair_joiner_config(id,total_pair_joiners,total_aggregators,total_joiners, log_level):
     return [
         f"  scather_gather_pair_joiner_{id}:",
         "    build:",
@@ -412,12 +466,18 @@ def set_scather_gather_pair_joiner_config(id,total_aggregators,total_joiners, lo
         "      - MOM_HOST=rabbitmq",
         f"      - SCATHER_GATHER_AGGREGATOR_AMOUNT={total_aggregators}",
         "      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner",
+        f"      - SCATHER_GATHER_PAIR_JOINER_AMOUNT={total_pair_joiners}",
         f"      - SCATHER_GATHER_JOINER_AMOUNT={total_joiners}",
         "      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner",
+        "      - EOF_CONTROL_EXCHANGE=scather_gather_pair_joiner_eof_control_exchange",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - AUXILIARY_INPUT=false",
+        "      - INPUT_PREFIX_1=scather_gather_aggregator",
+        "      - OUTPUT_PREFIX_1=scather_gather_joiner",
         "",
     ]
 
-def set_scather_gather_joiner_config(id,total_pair_joiners,total_joiners, log_level):
+def set_scather_gather_joiner_config(id,total_joiners, log_level):
     return [
         f"  scather_gather_joiner_{id}:",
         "    build:",
@@ -432,12 +492,15 @@ def set_scather_gather_joiner_config(id,total_pair_joiners,total_joiners, log_le
         f"      - LOG_LEVEL={log_level}",
         f"      - ID={id}",
         "      - MOM_HOST=rabbitmq",
-        f"      - SCATHER_GATHER_PAIR_JOINER_AMOUNT={total_pair_joiners}",
         "      - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner",
         "      - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange",
         f"      - SCATHER_GATHER_JOINER_AMOUNT={total_joiners}",
         "      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner",
         "      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - AUXILIARY_INPUT=false",
+        "      - INPUT_PREFIX_1=scather_gather_pair_joiner",
+        "      - OUTPUT_PREFIX_1=gateway",
         "",
     ]
 
@@ -446,7 +509,7 @@ def set_currency_converter_config(id,total, log_level):
         f"  currency_converter_{id}:",
         "    build:",
         "      context: ./src",
-        "      dockerfile: entities/Dockerfile",
+        "      dockerfile: entities/filters/currency_converter/Dockerfile",
         f"    container_name: currency_converter_{id}",
         "    depends_on:",
         "      rabbitmq:",
@@ -454,19 +517,23 @@ def set_currency_converter_config(id,total, log_level):
         "    environment:",
         "      - PYTHONUNBUFFERED=1",
         f"      - LOG_LEVEL={log_level}",
-        "      - PROCESSING_DELAY_SECONDS=0",
-        "      - ENTITY_CLASS=CurrencyConverter",
         "      - MOM_HOST=rabbitmq",
-        f"      - INPUT_QUEUE=currency_converter_queue_{id}",
-        "      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue",
+        f"      - ID={id}",
         "      - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange",
         f"      - CONVERSION_ROUTING_KEY=conversion.{id}",
-        "      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}",
-        "      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json",
+        "      - CURRENCY_CONVERTER_PREFIX=currency_converter",
+        f"      - CURRENCY_CONVERTER_AMOUNT={total}",
+        "      - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange",
+        "      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - AUXILIARY_INPUT=false",
+        "      - INPUT_PREFIX_1=pay_format_filter",
+        "      - OUTPUT_PREFIX_1=amount_filter_q5",
         "      - CONVERSION_AMOUNT_FIELD=amount_paid",
         "      - CONVERSION_CURRENCY_FIELD=payment_currency",
         "      - CONVERSION_DATE_FIELD=timestamp",
         "      - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid",
+        "      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json",
         "      - FRANKFURTER_MAX_RETRIES=10",
         "      - FRANKFURTER_RETRY_DELAY_SECONDS=1",
         "      - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60",
@@ -515,7 +582,7 @@ def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers, log_
         f"  data_per_bank_redirector_{id}:",
         "    build:",
         "      context: ./src",
-        "      dockerfile: entities/general/data_per_bank_redirector/Dockerfile",
+        "      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile",
         f"    container_name: data_per_bank_redirector_{id}",
         "    depends_on:",
         "      rabbitmq:",
@@ -532,6 +599,10 @@ def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers, log_
         "      - EXCHANGE_NAME=map_max_exchange",
         "      - OUTPUT_ROUTING_KEY_PREFIX=map_partition",
         "      - EOF_CONTROL_EXCHANGE=dpb_control_exchange",
+        "      - PREFIX_WORKER=data_per_bank_redirector",
+        "      - INPUT_PREFIX=usd_filter_q1q2",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - MAPPER_PREFIX=map_max_amount_per_bank",
         "",
     ]
 
@@ -558,6 +629,10 @@ def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank,
         f"      - JOIN_AMOUNT={total_join_max_amount_per_bank}",
         "      - JOIN_ROUTING_KEY_PREFIX=join_partition",
         "      - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange",
+        "      - PREFIX_WORKER=bank_filter",
+        "      - INPUT_PREFIX=gateway",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - NEXT_STAGE_PREFIX=join_max_amount_per_bank",
         "",
     ]
 
@@ -566,7 +641,7 @@ def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_am
         f"  map_max_amount_per_bank_{id}:",
         "    build:",
         "      context: ./src",
-        "      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile",
+        "      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile",
         f"    container_name: map_max_amount_per_bank_{id}",
         "    depends_on:",
         "      rabbitmq:",
@@ -584,6 +659,10 @@ def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_am
         f"      - JOIN_AMOUNT={total_join_amount_per_bank}",
         "      - JOIN_ROUTING_KEY_PREFIX=join_partition",
         "      - EOF_CONTROL_EXCHANGE=map_control_exchange",
+        "      - PREFIX_WORKER=map_max_amount_per_bank",
+        "      - INPUT_PREFIX=data_per_bank_redirector",
+        "      - EXPECTED_INPUT_EOFS=1",
+        "      - NEXT_STAGE_PREFIX=join_max_amount_per_bank",
         "",
     ]
 
@@ -592,7 +671,7 @@ def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_a
         f"  join_max_amount_per_bank_{id}:",
         "    build:",
         "      context: ./src",
-        "      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile",
+        "      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile",
         f"    container_name: join_max_amount_per_bank_{id}",
         "    depends_on:",
         "      rabbitmq:",
@@ -609,6 +688,11 @@ def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_a
         "      - JOIN_ROUTING_KEY_PREFIX=join_partition",
         "      - OUTPUT_QUEUE=gateway_results_queue",
         "      - EOF_CONTROL_EXCHANGE=join_control_exchange",
+        "      - PREFIX_WORKER=join_max_amount_per_bank",
+        "      - INPUT_PREFIX_1=bank_filter",
+        "      - INPUT_PREFIX_2=map_max_amount_per_bank",
+        "      - EXPECTED_INPUT_EOFS=2",
+        "      - NEXT_STAGE_PREFIX=gateway",
         "",
     ]
 
@@ -644,11 +728,11 @@ def generate_compose(config_id,log_level):
     for i in range(config["scather_gather_mapper"]):
         yaml_lines += set_scather_gather_mapper_config(i, config["scather_gather_mapper"], config["scather_gather_aggregator"], log_level)
     for i in range(config["scather_gather_aggregator"]):
-        yaml_lines += set_scather_gather_aggregator_config(i, config["scather_gather_mapper"], config["scather_gather_pair_joiner"], log_level)
+        yaml_lines += set_scather_gather_aggregator_config(i, config["scather_gather_aggregator"], config["scather_gather_pair_joiner"], log_level)
     for i in range(config["scather_gather_pair_joiner"]):
-        yaml_lines += set_scather_gather_pair_joiner_config(i, config["scather_gather_aggregator"], config["scather_gather_joiner"], log_level)
+        yaml_lines += set_scather_gather_pair_joiner_config(i, config["scather_gather_pair_joiner"], config["scather_gather_aggregator"], config["scather_gather_joiner"], log_level)
     for i in range(config["scather_gather_joiner"]):
-        yaml_lines += set_scather_gather_joiner_config(i, config["scather_gather_pair_joiner"], config["scather_gather_joiner"], log_level)
+        yaml_lines += set_scather_gather_joiner_config(i, config["scather_gather_joiner"], log_level)
     for i in range(config["currency_converter"]):
         yaml_lines += set_currency_converter_config(i, config["currency_converter"], log_level)
     for i in range(config["data_per_bank_redirector"]):

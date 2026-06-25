@@ -50,8 +50,9 @@ class InMemoryDeduplicator:
         ranges.add(parsed_message_id)
 
     def remove_client(self, client_id):
-        # TODO: Call this after the client's EOF is fully acknowledged by the pipeline.
-        pass
+        client_key = str(client_id)
+        self._processed_by_client.pop(client_key, None)
+        self._processed_strings_by_client.pop(client_key, None)
 
     def _parse_int(self, value):
         try:

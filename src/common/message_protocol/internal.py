@@ -1,4 +1,5 @@
 import json
+from common.controllers.eof_controller.types import partial_count_by_worker_prefix
 
 class InternalMessageType:
     GATEWAY_TO_DATE_FILTER = 0
@@ -32,6 +33,16 @@ class InternalMessageType:
     MAX_AMOUNT_PER_BANK_RESULT = 28
     SCATHER_GATHER_PAIR_JOINER_TO_SCATHER_GATHER_JOINER = 29
     EOF_FINAL_MESSAGE = 30
+    EOF_MESSAGE = 31
+    EOF_CONSENSUS_REQUEST = 32
+    EOF_CONSENSUS_RESPONSE = 33
+    EOF_CONSENSUS_OK = 34
+    EOF_CONSENSUS_FAIL = 35
+    EOF_POST_CONSENSUS_OK = 36
+    EOF_LEADER_FALLEN = 37
+    EOF_LEADER_ELECTION = 38
+    HEARTBEAT_MESSAGE = 39
+
 
 class ScatherGatherData(dict):
     type : str
@@ -55,6 +66,7 @@ class ScatherGatherData(dict):
             del self[name]
         except KeyError:
             raise AttributeError(name)
+
 class TransactionData(dict):
     timestamp : str
     from_bank : str
@@ -130,21 +142,76 @@ class AccountData(dict):
             del self[name]
         except KeyError:
             raise AttributeError(name)
+        
+class HealthCheckData(dict):
+    container_name : str
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        try:
+            del self[name]
+        except KeyError:
+            raise AttributeError(name)
+        
+class EOFData(dict):
+    #variables del EOF
+    total_packets : int
+    origin_worker_prefix : str
+    amount_origin_workers : int
+
+    #variables de solicitud de consenso EOF
+    awaited_origin_worker_prefix_flux_1 : str
+    awaited_origin_worker_prefix_flux_2 : str
+
+    #variables para consenso eof, suponiendo maximo 2 input eofs
+    partial_packets_count_flux_1 : int
+    partial_packets_count_flux_2 : int
+    origin_worker_prefix_flux_1 : str
+    origin_worker_prefix_flux_2 : str
+    worker_id_sending_partials : str
+    total_packets_sent_by_worker : partial_count_by_worker_prefix
+
+
+    postconsensus_worker_id : str
+
+    #variables de eleccion de lider #TODO
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        try:
+            del self[name]
+        except KeyError:
+            raise AttributeError(name)
 class InternalMessage:
 
     type : InternalMessageType
     source_client_uuid : str | None
     message_id : int | None
-    data : TransactionData | AccountData | CantTrxData | ScatherGatherData | None
+    data : TransactionData | AccountData | CantTrxData | ScatherGatherData | EOFData | None
     
-    def __init__(
-        self,
-        type=None,
-        source_client_uuid=None,
-        data_id=None,
-        data=None,
-        message_id=None,
-    ):
+    def __init__(self, type=None, source_client_uuid=None, data_id=None, data=None, message_id=None):
         self.type = type
         self.source_client_uuid = source_client_uuid
         self.data_id = data_id
@@ -178,13 +245,7 @@ class InternalMessage:
 
 
 def serialize(type,client_id,data_id,data,message_id=None) -> bytes:
-    msg = InternalMessage(
-        type=type,
-        source_client_uuid=client_id,
-        data_id=data_id,
-        data=data,
-        message_id=message_id,
-    )
+    msg = InternalMessage(type=type, source_client_uuid=client_id, data_id=data_id, data=data, message_id=message_id)
     return msg._serialize()
 
 

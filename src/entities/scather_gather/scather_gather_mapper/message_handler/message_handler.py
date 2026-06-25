@@ -13,7 +13,6 @@ class MessageHandler:
     def serialize_scather_gather_mapper_message_fanin(client : str, destino : str, origenes: list[str]):
         return MessageHandler._serialize_scather_gather_mapper_message(client, "FANIN", destino, origenes)
 
-
     def _serialize_scather_gather_mapper_message(client : str, type: str, key : str, values: list[str]):
         message_id = str(uuid.uuid4())
         parsedMessage = ScatherGatherData()
@@ -22,12 +21,6 @@ class MessageHandler:
         parsedMessage.value = values
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.SCATHER_GATHER_MAPPER_TO_SCATHER_GATHER_AGGREGATOR, client, message_id, parsedMessage, message_id=message_id)
 
-    def serialize_eof_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None, None)
-    
-    def serialize_eof_leader_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE, client, None, None)
-    
     def deserialize_input_message(message):
         internal_message = message_protocol.internal.deserialize(message)
         return internal_message

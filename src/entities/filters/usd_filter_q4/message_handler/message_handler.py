@@ -19,12 +19,6 @@ class MessageHandler:
         parsedMessage.account_destination = message["account_destination"]
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.USD_FILTER_Q4_TO_SCATHER_GATHER_MAPPER, client, data_id, parsedMessage, message_id=message_id)
 
-    def serialize_eof_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_GENERIC_MESSAGE, client, None, None)
-    
-    def serialize_eof_leader_message(client):
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.EOF_LEADER_MESSAGE, client, None, None)
-    
     def deserialize_input_message(message):
         internal_message = message_protocol.internal.deserialize(message)
         return internal_message
