@@ -28,13 +28,8 @@ class SnapshotManager:
         with self._lock:
             if os.path.exists(self.snapshot_path):
                 with open(self.snapshot_path, 'r', encoding='utf-8') as f:
-                    snap = json.load(f)
-                raw_state = snap.get('data', {})
-                # Convertir listas a sets
-                if set_keys:
-                    self.state = self._convert_lists_to_sets(raw_state, set_keys)
-                else:
-                    self.state = raw_state
+                    snap = json.load(f, object_hook=set_decoder)
+                self.state = snap.get('data', {})
                 self.last_snapshot_index = snap.get('last_index', 0)
             else:
                 self.state = {}
@@ -44,7 +39,7 @@ class SnapshotManager:
             if os.path.exists(self.wal_path):
                 with open(self.wal_path, 'r', encoding='utf-8') as f:
                     for line in f:
-                        op = json.loads(line.strip())
+                        op = json.loads(line.strip(), object_hook=set_decoder)
                         if op.get('index', 0) > self.last_snapshot_index:
                             self._apply_op_no_wal(op)
 
@@ -62,7 +57,7 @@ class SnapshotManager:
             op['index'] = op_index
 
             with open(self.wal_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps(op) + '\n')
+                f.write(json.dumps(op, cls=SetEncoder) + '\n')
 
             self._apply_op_no_wal(op)
             self.op_count_since_snapshot += 1
@@ -181,14 +176,14 @@ class SnapshotManager:
             self._take_snapshot_locked()
 
     def _take_snapshot_locked(self) -> None:
-        state_serializable = self._convert_sets_to_lists(self.state)
+        #state_serializable = self._convert_sets_to_lists(self.state)
         snapshot_data = {
             'last_index': self.last_snapshot_index + self.op_count_since_snapshot,
-            'data': state_serializable
+            'data': self.state
         }
         temp_path = self.snapshot_path + '.tmp'
         with open(temp_path, 'w', encoding='utf-8') as f:
-            json.dump(snapshot_data, f)
+            json.dump(snapshot_data, f, cls=SetEncoder)
         shutil.move(temp_path, self.snapshot_path)
 
         # Compactar WAL
@@ -197,7 +192,7 @@ class SnapshotManager:
                 lines = f.readlines()
             new_lines = []
             for line in lines:
-                op = json.loads(line.strip())
+                op = json.loads(line.strip(), object_hook=set_decoder)
                 if op.get('index', 0) > snapshot_data['last_index']:
                     new_lines.append(line)
             with open(self.wal_path, 'w', encoding='utf-8') as f:
@@ -240,7 +235,7 @@ class SnapshotManager:
             for op in ops:
                 self.op_count_since_snapshot += 1
                 op['index'] = self.last_snapshot_index + self.op_count_since_snapshot
-                lines.append(json.dumps(op))
+                lines.append(json.dumps(op, cls=SetEncoder))
                 self._apply_op_no_wal(op)
             
             with open(self.wal_path, 'a', encoding='utf-8') as f:
@@ -248,3 +243,19 @@ class SnapshotManager:
             
             if self.op_count_since_snapshot >= self.snapshot_interval_ops:
                 self._take_snapshot_locked()
+
+
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, set):
+            # Transformamos el set en un diccionario con una firma especial
+            return {"__set_type__": True, "values": list(obj)}
+        # Para todo lo demás (dict, list, int), dejamos que json actúe normal
+        return super().default(obj)
+
+# 2. El Extractor (Decoder Hook): Le enseña a json.loads cómo reconstruirlo
+def set_decoder(dct):
+    # Si el diccionario tiene nuestra firma especial, lo convertimos a set
+    if "__set_type__" in dct and dct["__set_type__"] is True:
+        return set(dct["values"])
+    return dct

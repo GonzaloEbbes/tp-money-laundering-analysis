@@ -164,7 +164,9 @@ def set_date_filter_config(id,total, log_level):
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=usd_filter_q3",
         "      - OUTPUT_PREFIX_2=usd_filter_q4",
-        "      - OUTPUT_PREFIX_3=pay_format_filter"
+        "      - OUTPUT_PREFIX_3=pay_format_filter",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -194,6 +196,8 @@ def set_usd_filter_q1q2_config(id,total, log_level):
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=amount_filter_q1",
         "      - OUTPUT_PREFIX_2=data_per_bank_redirector",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -221,6 +225,8 @@ def set_amount_filter_q1_config(id,total, log_level):
         "      - INPUT_PREFIX_1=usd_filter_q1q2",
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=gateway",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -248,6 +254,8 @@ def set_usd_filter_q3_config(id,total, log_level):
         "      - INPUT_PREFIX_1=date_filter",
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=amount_filter_q3",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -277,6 +285,8 @@ def set_usd_filter_q4_config(id,total, log_level):
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=scather_gather_mapper",
         "      - OUTPUT_PREFIX_2=average_per_pay_format_mapper",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -309,6 +319,8 @@ def set_pay_format_filter_config(id,total,total_usd_currency_converters, log_lev
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=amount_filter_q5",
         "      - OUTPUT_PREFIX_2=currency_converter",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -336,6 +348,8 @@ def set_average_per_pay_format_mapper_config(id,total, log_level):
         "      - INPUT_PREFIX_1=usd_filter_q4",
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=average_per_pay_format_joiner",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -363,6 +377,9 @@ def set_average_pay_format_joiner_config(id, log_level):
         "      - INPUT_PREFIX_1=average_per_pay_format_mapper",
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=amount_filter_q3",
+        "    volumes:",
+        "      - snapshots_volume:/data",
+        "",
     ]
 
 def set_amount_filter_q3_config(id,total, log_level):
@@ -391,6 +408,8 @@ def set_amount_filter_q3_config(id,total, log_level):
         "      - INPUT_PREFIX_2=average_per_pay_format_joiner",
         "      - AUXILIARY_INPUT=true",
         "      - OUTPUT_PREFIX_1=gateway",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -419,6 +438,8 @@ def set_amount_filter_q5_config(id,total,total_usd_currency_converters, log_leve
         "      - INPUT_PREFIX_2=currency_converter",
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=gateway",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -474,6 +495,8 @@ def set_scather_gather_aggregator_config(id,total_aggregators,total_pair_joiners
         "      - AUXILIARY_INPUT=false",
         "      - INPUT_PREFIX_1=scather_gather_mapper",
         "      - OUTPUT_PREFIX_1=scather_gather_pair_joiner",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -502,6 +525,8 @@ def set_scather_gather_pair_joiner_config(id,total_pair_joiners,total_aggregator
         "      - AUXILIARY_INPUT=false",
         "      - INPUT_PREFIX_1=scather_gather_aggregator",
         "      - OUTPUT_PREFIX_1=scather_gather_joiner",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -529,6 +554,8 @@ def set_scather_gather_joiner_config(id,total_joiners, log_level):
         "      - AUXILIARY_INPUT=false",
         "      - INPUT_PREFIX_1=scather_gather_pair_joiner",
         "      - OUTPUT_PREFIX_1=gateway",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -566,7 +593,8 @@ def set_currency_converter_config(id,total, log_level):
         "      - FRANKFURTER_RETRY_DELAY_SECONDS=1",
         "      - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60",
         "    volumes:",
-        "      - ./data:/data",
+        "      - ./data/static_conversion_rates.json:/data/static_conversion_rates.json:ro",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -631,6 +659,8 @@ def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers, log_
         "      - INPUT_PREFIX=usd_filter_q1q2",
         "      - EXPECTED_INPUT_EOFS=1",
         "      - MAPPER_PREFIX=map_max_amount_per_bank",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -661,6 +691,8 @@ def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank,
         "      - INPUT_PREFIX=gateway",
         "      - EXPECTED_INPUT_EOFS=1",
         "      - NEXT_STAGE_PREFIX=join_max_amount_per_bank",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -691,6 +723,8 @@ def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_am
         "      - INPUT_PREFIX=data_per_bank_redirector",
         "      - EXPECTED_INPUT_EOFS=1",
         "      - NEXT_STAGE_PREFIX=join_max_amount_per_bank",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -721,6 +755,8 @@ def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_a
         "      - INPUT_PREFIX_2=map_max_amount_per_bank",
         "      - EXPECTED_INPUT_EOFS=2",
         "      - NEXT_STAGE_PREFIX=gateway",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -796,6 +832,10 @@ def generate_compose(config_id,log_level, chaos_profile):
     yaml_lines += set_client(config, log_level)
     if chaos_monkey_config["disabled"] is not None:
         yaml_lines += set_chaos_monkey_config(chaos_monkey_config)
+    yaml_lines += [
+        "volumes:",
+        "  snapshots_volume:"
+    ]
 
     with open("docker-compose.yaml", "w", encoding="utf-8") as f:
         f.write("\n".join(yaml_lines))
