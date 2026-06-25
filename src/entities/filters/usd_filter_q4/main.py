@@ -121,7 +121,7 @@ class USDFilterQ4:
             try:
                 consumer.stop_consuming()
             except Exception as e:
-                logging.error(f"Error stopping consumer: {e}")
+                logging.exception("Error stopping USDFilterQ4 consumer: %s", e)
 
     def _close_resources(self):
         resources = [self.date_filter_queue]
@@ -134,7 +134,7 @@ class USDFilterQ4:
             try:
                 resource.close()
             except Exception as e:
-                logging.error(f"Error closing resource: {e}")
+                logging.exception("Error closing USDFilterQ4 resource %s: %s", type(resource).__name__, e)
 
     def notify_sigterm(self):
         self._sigterm_received = True
@@ -142,7 +142,7 @@ class USDFilterQ4:
         self.eof_controller.on_sigterm()
 
     def _handle_runtime_failure(self, error, context):
-        logging.error(f"{context}: {error}")
+        logging.exception("%s: %s", context, error)
         self._runtime_error = True
         self.stop()
         self.eof_controller.on_stop()
@@ -166,7 +166,7 @@ class USDFilterQ4:
                 process_thread.join()
 
         except Exception as e:
-            logging.error(e)
+            logging.exception("USDFilterQ4 start failed")
             self.stop()
             return max(eof_exit_code, 2)
 

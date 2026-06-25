@@ -19,6 +19,10 @@ from .middleware import (
 	MessageMiddlewareExchangePublisher,
 )
 
+
+def _log_close_failure(resource_name, error):
+	logging.exception("Error closing %s: %s", resource_name, error)
+
 class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 
 	# Inicializa la conexion con RabbitMQ y el canal de comunicacion.
@@ -129,12 +133,14 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 			try:
 				self._batched_publisher.close()
 			except Exception as e:
+				_log_close_failure("queue batched publisher", e)
 				errors.append(e)
 		if self._channel is not None:
 			try:
 				if self._channel.is_open:
 					self._channel.close()
 			except Exception as e:
+				_log_close_failure("queue channel", e)
 				errors.append(e)
 
 		if self._connection is not None:
@@ -142,6 +148,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 				if self._connection.is_open:
 					self._connection.close()
 			except Exception as e:
+				_log_close_failure("queue connection", e)
 				errors.append(e)
 
 		self._batched_publisher = None
@@ -285,6 +292,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			try:
 				self._batched_publisher.close()
 			except Exception as e:
+				_log_close_failure("exchange batched publisher", e)
 				errors.append(e)
 
 		if self._channel is not None:
@@ -292,6 +300,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 				if self._channel.is_open:
 					self._channel.close()
 			except Exception as e:
+				_log_close_failure("exchange channel", e)
 				errors.append(e)
 
 		if self._connection is not None:
@@ -299,6 +308,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 				if self._connection.is_open:
 					self._connection.close()
 			except Exception as e:
+				_log_close_failure("exchange connection", e)
 				errors.append(e)
 
 		self._batched_publisher = None
@@ -365,6 +375,7 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 			try:
 				self._batched_publisher.close()
 			except Exception as e:
+				_log_close_failure("exchange publisher batched publisher", e)
 				errors.append(e)
 
 		if self._channel is not None:
@@ -372,6 +383,7 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 				if self._channel.is_open:
 					self._channel.close()
 			except Exception as e:
+				_log_close_failure("exchange publisher channel", e)
 				errors.append(e)
 
 		if self._connection is not None:
@@ -379,6 +391,7 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 				if self._connection.is_open:
 					self._connection.close()
 			except Exception as e:
+				_log_close_failure("exchange publisher connection", e)
 				errors.append(e)
 
 		self._batched_publisher = None

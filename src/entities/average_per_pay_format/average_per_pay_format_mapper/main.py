@@ -120,10 +120,11 @@ class AveragePerPayFormatMapper:
             averages_in_client = dict(self.averages_per_client.get(client_id, {}))
 
         for payment_format, values in averages_in_client.items():
+            message_id = f"{data_id}:{payment_format}"
     
             with self.producer_lock:
                 self.output_queue.send(
-                    AveragePerPayFormatMapperMessageHandler.serialize_average_per_pay_joiner_message(client_id, data_id, payment_format, values, message_id=data_id)
+                    AveragePerPayFormatMapperMessageHandler.serialize_average_per_pay_joiner_message(client_id, data_id, payment_format, values, message_id=message_id)
                 )
                 self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
     

@@ -108,7 +108,7 @@ class Q1MessageIdFlowTest(unittest.TestCase):
         self.assertEqual(message.message_id, 3)
 
     def test_usd_filter_q2_message_preserves_message_id(self):
-        raw = usd_q1q2_message_handler.MessageHandler.serialize_data_per_bank_shuffler_message(
+        raw = usd_q1q2_message_handler.MessageHandler.serialize_data_per_bank_redirector_message(
             "client-1",
             7,
             {

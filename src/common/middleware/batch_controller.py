@@ -235,13 +235,13 @@ class _DestinationBatchPublisher:
 				if channel is not None and channel.is_open:
 					channel.close()
 			except Exception:
-				pass
+				logging.exception("Error closing batch publisher channel")
 
 			try:
 				if connection is not None and connection.is_open:
 					connection.close()
 			except Exception:
-				pass
+				logging.exception("Error closing batch publisher connection")
 
 	def _append_to_destination_buffer(self, destination, message_body, buffers_by_destination, first_message_time_by_destination):
 		if not buffers_by_destination[destination]:
