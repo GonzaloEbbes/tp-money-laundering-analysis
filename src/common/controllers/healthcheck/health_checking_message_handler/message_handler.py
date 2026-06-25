@@ -10,7 +10,7 @@ class HealthCheckingMessageHandler:
     @staticmethod
     def serialize_heartbeat_message(node_prefix,node_index=""):
         parsedMessage = HealthCheckData()
-        parsedMessage.container_name = node_prefix + str(node_index)
+        parsedMessage.container_name = node_prefix + "_"+ str(node_index)
         return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.HEARTBEAT_MESSAGE, None, None, parsedMessage)
 
     @staticmethod

@@ -9,6 +9,7 @@ from time import sleep, monotonic
 
 from common import middleware, message_protocol
 from common.controllers.healthcheck.health_checking_message_handler.message_handler import HealthCheckingMessageHandler
+from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.healthcheck.utils import recovery_node_id_responsible_of_recovery
 from common.logging import configure_logging_from_env
 from common.message_protocol.internal import HealthCheckData
@@ -59,11 +60,15 @@ class RecoveryNode:
                 "x-overflow": "drop-head",
             },)
 
-        self.heartbeat_exchange_ring_producer = middleware.MessageMiddlewareExchangePublisherRabbitMQ(
-            MOM_HOST,
-            HEARTBEAT_EXCHANGE
-        )
-        self.heartbeat_exchange_routing_key = f"{RECOVERY_PREFIX}_{self.next_ring_node_id()}"   
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=RECOVERY_PREFIX,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        ) 
 
         self.producer_lock = threading.Lock()
 
@@ -244,7 +249,7 @@ class RecoveryNode:
         self._stop()
 
     def _close_resources(self):
-        resources = [self.heartbeat_exchange_consumer, self.heartbeat_exchange_ring_producer]
+        resources = [self.heartbeat_exchange_consumer]
         for resource in resources:
             try:
                 resource.close()
@@ -254,6 +259,7 @@ class RecoveryNode:
     def notify_sigterm(self):
         self._sigterm_received = True
         self._stop()
+        self.recovery_producer_controller.on_sigterm()
 
     def _stop(self):
         with self._stop_lock:
@@ -273,36 +279,51 @@ class RecoveryNode:
     def start(self):
 
         consumer_thread = threading.Thread(
-        target=self._run_heartbeat_consumer,
-        name="heartbeat-consumer-thread",
+            target=self._run_heartbeat_consumer,
+            name="heartbeat-consumer-thread",
         )
 
         timer_thread = threading.Thread(
-        target=self._run_heartbeat_checker,
-        name="heartbeat-timer-thread",
+            target=self._run_heartbeat_checker,
+            name="heartbeat-timer-thread",
         )
 
+        stop_recovery_controller_callback = None
         processing_thread_started = False
         timer_thread_started = False
+        recovery_controller_exit_code = 0
 
         try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+
             consumer_thread.start()
             processing_thread_started = True
+
             timer_thread.start()
             timer_thread_started = True
 
             if processing_thread_started:
                 consumer_thread.join()
+
             if timer_thread_started:
                 timer_thread.join()
 
         except Exception as e:
             logging.error(e)
             self._stop()
+            self.recovery_producer_controller.on_sigterm()
             return 2
 
         finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
             self._close_resources()
+
+        if recovery_controller_exit_code != 0:
+            return recovery_controller_exit_code
 
         if self._runtime_error and not self._sigterm_received:
             return 1

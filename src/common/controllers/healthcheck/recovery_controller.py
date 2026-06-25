@@ -24,7 +24,7 @@ class RecoveryController:
             mom_host,
             heartbeat_exchange
         )
-        self.heartbeat_recovery_routing_key = f"{recovery_prefix}_{recovery_node_id_responsible_of_recovery(self.id, prefix, recovery_prefix, recovery_amount)}"   
+        self.heartbeat_recovery_routing_key = f"{recovery_prefix}_{recovery_node_id_responsible_of_recovery(self.id, f"{prefix}_{self.id}", recovery_prefix, recovery_amount)}"   
 
         self.producer_lock = threading.Lock()
 
@@ -43,10 +43,6 @@ class RecoveryController:
                 resource.close()
             except Exception as e:
                 logging.error(f"Error closing resource: {e}")
-
-    def notify_sigterm(self):
-        self._sigterm_received = True
-
     def _run_heartbeat_sender(self):
         try:
             while not self._sigterm_received and not self._runtime_error:
@@ -61,43 +57,29 @@ class RecoveryController:
             return 1
         return 0
     
-    def notify_sigterm(self):
+    def on_sigterm(self):
         logging.info("SIGTERM received in recovery controller")
         self._sigterm_received = True
 
-    def start_recovery_controller(self):
+    def start_recovery_producer_controller(self):
+        exit_code_holder = {"code": 0}
 
+        def _target():
+            exit_code_holder["code"] = self._run_heartbeat_sender()
 
-        def _handle_sigterm(signum, frame):
-            logging.info("SIGTERM received in amount filter q1")
-            self.notify_sigterm()
-        
-        signal.signal(signal.SIGTERM, _handle_sigterm)
-        
-        heartbeat_sender = threading.Thread(
-            target=self._run_heartbeat_sender,
+        thread = threading.Thread(
+            target=_target,
             name=f"{self.prefix_worker.replace('_', '-')}-heartbeat-sender-thread",
         )
 
-        sender_started = False
+        thread.start()
 
-        try:
-            heartbeat_sender.start()
-            sender_started = True
-
-        except Exception as e:
-            logging.error(e)
+        def stop_and_join():
+            self.on_sigterm()
+            thread.join()
             self._close_resources()
-            return 2
+            return exit_code_holder["code"]
 
-        if sender_started:
-            heartbeat_sender.join()
-
-        self._close_resources()
-
-        if self._runtime_error and not self._sigterm_received:
-            return 1
-
-        return 0
+        return stop_and_join
 
 
