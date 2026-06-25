@@ -46,7 +46,7 @@ configurations = {
 
 
 chaos_monkey_config = {
-    "disabled": None,
+    "disabled": True,
     "easy": { 
         "min_wait": 15,
         "max_wait": 30,
@@ -794,6 +794,8 @@ def generate_compose(config_id,log_level, chaos_profile):
     for i in range(config["join_max_amount_per_bank"]):
         yaml_lines += set_join_max_amount_per_bank_config(i, config["join_max_amount_per_bank"], config["map_max_amount_per_bank"], log_level)
     yaml_lines += set_client(config, log_level)
+    if chaos_monkey_config["disabled"] is not None:
+        yaml_lines += set_chaos_monkey_config(chaos_monkey_config)
 
     with open("docker-compose.yaml", "w", encoding="utf-8") as f:
         f.write("\n".join(yaml_lines))
