@@ -1,4 +1,4 @@
-import hashlib
+import zlib
 import os
 import logging
 from random import randint
@@ -168,7 +168,7 @@ class ScatherGatherMapper(StatefulWorker):
 
     def _worker_to_send_data_to_aggregator(self, clave_fanin_fanout):
         key=(clave_fanin_fanout).encode("utf-8")
-        digest=hashlib.sha256(key).digest()
+        digest= zlib.crc32(str(key).encode("utf-8"))
         value = int.from_bytes(digest, byteorder="big")
         return value % SCATHER_GATHER_AGGREGATOR_AMOUNT
 

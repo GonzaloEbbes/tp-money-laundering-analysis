@@ -1,4 +1,4 @@
-import hashlib
+import zlib
 import os
 import logging
 from random import randint
@@ -199,7 +199,7 @@ class ScatherGatherAggregator(StatefulWorker):
 
     def _worker_to_send_data_to_pair_joiners(self, middle_account : str):
         hashkey=middle_account.encode("utf-8")
-        digest=hashlib.sha256(hashkey).digest()
+        digest= zlib.crc32(str(hashkey).encode("utf-8"))
         value = int.from_bytes(digest, byteorder="big")
         return value % SCATHER_GATHER_PAIR_JOINER_AMOUNT
 
