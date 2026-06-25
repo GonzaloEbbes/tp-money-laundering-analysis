@@ -48,7 +48,7 @@ configurations = {
 
 RECOVERY_PREFIX = "recovery_node"
 HEARTBEAT_EXCHANGE = "recovery_node_heartbeat_exchange"
-HEARTBEAT_INTERVAL = 5
+HEARTBEAT_INTERVAL = 2
 
 def with_middleware_impl_env(lines):
     result = []
@@ -749,6 +749,7 @@ def set_recovery_node_config(id,config,total_recovery_nodes, log_level):
         f"      - MONITORED_CONTAINERS={obtain_all_monitored_containers(config)}",
         "    volumes:",
         "      - /var/run/docker.sock:/var/run/docker.sock",
+        "      - ./docker-compose.yaml:/tp-money-laundering-analysis/docker-compose.yaml:ro",
         "",
     ]
     return recovery
