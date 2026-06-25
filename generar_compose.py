@@ -48,7 +48,7 @@ configurations = {
 
 RECOVERY_PREFIX = "recovery_node"
 HEARTBEAT_EXCHANGE = "recovery_node_heartbeat_exchange"
-HEARTBEAT_INTERVAL = 2
+HEARTBEAT_INTERVAL = 5
 
 def with_middleware_impl_env(lines):
     result = []
@@ -127,7 +127,7 @@ def set_gateway_config(bank_filters_amount, log_level):
         "",
     ]
 
-def set_date_filter_config(id,total, log_level):
+def set_date_filter_config(id,total, log_level, recovery_amount):
     return with_recovery_env([
         f"  date_filter_{id}:",
         "    build:",
@@ -156,9 +156,9 @@ def set_date_filter_config(id,total, log_level):
         "      - OUTPUT_PREFIX_2=usd_filter_q4",
         "      - OUTPUT_PREFIX_3=pay_format_filter"
         "",
-    ], total)
+    ], recovery_amount)
 
-def set_usd_filter_q1q2_config(id,total, log_level):
+def set_usd_filter_q1q2_config(id,total, log_level, recovery_amount):
     return with_recovery_env([ 
         f"  usd_filter_q1q2_{id}:",
         "    build:",
@@ -185,9 +185,9 @@ def set_usd_filter_q1q2_config(id,total, log_level):
         "      - OUTPUT_PREFIX_1=amount_filter_q1",
         "      - OUTPUT_PREFIX_2=data_per_bank_redirector",
         "",
-    ], total)
+    ], recovery_amount)
 
-def set_amount_filter_q1_config(id,total, log_level):
+def set_amount_filter_q1_config(id,total, log_level, recovery_amount):
     return with_recovery_env([
         f"  amount_filter_q1_{id}:",
         "    build:",
@@ -212,9 +212,9 @@ def set_amount_filter_q1_config(id,total, log_level):
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=gateway",
         "",
-    ], total)
+    ], recovery_amount)
 
-def set_usd_filter_q3_config(id,total, log_level):
+def set_usd_filter_q3_config(id,total, log_level, recovery_amount):
     return with_recovery_env([
         f"  usd_filter_q3_{id}:",
         "    build:",
@@ -239,9 +239,9 @@ def set_usd_filter_q3_config(id,total, log_level):
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=amount_filter_q3",
         "",
-    ], total)
+    ], recovery_amount)
 
-def set_usd_filter_q4_config(id,total, log_level):
+def set_usd_filter_q4_config(id,total, log_level, recovery_amount):
     return with_recovery_env([
         f"  usd_filter_q4_{id}:",
         "    build:",
@@ -268,9 +268,9 @@ def set_usd_filter_q4_config(id,total, log_level):
         "      - OUTPUT_PREFIX_1=scather_gather_mapper",
         "      - OUTPUT_PREFIX_2=average_per_pay_format_mapper",
         "",
-    ], total)
+    ], recovery_amount)
 
-def set_pay_format_filter_config(id,total,total_usd_currency_converters, log_level):
+def set_pay_format_filter_config(id,total,total_usd_currency_converters, log_level, recovery_amount):
     return with_recovery_env([
         f"  pay_format_filter_{id}:",
         "    build:",
@@ -300,9 +300,9 @@ def set_pay_format_filter_config(id,total,total_usd_currency_converters, log_lev
         "      - OUTPUT_PREFIX_1=amount_filter_q5",
         "      - OUTPUT_PREFIX_2=currency_converter",
         "",
-    ], total)
+    ], recovery_amount)
 
-def set_average_per_pay_format_mapper_config(id,total, log_level):
+def set_average_per_pay_format_mapper_config(id,total, log_level, recovery_amount):
     return with_recovery_env([
         f"  average_per_pay_format_mapper_{id}:",
         "    build:",
@@ -327,9 +327,9 @@ def set_average_per_pay_format_mapper_config(id,total, log_level):
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=average_per_pay_format_joiner",
         "",
-    ], total)
+    ], recovery_amount)
 
-def set_average_pay_format_joiner_config(id, log_level):
+def set_average_pay_format_joiner_config(id, log_level, recovery_amount):
     return with_recovery_env([
         f"  average_per_pay_format_joiner_{id}:",
         "    build:",
@@ -353,9 +353,9 @@ def set_average_pay_format_joiner_config(id, log_level):
         "      - INPUT_PREFIX_1=average_per_pay_format_mapper",
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=amount_filter_q3",
-    ], 1)
+    ], recovery_amount)
 
-def set_amount_filter_q3_config(id,total, log_level):
+def set_amount_filter_q3_config(id,total, log_level, recovery_amount):
     return with_recovery_env([
         f"  amount_filter_q3_{id}:",
         "    build:",
@@ -382,9 +382,9 @@ def set_amount_filter_q3_config(id,total, log_level):
         "      - AUXILIARY_INPUT=true",
         "      - OUTPUT_PREFIX_1=gateway",
         "",
-    ], total)
+    ], recovery_amount)
 
-def set_amount_filter_q5_config(id,total,total_usd_currency_converters, log_level):
+def set_amount_filter_q5_config(id,total,total_usd_currency_converters, log_level, recovery_amount):
     return with_recovery_env([
         f"  amount_filter_q5_{id}:",
         "    build:",
@@ -410,9 +410,9 @@ def set_amount_filter_q5_config(id,total,total_usd_currency_converters, log_leve
         "      - AUXILIARY_INPUT=false",
         "      - OUTPUT_PREFIX_1=gateway",
         "",
-    ], total)
+    ], recovery_amount)
 
-def set_scather_gather_mapper_config(id,total_mappers,total_aggregators, log_level):
+def set_scather_gather_mapper_config(id,total_mappers,total_aggregators, log_level, recovery_amount):
     return with_recovery_env([
         f"  scather_gather_mapper_{id}:",
         "    build:",
@@ -438,9 +438,9 @@ def set_scather_gather_mapper_config(id,total_mappers,total_aggregators, log_lev
         "      - INPUT_PREFIX_1=usd_filter_q4",
         "      - OUTPUT_PREFIX_1=scather_gather_aggregator",
         "",
-    ], total_mappers)
+    ], recovery_amount)
 
-def set_scather_gather_aggregator_config(id,total_aggregators,total_pair_joiners, log_level):
+def set_scather_gather_aggregator_config(id,total_aggregators,total_pair_joiners, log_level, recovery_amount):
     return with_recovery_env([
         f"  scather_gather_aggregator_{id}:",
         "    build:",
@@ -465,9 +465,9 @@ def set_scather_gather_aggregator_config(id,total_aggregators,total_pair_joiners
         "      - INPUT_PREFIX_1=scather_gather_mapper",
         "      - OUTPUT_PREFIX_1=scather_gather_pair_joiner",
         "",
-    ], total_aggregators)
+    ], recovery_amount)
 
-def set_scather_gather_pair_joiner_config(id,total_pair_joiners,total_aggregators,total_joiners, log_level):
+def set_scather_gather_pair_joiner_config(id,total_pair_joiners,total_aggregators,total_joiners, log_level, recovery_amount):
     return with_recovery_env([
         f"  scather_gather_pair_joiner_{id}:",
         "    build:",
@@ -493,9 +493,9 @@ def set_scather_gather_pair_joiner_config(id,total_pair_joiners,total_aggregator
         "      - INPUT_PREFIX_1=scather_gather_aggregator",
         "      - OUTPUT_PREFIX_1=scather_gather_joiner",
         "",
-    ], total_pair_joiners)
+    ], recovery_amount)
 
-def set_scather_gather_joiner_config(id,total_joiners, log_level):
+def set_scather_gather_joiner_config(id,total_joiners, log_level, recovery_amount):
     return with_recovery_env([
         f"  scather_gather_joiner_{id}:",
         "    build:",
@@ -520,9 +520,9 @@ def set_scather_gather_joiner_config(id,total_joiners, log_level):
         "      - INPUT_PREFIX_1=scather_gather_pair_joiner",
         "      - OUTPUT_PREFIX_1=gateway",
         "",
-    ], total_joiners)
+    ], recovery_amount)
 
-def set_currency_converter_config(id,total, log_level):
+def set_currency_converter_config(id,total, log_level, recovery_amount):
     return with_recovery_env([
         f"  currency_converter_{id}:",
         "    build:",
@@ -558,7 +558,7 @@ def set_currency_converter_config(id,total, log_level):
         "    volumes:",
         "      - ./data:/data",
         "",
-    ], total)
+    ], recovery_amount)
 
 def set_client(config, log_level):
     cliente = []
@@ -595,7 +595,7 @@ def set_client(config, log_level):
     ]
     return cliente
 
-def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers, log_level):
+def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers, log_level, recovery_amount):
     return with_recovery_env([
         f"  data_per_bank_redirector_{id}:",
         "    build:",
@@ -622,10 +622,10 @@ def set_data_per_bank_redirector_config(id,total_redirectors,total_mappers, log_
         "      - EXPECTED_INPUT_EOFS=1",
         "      - MAPPER_PREFIX=map_max_amount_per_bank",
         "",
-    ], total_redirectors)
+    ], recovery_amount)
     
 
-def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank, log_level):
+def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank, log_level, recovery_amount):
     return with_recovery_env([
         f"  bank_filter_{id}:",
         "    build:",
@@ -653,9 +653,9 @@ def set_bank_filter_config(id,total_bank_filters,total_join_max_amount_per_bank,
         "      - EXPECTED_INPUT_EOFS=1",
         "      - NEXT_STAGE_PREFIX=join_max_amount_per_bank",
         "",
-    ], total_bank_filters)
+    ], recovery_amount)
 
-def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_amount_per_bank, log_level):
+def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_amount_per_bank, log_level, recovery_amount):
     return with_recovery_env([
         f"  map_max_amount_per_bank_{id}:",
         "    build:",
@@ -683,9 +683,9 @@ def set_map_max_amount_per_bank_config(id,total_map_amount_filters,total_join_am
         "      - EXPECTED_INPUT_EOFS=1",
         "      - NEXT_STAGE_PREFIX=join_max_amount_per_bank",
         "",
-    ], total_map_amount_filters)
+    ], recovery_amount)
 
-def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_amount_filters, log_level):
+def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_amount_filters, log_level, recovery_amount):
     return with_recovery_env([
         f"  join_max_amount_per_bank_{id}:",
         "    build:",
@@ -713,7 +713,7 @@ def set_join_max_amount_per_bank_config(id,total_join_amount_filters,total_map_a
         "      - EXPECTED_INPUT_EOFS=2",
         "      - NEXT_STAGE_PREFIX=gateway",
         "",
-    ], total_join_amount_filters)
+    ], recovery_amount)
 
 def set_recovery_node_config(id,config,total_recovery_nodes, log_level):
     recovery = []
@@ -724,12 +724,15 @@ def set_recovery_node_config(id,config,total_recovery_nodes, log_level):
         "      dockerfile: recovery_node/Dockerfile",
         f"    container_name: recovery_node_{id}",
         "    depends_on:",
+        "      rabbitmq:",
+        "        condition: service_healthy",
     ]
     servicios_dependence = config.keys()
     servicios_dependence = [s for s in servicios_dependence if s != "recovery_node"]
     for service in servicios_dependence:
         for i in range(config[service]):
-            recovery += [f"      - {service}_{i}"]
+            recovery += [f"      {service}_{i}:"]
+            recovery += [f"        condition: service_started"]
     
     recovery += [
         "    environment:",
@@ -743,7 +746,9 @@ def set_recovery_node_config(id,config,total_recovery_nodes, log_level):
         "      - HEARTBEAT_INTERVAL=2",
         "      - MAX_HEARTBEAT_MISSES=4",
         "      - DOCKER_RESTART_TIMEOUT_SECS=15",
-        f"      - ALL_MONITORED_CONTAINERS={obtain_all_monitored_containers(config)}"
+        f"      - MONITORED_CONTAINERS={obtain_all_monitored_containers(config)}",
+        "    volumes:",
+        "      - /var/run/docker.sock:/var/run/docker.sock",
         "",
     ]
     return recovery
@@ -766,43 +771,43 @@ def generate_compose(config_id,log_level):
     yaml_lines += set_gateway_config(config["bank_filter"], log_level)
 
     for i in range(config["date_filter"]):
-        yaml_lines += set_date_filter_config(i, config["date_filter"], log_level)
+        yaml_lines += set_date_filter_config(i, config["date_filter"], log_level, config["recovery_node"])
     for i in range(config["usd_filter_q1q2"]):
-        yaml_lines += set_usd_filter_q1q2_config(i, config["usd_filter_q1q2"], log_level)
+        yaml_lines += set_usd_filter_q1q2_config(i, config["usd_filter_q1q2"], log_level, config["recovery_node"])
     for i in range(config["amount_filter_q1"]):
-        yaml_lines += set_amount_filter_q1_config(i, config["amount_filter_q1"], log_level)
+        yaml_lines += set_amount_filter_q1_config(i, config["amount_filter_q1"], log_level, config["recovery_node"])
     for i in range(config["usd_filter_q3"]):
-        yaml_lines += set_usd_filter_q3_config(i, config["usd_filter_q3"], log_level)
+        yaml_lines += set_usd_filter_q3_config(i, config["usd_filter_q3"], log_level, config["recovery_node"])
     for i in range(config["usd_filter_q4"]):
-        yaml_lines += set_usd_filter_q4_config(i, config["usd_filter_q4"], log_level)
+        yaml_lines += set_usd_filter_q4_config(i, config["usd_filter_q4"], log_level, config["recovery_node"])
     for i in range(config["average_per_pay_format_mapper"]):
-        yaml_lines += set_average_per_pay_format_mapper_config(i, config["average_per_pay_format_mapper"], log_level)
+        yaml_lines += set_average_per_pay_format_mapper_config(i, config["average_per_pay_format_mapper"], log_level, config["recovery_node"])
     for i in range(config["average_per_pay_format_joiner"]):
-        yaml_lines += set_average_pay_format_joiner_config(i, log_level)
+        yaml_lines += set_average_pay_format_joiner_config(i, log_level, config["recovery_node"])
     for i in range(config["amount_filter_q3"]):
-        yaml_lines += set_amount_filter_q3_config(i, config["amount_filter_q3"], log_level)
+        yaml_lines += set_amount_filter_q3_config(i, config["amount_filter_q3"], log_level, config["recovery_node"])
     for i in range(config["pay_format_filter"]):
-        yaml_lines += set_pay_format_filter_config(i, config["pay_format_filter"], config["currency_converter"], log_level)
+        yaml_lines += set_pay_format_filter_config(i, config["pay_format_filter"], config["currency_converter"], log_level, config["recovery_node"])
     for i in range(config["amount_filter_q5"]):
-        yaml_lines += set_amount_filter_q5_config(i, config["amount_filter_q5"], config["currency_converter"], log_level)
+        yaml_lines += set_amount_filter_q5_config(i, config["amount_filter_q5"], config["currency_converter"], log_level, config["recovery_node"])
     for i in range(config["scather_gather_mapper"]):
-        yaml_lines += set_scather_gather_mapper_config(i, config["scather_gather_mapper"], config["scather_gather_aggregator"], log_level)
+        yaml_lines += set_scather_gather_mapper_config(i, config["scather_gather_mapper"], config["scather_gather_aggregator"], log_level, config["recovery_node"])
     for i in range(config["scather_gather_aggregator"]):
-        yaml_lines += set_scather_gather_aggregator_config(i, config["scather_gather_aggregator"], config["scather_gather_pair_joiner"], log_level)
+        yaml_lines += set_scather_gather_aggregator_config(i, config["scather_gather_aggregator"], config["scather_gather_pair_joiner"], log_level, config["recovery_node"])
     for i in range(config["scather_gather_pair_joiner"]):
-        yaml_lines += set_scather_gather_pair_joiner_config(i, config["scather_gather_pair_joiner"], config["scather_gather_aggregator"], config["scather_gather_joiner"], log_level)
+        yaml_lines += set_scather_gather_pair_joiner_config(i, config["scather_gather_pair_joiner"], config["scather_gather_aggregator"], config["scather_gather_joiner"], log_level, config["recovery_node"])
     for i in range(config["scather_gather_joiner"]):
-        yaml_lines += set_scather_gather_joiner_config(i, config["scather_gather_joiner"], log_level)
+        yaml_lines += set_scather_gather_joiner_config(i, config["scather_gather_joiner"], log_level, config["recovery_node"])
     for i in range(config["currency_converter"]):
-        yaml_lines += set_currency_converter_config(i, config["currency_converter"], log_level)
+        yaml_lines += set_currency_converter_config(i, config["currency_converter"], log_level, config["recovery_node"])
     for i in range(config["data_per_bank_redirector"]):
-        yaml_lines += set_data_per_bank_redirector_config(i, config["data_per_bank_redirector"], config["map_max_amount_per_bank"], log_level)
+        yaml_lines += set_data_per_bank_redirector_config(i, config["data_per_bank_redirector"], config["map_max_amount_per_bank"], log_level, config["recovery_node"])
     for i in range(config["bank_filter"]):
-        yaml_lines += set_bank_filter_config(i, config["bank_filter"], config["join_max_amount_per_bank"], log_level)
+        yaml_lines += set_bank_filter_config(i, config["bank_filter"], config["join_max_amount_per_bank"], log_level, config["recovery_node"])
     for i in range(config["map_max_amount_per_bank"]):
-        yaml_lines += set_map_max_amount_per_bank_config(i, config["map_max_amount_per_bank"],config["join_max_amount_per_bank"], log_level)
+        yaml_lines += set_map_max_amount_per_bank_config(i, config["map_max_amount_per_bank"],config["join_max_amount_per_bank"], log_level, config["recovery_node"])
     for i in range(config["join_max_amount_per_bank"]):
-        yaml_lines += set_join_max_amount_per_bank_config(i, config["join_max_amount_per_bank"], config["map_max_amount_per_bank"], log_level)
+        yaml_lines += set_join_max_amount_per_bank_config(i, config["join_max_amount_per_bank"], config["map_max_amount_per_bank"], log_level, config["recovery_node"])
     for i in range(config["recovery_node"]):
         yaml_lines += set_recovery_node_config(i, config, config["recovery_node"], log_level)
     yaml_lines += set_client(config, log_level)

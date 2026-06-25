@@ -85,6 +85,9 @@ class ToxicRabbitMQ:
     def start_consuming(self, on_message_callback):
         return self._inner.start_consuming(on_message_callback)
 
+    def discard_pending_messages_in_exchange_queue(self):
+        return self._inner.discard_pending_messages_in_exchange_queue()
+
     def stop_consuming(self):
         return self._inner.stop_consuming()
 

@@ -33,6 +33,7 @@ def MessageMiddlewareExchangeRabbitMQ(
     routing_keys,
     queue_name=None,
     exclusive=True,
+    queue_arguments=None
 ):
     from common.middleware.middleware_rabbitmq import (
         MessageMiddlewareExchangeRabbitMQ as RabbitMQExchange,
@@ -45,6 +46,7 @@ def MessageMiddlewareExchangeRabbitMQ(
             routing_keys,
             queue_name=queue_name,
             exclusive=exclusive,
+            queue_arguments=queue_arguments if queue_arguments else None
         )
     )
 

@@ -259,10 +259,17 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 
 	def discard_pending_messages_in_exchange_queue(self):
 		try:
+			self._declare_and_bind_queue_to_routing_keys()
 			self._channel.queue_purge(queue=self._queue_name)
+		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
+			raise MessageMiddlewareDisconnectedError(
+				f"Connection Error during discard_pending_messages_in_exchange_queue: {e}"
+			) from e
 		except Exception as e:
-			raise MessageMiddlewareMessageError("Internal Error during discard_pending_messages_in_exchange_queue: {0}".format(str(e))) from e
-		
+			raise MessageMiddlewareMessageError(
+				"Internal Error during discard_pending_messages_in_exchange_queue: "
+				f"{e}"
+			) from e	
 	# Si se estaba consumiendo desde el exchange, detiene la escucha.
 	# Si no se estaba consumiendo, no tiene efecto ni levanta error.
 	# Si se pierde la conexión con el middleware eleva MessageMiddlewareDisconnectedError.
