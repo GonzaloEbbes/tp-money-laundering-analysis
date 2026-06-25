@@ -68,7 +68,7 @@ def load_rabbitmq_settings():
 		max_unacked_messages=_read_int_env("RABBITMQ_MAX_UNACKED_MESSAGES", 1),
 		heartbeat=_read_int_env("RABBITMQ_HEARTBEAT", 0),
 		blocked_connection_timeout_seconds=_read_int_env("RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS", 300),
-		batch_max_messages=_read_int_env("RABBITMQ_BATCH_MAX_MESSAGES", 10),
+		batch_max_messages=_read_int_env("RABBITMQ_BATCH_MAX_MESSAGES", 100000),
 		batch_max_seconds=_read_float_env("RABBITMQ_BATCH_MAX_SECONDS", 2),
 		batch_header=os.environ.get("RABBITMQ_BATCH_HEADER", "x-middleware-batch"),
 		batch_header_value=os.environ.get("RABBITMQ_BATCH_HEADER_VALUE", "v1"),
