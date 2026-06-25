@@ -7,6 +7,7 @@ import threading
 
 from common import middleware, message_protocol
 from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.logging.logging_config import configure_logging_from_env
@@ -14,6 +15,10 @@ from message_handler import MessageHandler as ScatherGatherMessageHandler
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
+RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
+RECOVERY_AMOUNT = int(os.environ.get("RECOVERY_AMOUNT", "1"))
+HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2"))
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
 SCATHER_GATHER_JOINER_AMOUNT = int(os.environ["SCATHER_GATHER_JOINER_AMOUNT"])
@@ -35,6 +40,16 @@ class ScatherGatherJoiner:
         )
         
         self.id = int(ID)
+
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=SCATHER_GATHER_JOINER_PREFIX,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        )
 
         # definicion de exchanges para enviar a los agregadores
         self.gateway_final_query_queue = middleware.MessageMiddlewareQueueRabbitMQ(MOM_HOST, OUTPUT_QUEUE)
@@ -156,6 +171,7 @@ class ScatherGatherJoiner:
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+        self.recovery_producer_controller.on_sigterm()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
@@ -171,9 +187,15 @@ class ScatherGatherJoiner:
         )
 
         processing_thread_started = False
+        stop_recovery_controller_callback = None
         eof_exit_code=0
+        recovery_controller_exit_code = 0
 
         try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+
             process_thread.start()
             processing_thread_started = True
             eof_exit_code = self.eof_controller.start()
@@ -184,15 +206,18 @@ class ScatherGatherJoiner:
         except Exception as e:
             logging.error(e)
             self.stop()
-            return max(eof_exit_code, 2)
+            return max(eof_exit_code, recovery_controller_exit_code, 2)
 
         finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
             self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
-            return max(eof_exit_code, 1)
+            return max(eof_exit_code, recovery_controller_exit_code, 1)
 
-        return max(eof_exit_code, 0)
+        return max(eof_exit_code, recovery_controller_exit_code, 0)
 
 
 def main():

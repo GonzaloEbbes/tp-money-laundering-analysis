@@ -14,11 +14,6 @@ from common.controllers.healthcheck.utils import recovery_node_id_responsible_of
 from common.logging import configure_logging_from_env
 from common.message_protocol.internal import HealthCheckData
 
-#TODO: en el docker-compose
-'''
-volumes:
-  - /var/run/docker.sock:/var/run/docker.sock
-  '''
 ID = os.environ.get("ID")
 MOM_HOST = os.environ.get("MOM_HOST", "rabbitmq")
 RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
@@ -40,6 +35,7 @@ ALL_MONITORED_CONTAINERS = [
     for name in os.environ.get("MONITORED_CONTAINERS", "").split(",")
     if name.strip()
 ] #incluye los recovery_nodes. Es una tira strin separada por comas
+COMPOSE_FILE = os.environ.get("COMPOSE_FILE", "/tp-money-laundering-analysis/docker-compose.yaml")
 
 class RecoveryNode: 
 
@@ -83,7 +79,6 @@ class RecoveryNode:
         self._stopping = False
 
         self._build_data()
-        self._clean_queue()
 
     def _build_data(self):
         #del listado de contenedores totales a monitorear, se realiza un shardeo determinista
@@ -93,7 +88,13 @@ class RecoveryNode:
         with self.state_lock:
             for container in monitored_containers:
                 #En last_heartbeat_received se guardan todos los contenedores que son de este recovery node
-                self.last_heartbeat_received[container] = time_mark_now
+                self.last_heartbeat_received[container] = time_mark_now + RECOVERY_GRACE_SECS # inicializo con un tiempo futuro para que no se resetee al iniciar
+        self._init_log(monitored_containers)
+    
+    def _init_log(self,monitored_containers):
+        logging.info(f"Recovery node {self.id} monitoring containers:")
+        for container in monitored_containers:
+            logging.info(f"{container}")
     
     def _clean_queue(self):
         try:
@@ -115,7 +116,8 @@ class RecoveryNode:
             message = HealthCheckingMessageHandler.deserialize_healthcheck_message(message)
             match message.type:
                 case message_protocol.internal.InternalMessageType.HEARTBEAT_MESSAGE:
-                    data = HealthCheckData(**message.data)
+                    data = HealthCheckData()
+                    data.container_name = message.data["container_name"]
                     self._process_heartbeat(data)
             ack()
         except Exception as e:
@@ -128,18 +130,28 @@ class RecoveryNode:
 
         with self.state_lock:
             if container_name not in self.last_heartbeat_received:
+                logging.debug(
+                    f"Heartbeat received from {container_name} at {now}. "
+                    "Not mine. Discarded."
+                )
                 return
 
             recovering_until = self.workers_currently_reseting.get(container_name)
 
-            if recovering_until is not None:
-                if now < recovering_until:
-                    return
-
-                logging.info(f"Recovery process for {container_name} completed.")
-                self.workers_currently_reseting.pop(container_name, None)
-
+            # Un heartbeat siempre acredita que el proceso está vivo,
+            # incluso durante el grace period.
             self.last_heartbeat_received[container_name] = now
+
+            if recovering_until is not None:
+                if now >= recovering_until:
+                    logging.info(f"Recovery process for {container_name} completed.")
+                    self.workers_currently_reseting.pop(container_name, None)
+                return
+
+            logging.debug(
+                f"Heartbeat received from {container_name} at {now}. "
+                "Updated last seen time."
+            )
 
 
     def _run_heartbeat_consumer(self):
@@ -218,13 +230,21 @@ class RecoveryNode:
             logging.info(f"Restarting container {container_name}")
 
             result = subprocess.run(
-                ["docker", "restart", "--time", "3", container_name],
+                [
+                    "docker", "compose",
+                    "-f", COMPOSE_FILE,
+                    "up",
+                    "-d",
+                    "--no-deps",
+                    "--no-build",
+                    "--force-recreate",
+                    "--timeout", "15",
+                    container_name],
                 check=False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                timeout=DOCKER_RESTART_TIMEOUT_SECS,
-            )
+                timeout=DOCKER_RESTART_TIMEOUT_SECS)
 
             if result.returncode != 0:
                 logging.error(

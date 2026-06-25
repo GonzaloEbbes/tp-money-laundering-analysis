@@ -8,6 +8,7 @@ from common import middleware, message_protocol
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.eof_controller.message_handler import EOFMessageHandler
 from common.dedup import InMemoryDeduplicator, message_dedup_key
 from message_handler import MessageHandler as DataPerBankRedirectorMessageHandler
@@ -15,6 +16,10 @@ from message_handler import MessageHandler as DataPerBankRedirectorMessageHandle
 ID = int(os.environ.get("ID", 0))
 DATA_PER_BANK_REDIRECTOR_AMOUNT = int(os.environ.get("DATA_PER_BANK_REDIRECTOR_AMOUNT", 1))
 MOM_HOST = os.environ["MOM_HOST"]
+RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
+RECOVERY_AMOUNT = int(os.environ.get("RECOVERY_AMOUNT", "1"))
+HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2"))
 INPUT_QUEUE = os.environ["INPUT_QUEUE"]
 EOF_CONTROL_EXCHANGE = os.environ.get("EOF_CONTROL_EXCHANGE", "data_per_bank_control_exchange")
 MAP_MAX_EXCHANGE = os.environ.get("MAP_MAX_EXCHANGE", "map_max_exchange")
@@ -39,6 +44,16 @@ class DataPerBankRedirector:
         self.input_queue = middleware.MessageMiddlewareQueueRabbitMQ(MOM_HOST, INPUT_QUEUE)
         self.map_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(MOM_HOST, MAP_MAX_EXCHANGE)
         self.id = ID
+
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=PREFIX_WORKER,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        )
         self._sigterm_received = False
         self._map_exchange_lock = threading.Lock()
         self.deduplicator = InMemoryDeduplicator()
@@ -140,15 +155,27 @@ class DataPerBankRedirector:
             target=self._run_input_consumer,
             name=f"redirector-{self.id}-input-consumer"
         )
-        input_thread.start()
-        eof_exit_code = self.eof_controller.start()
-        input_thread.join()
+        stop_recovery_controller_callback = None
+        eof_exit_code = 0
+        recovery_controller_exit_code = 0
 
-        self.input_queue.close()
-        if hasattr(self, 'map_exchange'):
-            self.map_exchange.close()
+        try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+            input_thread.start()
+            eof_exit_code = self.eof_controller.start()
+            input_thread.join()
 
-        return eof_exit_code
+        finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
+            self.input_queue.close()
+            if hasattr(self, 'map_exchange'):
+                self.map_exchange.close()
+
+        return max(eof_exit_code, recovery_controller_exit_code, 0)
 
     def stop(self):
         self._sigterm_received = True
@@ -160,6 +187,7 @@ class DataPerBankRedirector:
             logging.error(f"Error al detener consumidor: {e}")
 
         self.eof_controller.on_sigterm()
+        self.recovery_producer_controller.on_sigterm()
 
 def main():
     configure_logging_from_env()

@@ -7,6 +7,7 @@ from time import sleep
 from decimal import Decimal, InvalidOperation
 from common import middleware, message_protocol
 from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.middleware.middleware_rabbitmq import MessageMiddlewareExchangeRabbitMQ
@@ -24,6 +25,10 @@ from common.conversions import (
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
+RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
+RECOVERY_AMOUNT = int(os.environ.get("RECOVERY_AMOUNT", "1"))
+HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2"))
 CONVERSION_INPUT_EXCHANGE = os.environ["CONVERSION_INPUT_EXCHANGE"]
 CONVERSION_ROUTING_KEY = os.environ["CONVERSION_ROUTING_KEY"]
 CURRENCY_CONVERTER_PREFIX = os.environ["CURRENCY_CONVERTER_PREFIX"]
@@ -53,6 +58,16 @@ class CurrencyConverter:
                 exclusive=False,
             )
         self.id = int(ID)
+
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=CURRENCY_CONVERTER_PREFIX,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        )
         self.producer_lock = threading.Lock()
         # definicion de working queue exchanges de la instancia posterior
         self.amount_filter_q5_queue = middleware.MessageMiddlewareQueueRabbitMQ(
@@ -193,6 +208,7 @@ class CurrencyConverter:
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+        self.recovery_producer_controller.on_sigterm()
 
     def _handle_runtime_failure(self, error, context):
         logging.exception("%s: %s", context, error)
@@ -208,9 +224,15 @@ class CurrencyConverter:
         )
 
         processing_thread_started = False
+        stop_recovery_controller_callback = None
         eof_exit_code=0
+        recovery_controller_exit_code = 0
 
         try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+
             process_thread.start()
             processing_thread_started = True
             eof_exit_code = self.eof_controller.start()
@@ -221,15 +243,18 @@ class CurrencyConverter:
         except Exception as e:
             logging.exception("CurrencyConverter start failed")
             self.stop()
-            return max(eof_exit_code, 2)
+            return max(eof_exit_code, recovery_controller_exit_code, 2)
 
         finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
             self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
-            return max(eof_exit_code, 1)
+            return max(eof_exit_code, recovery_controller_exit_code, 1)
 
-        return max(eof_exit_code, 0)
+        return max(eof_exit_code, recovery_controller_exit_code, 0)
 
     @staticmethod
     def _build_static_fallback_provider():

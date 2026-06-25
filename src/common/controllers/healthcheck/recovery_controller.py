@@ -49,6 +49,7 @@ class RecoveryController:
                 heartbeat_message = HealthCheckingMessageHandler.serialize_heartbeat_message(self.prefix_worker, self.id)
                 with self.producer_lock:
                     self.heartbeat_producer.send(heartbeat_message, routing_key=self.heartbeat_recovery_routing_key)
+                    logging.debug(f"Heartbeat sent from {self.prefix_worker}_{self.id} to {self.heartbeat_recovery_routing_key}")
                 sleep(self.heartbeat_interval_secs)
         except Exception as e:
             self._handle_runtime_failure(e, "Heartbeat timer crashed")
