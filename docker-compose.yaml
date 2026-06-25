@@ -43,7 +43,7 @@ services:
       - BANK_DEDUPLICATOR_QUEUE=bank_deduplicator_queue
       - CURRENCY_FILTER_QUEUE=currency_filter_queue
       - DATE_FILTER_QUEUE=date_filter_queue
-      - BANK_FILTERS_AMOUNT=6
+      - BANK_FILTERS_AMOUNT=7
       - BANK_EXCHANGE=bank_exchange
       - BANK_ROUTING_KEY_PREFIX=bank_partition
 
@@ -59,12 +59,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -87,12 +91,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -115,12 +123,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -143,12 +155,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -171,12 +187,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -199,12 +219,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -227,12 +251,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -255,12 +283,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -283,12 +315,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -311,12 +347,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -339,12 +379,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -367,12 +411,48 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_queue
       - DATE_FILTER_PREFIX=date_filter
-      - DATE_FILTER_AMOUNT=12
+      - DATE_FILTER_AMOUNT=13
+      - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
+      - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
+      - PAY_FORMAT_FILTER_QUEUE=date_filter_to_pay_format_filter_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=usd_filter_q3
+      - OUTPUT_PREFIX_2=usd_filter_q4
+      - OUTPUT_PREFIX_3=pay_format_filter
+  date_filter_12:
+    build:
+      context: ./src
+      dockerfile: entities/filters/date_filter/Dockerfile
+    container_name: date_filter_12
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=12
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_queue
+      - DATE_FILTER_PREFIX=date_filter
+      - DATE_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=date_filter_eof_control_exchange
       - USD_FILTER_Q3_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_Q4_QUEUE=date_filter_to_usd_filter_q4_queue
@@ -395,12 +475,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -422,12 +506,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -449,12 +537,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -476,12 +568,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -503,12 +599,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -530,12 +630,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -557,12 +661,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -584,12 +692,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -611,12 +723,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -638,12 +754,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -665,12 +785,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -692,12 +816,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -719,12 +847,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=12
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -746,12 +878,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=13
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -773,12 +909,47 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=14
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=currency_filter_queue
       - USD_FILTER_PREFIX=usd_filter_q1q2
-      - USD_FILTER_AMOUNT=15
+      - USD_FILTER_AMOUNT=16
+      - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
+      - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=gateway
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q1
+      - OUTPUT_PREFIX_2=data_per_bank_redirector
+
+  usd_filter_q1q2_15:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q1q2/Dockerfile
+    container_name: usd_filter_q1q2_15
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=16
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=15
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=currency_filter_queue
+      - USD_FILTER_PREFIX=usd_filter_q1q2
+      - USD_FILTER_AMOUNT=16
       - EOF_CONTROL_EXCHANGE=usd_filter_q1q2_eof_control_exchange
       - AMOUNT_FILTER_Q1_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - DATA_PER_BANK_SHUFFLER_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
@@ -800,12 +971,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q1
-      - AMOUNT_FILTER_AMOUNT=3
+      - AMOUNT_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
       - EXPECTED_INPUT_EOFS=1
@@ -825,12 +1000,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q1
-      - AMOUNT_FILTER_AMOUNT=3
+      - AMOUNT_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
       - EXPECTED_INPUT_EOFS=1
@@ -850,12 +1029,45 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q1
-      - AMOUNT_FILTER_AMOUNT=3
+      - AMOUNT_FILTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q1q2
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
+
+  amount_filter_q1_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/amount_filter_q1/Dockerfile
+    container_name: amount_filter_q1_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q1q2_to_amount_filter_q1_queue
+      - AMOUNT_FILTER_PREFIX=amount_filter_q1
+      - AMOUNT_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=amount_filter_q1_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
       - EXPECTED_INPUT_EOFS=1
@@ -875,12 +1087,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=6
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_PREFIX=usd_filter_q3
-      - USD_FILTER_AMOUNT=3
+      - USD_FILTER_AMOUNT=6
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
       - EXPECTED_INPUT_EOFS=1
@@ -900,12 +1116,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=6
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_PREFIX=usd_filter_q3
-      - USD_FILTER_AMOUNT=3
+      - USD_FILTER_AMOUNT=6
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
       - EXPECTED_INPUT_EOFS=1
@@ -925,12 +1145,103 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=6
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
       - USD_FILTER_PREFIX=usd_filter_q3
-      - USD_FILTER_AMOUNT=3
+      - USD_FILTER_AMOUNT=6
+      - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
+      - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
+
+  usd_filter_q3_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q3/Dockerfile
+    container_name: usd_filter_q3_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=6
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_PREFIX=usd_filter_q3
+      - USD_FILTER_AMOUNT=6
+      - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
+      - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
+
+  usd_filter_q3_4:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q3/Dockerfile
+    container_name: usd_filter_q3_4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=6
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=4
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_PREFIX=usd_filter_q3
+      - USD_FILTER_AMOUNT=6
+      - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
+      - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q3
+
+  usd_filter_q3_5:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q3/Dockerfile
+    container_name: usd_filter_q3_5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=6
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=5
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q3_queue
+      - USD_FILTER_PREFIX=usd_filter_q3
+      - USD_FILTER_AMOUNT=6
       - EOF_CONTROL_EXCHANGE=usd_filter_q3_eof_control_exchange
       - AMOUNT_FILTER_Q3_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
       - EXPECTED_INPUT_EOFS=1
@@ -950,12 +1261,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -977,12 +1292,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1004,12 +1323,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1031,12 +1354,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1058,12 +1385,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1085,12 +1416,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1112,12 +1447,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1139,12 +1478,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1166,12 +1509,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1193,12 +1540,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1220,12 +1571,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1247,12 +1602,47 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
       - USD_FILTER_PREFIX=usd_filter_q4
-      - USD_FILTER_AMOUNT=12
+      - USD_FILTER_AMOUNT=13
+      - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
+      - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_2=average_per_pay_format_mapper
+
+  usd_filter_q4_12:
+    build:
+      context: ./src
+      dockerfile: entities/filters/usd_filter_q4/Dockerfile
+    container_name: usd_filter_q4_12
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=12
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_usd_filter_q4_queue
+      - USD_FILTER_PREFIX=usd_filter_q4
+      - USD_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=usd_filter_q4_eof_control_exchange
       - AVERAGE_PER_PAY_FORMAT_MAPPER_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - SCATHER_GATHER_QUEUE=usd_filter_q4_to_scatter_gather_queue
@@ -1274,13 +1664,17 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=0
       - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue
       - MAPPER_FILTER_PREFIX=average_per_pay_format_mapper
-      - MAPPER_FILTER_AMOUNT=2
+      - MAPPER_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=usd_filter_q4
@@ -1299,13 +1693,75 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=1
       - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
       - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue
       - MAPPER_FILTER_PREFIX=average_per_pay_format_mapper
-      - MAPPER_FILTER_AMOUNT=2
+      - MAPPER_FILTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q4
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=average_per_pay_format_joiner
+
+  average_per_pay_format_mapper_2:
+    build:
+      context: ./src
+      dockerfile: entities/average_per_pay_format/average_per_pay_format_mapper/Dockerfile
+    container_name: average_per_pay_format_mapper_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - MOM_HOST=rabbitmq
+      - ID=2
+      - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue
+      - MAPPER_FILTER_PREFIX=average_per_pay_format_mapper
+      - MAPPER_FILTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=usd_filter_q4
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=average_per_pay_format_joiner
+
+  average_per_pay_format_mapper_3:
+    build:
+      context: ./src
+      dockerfile: entities/average_per_pay_format/average_per_pay_format_mapper/Dockerfile
+    container_name: average_per_pay_format_mapper_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - MOM_HOST=rabbitmq
+      - ID=3
+      - INPUT_QUEUE=usd_filter_q4_to_average_per_pay_format_mapper_queue
+      - OUTPUT_QUEUE=average_per_pay_format_mapper_to_average_per_pay_format_joiner_queue
+      - MAPPER_FILTER_PREFIX=average_per_pay_format_mapper
+      - MAPPER_FILTER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=average_per_pay_format_mapper_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=usd_filter_q4
@@ -1324,6 +1780,10 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=1
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=0
@@ -1348,13 +1808,141 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=5
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
       - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange
       - AMOUNT_FILTER_PREFIX=amount_filter_q3
-      - AMOUNT_FILTER_AMOUNT=1
+      - AMOUNT_FILTER_AMOUNT=5
+      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
+      - INPUT_PREFIX_1=usd_filter_q3
+      - INPUT_PREFIX_2=average_per_pay_format_joiner
+      - AUXILIARY_INPUT=true
+      - OUTPUT_PREFIX_1=gateway
+
+  amount_filter_q3_1:
+    build:
+      context: ./src
+      dockerfile: entities/filters/amount_filter_q3/Dockerfile
+    container_name: amount_filter_q3_1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=5
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=1
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange
+      - AMOUNT_FILTER_PREFIX=amount_filter_q3
+      - AMOUNT_FILTER_AMOUNT=5
+      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
+      - INPUT_PREFIX_1=usd_filter_q3
+      - INPUT_PREFIX_2=average_per_pay_format_joiner
+      - AUXILIARY_INPUT=true
+      - OUTPUT_PREFIX_1=gateway
+
+  amount_filter_q3_2:
+    build:
+      context: ./src
+      dockerfile: entities/filters/amount_filter_q3/Dockerfile
+    container_name: amount_filter_q3_2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=5
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=2
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange
+      - AMOUNT_FILTER_PREFIX=amount_filter_q3
+      - AMOUNT_FILTER_AMOUNT=5
+      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
+      - INPUT_PREFIX_1=usd_filter_q3
+      - INPUT_PREFIX_2=average_per_pay_format_joiner
+      - AUXILIARY_INPUT=true
+      - OUTPUT_PREFIX_1=gateway
+
+  amount_filter_q3_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/amount_filter_q3/Dockerfile
+    container_name: amount_filter_q3_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=5
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange
+      - AMOUNT_FILTER_PREFIX=amount_filter_q3
+      - AMOUNT_FILTER_AMOUNT=5
+      - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=2
+      - INPUT_PREFIX_1=usd_filter_q3
+      - INPUT_PREFIX_2=average_per_pay_format_joiner
+      - AUXILIARY_INPUT=true
+      - OUTPUT_PREFIX_1=gateway
+
+  amount_filter_q3_4:
+    build:
+      context: ./src
+      dockerfile: entities/filters/amount_filter_q3/Dockerfile
+    container_name: amount_filter_q3_4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=5
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=4
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q3_to_amount_filter_q3_queue
+      - AVERAGE_PER_PAY_FORMAT_TO_FILTER_EXCHANGE=average_per_pay_format_joiner_to_amount_filter_q3_exchange
+      - AMOUNT_FILTER_PREFIX=amount_filter_q3
+      - AMOUNT_FILTER_AMOUNT=5
       - EOF_CONTROL_EXCHANGE=amount_filter_q3_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
       - EXPECTED_INPUT_EOFS=2
@@ -1375,17 +1963,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1405,17 +1997,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1435,17 +2031,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1465,17 +2065,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=3
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1495,17 +2099,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=4
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1525,17 +2133,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=5
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1555,17 +2167,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=6
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1585,17 +2201,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=7
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1615,17 +2235,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=8
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1645,17 +2269,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=9
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1675,17 +2303,21 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=10
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1705,17 +2337,55 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
       - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
-      - PAY_FORMAT_FILTER_AMOUNT=12
+      - PAY_FORMAT_FILTER_AMOUNT=13
       - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
       - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_QUEUE_PREFIX=currency_converter_queue
       - CONVERSION_ROUTING_KEY_PREFIX=conversion
-      - TOTAL_CONVERSION_WORKERS=4
+      - TOTAL_CONVERSION_WORKERS=5
+      - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - INPUT_PREFIX_1=date_filter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - OUTPUT_PREFIX_2=currency_converter
+
+  pay_format_filter_12:
+    build:
+      context: ./src
+      dockerfile: entities/filters/pay_format_filter/Dockerfile
+    container_name: pay_format_filter_12
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=13
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=12
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=date_filter_to_pay_format_filter_queue
+      - PAY_FORMAT_FILTER_PREFIX=pay_format_filter
+      - PAY_FORMAT_FILTER_AMOUNT=13
+      - EOF_CONTROL_EXCHANGE=pay_format_filter_eof_control_exchange
+      - CONVERSION_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_QUEUE_PREFIX=currency_converter_queue
+      - CONVERSION_ROUTING_KEY_PREFIX=conversion
+      - TOTAL_CONVERSION_WORKERS=5
       - AMOUNT_FILTER_Q5_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
       - INPUT_PREFIX_1=date_filter
@@ -1735,12 +2405,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
-      - AMOUNT_FILTER_AMOUNT=3
+      - AMOUNT_FILTER_AMOUNT=4
       - EXPECTED_INPUT_EOFS=2
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
@@ -1761,12 +2435,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
-      - AMOUNT_FILTER_AMOUNT=3
+      - AMOUNT_FILTER_AMOUNT=4
       - EXPECTED_INPUT_EOFS=2
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
@@ -1787,12 +2465,46 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
-      - AMOUNT_FILTER_AMOUNT=3
+      - AMOUNT_FILTER_AMOUNT=4
+      - EXPECTED_INPUT_EOFS=2
+      - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - INPUT_PREFIX_1=pay_format_filter
+      - INPUT_PREFIX_2=currency_converter
+      - AUXILIARY_INPUT=false
+      - OUTPUT_PREFIX_1=gateway
+
+  amount_filter_q5_3:
+    build:
+      context: ./src
+      dockerfile: entities/filters/amount_filter_q5/Dockerfile
+    container_name: amount_filter_q5_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - AMOUNT_FILTER_PREFIX=amount_filter_q5
+      - AMOUNT_FILTER_AMOUNT=4
       - EXPECTED_INPUT_EOFS=2
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
@@ -1813,14 +2525,18 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
       - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper
-      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - SCATHER_GATHER_MAPPER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
-      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
       - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
       - EXPECTED_INPUT_EOFS=1
       - AUXILIARY_INPUT=false
@@ -1839,14 +2555,18 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
       - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper
-      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - SCATHER_GATHER_MAPPER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
-      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
       - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
       - EXPECTED_INPUT_EOFS=1
       - AUXILIARY_INPUT=false
@@ -1865,14 +2585,48 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
       - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper
-      - SCATHER_GATHER_MAPPER_AMOUNT=3
+      - SCATHER_GATHER_MAPPER_AMOUNT=4
       - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
-      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
+      - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=usd_filter_q4
+      - OUTPUT_PREFIX_1=scather_gather_aggregator
+
+  scather_gather_mapper_3:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_mapper/Dockerfile
+    container_name: scather_gather_mapper_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q4_to_scatter_gather_queue
+      - SCATHER_GATHER_MAPPER_PREFIX=scather_gather_mapper
+      - SCATHER_GATHER_MAPPER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=scather_gather_mapper_eof_control_exchange
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
       - SCATHER_GATHER_AGGREGATOR_PREFIX=scather_gather_aggregator
       - EXPECTED_INPUT_EOFS=1
       - AUXILIARY_INPUT=false
@@ -1891,12 +2645,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
-      - SCATHER_GATHER_AGG_AMOUNT=3
-      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_AGG_AMOUNT=4
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_aggregator_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
@@ -1916,12 +2674,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
-      - SCATHER_GATHER_AGG_AMOUNT=3
-      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_AGG_AMOUNT=4
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_aggregator_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
@@ -1941,12 +2703,45 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
-      - SCATHER_GATHER_AGG_AMOUNT=3
-      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
+      - SCATHER_GATHER_AGG_AMOUNT=4
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_aggregator_eof_control_exchange
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_mapper
+      - OUTPUT_PREFIX_1=scather_gather_pair_joiner
+
+  scather_gather_aggregator_3:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_aggregator/Dockerfile
+    container_name: scather_gather_aggregator_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_AGG_PREFIX=scather_gather_aggregator
+      - SCATHER_GATHER_AGG_AMOUNT=4
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_aggregator_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
@@ -1966,13 +2761,17 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
-      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
-      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
-      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
+      - SCATHER_GATHER_JOINER_AMOUNT=4
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_pair_joiner_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
@@ -1992,13 +2791,17 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
-      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
-      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
-      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
+      - SCATHER_GATHER_JOINER_AMOUNT=4
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_pair_joiner_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
@@ -2018,13 +2821,47 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
-      - SCATHER_GATHER_AGGREGATOR_AMOUNT=3
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
       - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
-      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=3
-      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
+      - SCATHER_GATHER_JOINER_AMOUNT=4
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_pair_joiner_eof_control_exchange
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_aggregator
+      - OUTPUT_PREFIX_1=scather_gather_joiner
+
+  scather_gather_pair_joiner_3:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_pair_joiner/Dockerfile
+    container_name: scather_gather_pair_joiner_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_AGGREGATOR_AMOUNT=4
+      - SCATHER_GATHER_PAIR_JOINER_PREFIX=scather_gather_pair_joiner
+      - SCATHER_GATHER_PAIR_JOINER_AMOUNT=4
+      - SCATHER_GATHER_JOINER_AMOUNT=4
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_pair_joiner_eof_control_exchange
       - EXPECTED_INPUT_EOFS=1
@@ -2044,12 +2881,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=0
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
-      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_AMOUNT=4
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
       - EXPECTED_INPUT_EOFS=1
@@ -2069,12 +2910,16 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=1
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
-      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_AMOUNT=4
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
       - EXPECTED_INPUT_EOFS=1
@@ -2094,12 +2939,45 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - ID=2
       - MOM_HOST=rabbitmq
       - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
       - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
-      - SCATHER_GATHER_JOINER_AMOUNT=3
+      - SCATHER_GATHER_JOINER_AMOUNT=4
+      - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
+      - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=scather_gather_pair_joiner
+      - OUTPUT_PREFIX_1=gateway
+
+  scather_gather_joiner_3:
+    build:
+      context: ./src
+      dockerfile: entities/scather_gather/scather_gather_joiner/Dockerfile
+    container_name: scather_gather_joiner_3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - SCATHER_GATHER_JOIN_PREFIX=scather_gather_joiner
+      - EOF_CONTROL_EXCHANGE=scather_gather_joiner_eof_control_exchange
+      - SCATHER_GATHER_JOINER_AMOUNT=4
       - SCATHER_GATHER_JOINER_PREFIX=scather_gather_joiner
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
       - EXPECTED_INPUT_EOFS=1
@@ -2119,13 +2997,17 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=5
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=0
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.0
       - CURRENCY_CONVERTER_PREFIX=currency_converter
-      - CURRENCY_CONVERTER_AMOUNT=4
+      - CURRENCY_CONVERTER_AMOUNT=5
       - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
@@ -2155,13 +3037,17 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=5
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=1
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.1
       - CURRENCY_CONVERTER_PREFIX=currency_converter
-      - CURRENCY_CONVERTER_AMOUNT=4
+      - CURRENCY_CONVERTER_AMOUNT=5
       - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
@@ -2191,13 +3077,17 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=5
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=2
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.2
       - CURRENCY_CONVERTER_PREFIX=currency_converter
-      - CURRENCY_CONVERTER_AMOUNT=4
+      - CURRENCY_CONVERTER_AMOUNT=5
       - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
@@ -2227,13 +3117,57 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=5
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - MOM_HOST=rabbitmq
       - ID=3
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.3
       - CURRENCY_CONVERTER_PREFIX=currency_converter
-      - CURRENCY_CONVERTER_AMOUNT=4
+      - CURRENCY_CONVERTER_AMOUNT=5
+      - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=pay_format_filter
+      - OUTPUT_PREFIX_1=amount_filter_q5
+      - CONVERSION_AMOUNT_FIELD=amount_paid
+      - CONVERSION_CURRENCY_FIELD=payment_currency
+      - CONVERSION_DATE_FIELD=timestamp
+      - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - FRANKFURTER_MAX_RETRIES=10
+      - FRANKFURTER_RETRY_DELAY_SECONDS=1
+      - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
+    volumes:
+      - ./data:/data
+
+  currency_converter_4:
+    build:
+      context: ./src
+      dockerfile: entities/filters/currency_converter/Dockerfile
+    container_name: currency_converter_4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=5
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - MOM_HOST=rabbitmq
+      - ID=4
+      - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
+      - CONVERSION_ROUTING_KEY=conversion.4
+      - CURRENCY_CONVERTER_PREFIX=currency_converter
+      - CURRENCY_CONVERTER_AMOUNT=5
       - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
       - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - EXPECTED_INPUT_EOFS=1
@@ -2263,11 +3197,15 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=9
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
-      - DATA_PER_BANK_REDIRECTOR_AMOUNT=8
-      - TOTAL_MAPPERS=12
+      - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
+      - TOTAL_MAPPERS=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
       - EXCHANGE_NAME=map_max_exchange
@@ -2290,11 +3228,15 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=9
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
-      - DATA_PER_BANK_REDIRECTOR_AMOUNT=8
-      - TOTAL_MAPPERS=12
+      - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
+      - TOTAL_MAPPERS=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
       - EXCHANGE_NAME=map_max_exchange
@@ -2317,11 +3259,15 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=9
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
-      - DATA_PER_BANK_REDIRECTOR_AMOUNT=8
-      - TOTAL_MAPPERS=12
+      - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
+      - TOTAL_MAPPERS=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
       - EXCHANGE_NAME=map_max_exchange
@@ -2344,11 +3290,15 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=9
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=3
-      - DATA_PER_BANK_REDIRECTOR_AMOUNT=8
-      - TOTAL_MAPPERS=12
+      - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
+      - TOTAL_MAPPERS=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
       - EXCHANGE_NAME=map_max_exchange
@@ -2371,11 +3321,15 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=9
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=4
-      - DATA_PER_BANK_REDIRECTOR_AMOUNT=8
-      - TOTAL_MAPPERS=12
+      - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
+      - TOTAL_MAPPERS=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
       - EXCHANGE_NAME=map_max_exchange
@@ -2398,11 +3352,15 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=9
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=5
-      - DATA_PER_BANK_REDIRECTOR_AMOUNT=8
-      - TOTAL_MAPPERS=12
+      - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
+      - TOTAL_MAPPERS=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
       - EXCHANGE_NAME=map_max_exchange
@@ -2425,11 +3383,15 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=9
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=6
-      - DATA_PER_BANK_REDIRECTOR_AMOUNT=8
-      - TOTAL_MAPPERS=12
+      - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
+      - TOTAL_MAPPERS=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
       - EXCHANGE_NAME=map_max_exchange
@@ -2452,11 +3414,46 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=9
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=7
-      - DATA_PER_BANK_REDIRECTOR_AMOUNT=8
-      - TOTAL_MAPPERS=12
+      - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
+      - TOTAL_MAPPERS=11
+      - MOM_HOST=rabbitmq
+      - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
+      - EXCHANGE_NAME=map_max_exchange
+      - OUTPUT_ROUTING_KEY_PREFIX=map_partition
+      - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
+
+  data_per_bank_redirector_8:
+    build:
+      context: ./src
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
+    container_name: data_per_bank_redirector_8
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=9
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - PROCESSING_DELAY_SECONDS=0
+      - ID=8
+      - DATA_PER_BANK_REDIRECTOR_AMOUNT=9
+      - TOTAL_MAPPERS=11
       - MOM_HOST=rabbitmq
       - INPUT_QUEUE=usd_filter_q1q2_to_data_per_bank_shuffler_queue
       - EXCHANGE_NAME=map_max_exchange
@@ -2479,15 +3476,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=7
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
-      - BANK_FILTERS_AMOUNT=6
+      - BANK_FILTERS_AMOUNT=7
       - MOM_HOST=rabbitmq
       - BANK_EXCHANGE=bank_exchange
       - BANK_ROUTING_KEY_PREFIX=bank_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
       - PREFIX_WORKER=bank_filter
@@ -2507,15 +3508,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=7
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
-      - BANK_FILTERS_AMOUNT=6
+      - BANK_FILTERS_AMOUNT=7
       - MOM_HOST=rabbitmq
       - BANK_EXCHANGE=bank_exchange
       - BANK_ROUTING_KEY_PREFIX=bank_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
       - PREFIX_WORKER=bank_filter
@@ -2535,15 +3540,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=7
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
-      - BANK_FILTERS_AMOUNT=6
+      - BANK_FILTERS_AMOUNT=7
       - MOM_HOST=rabbitmq
       - BANK_EXCHANGE=bank_exchange
       - BANK_ROUTING_KEY_PREFIX=bank_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
       - PREFIX_WORKER=bank_filter
@@ -2563,15 +3572,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=7
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=3
-      - BANK_FILTERS_AMOUNT=6
+      - BANK_FILTERS_AMOUNT=7
       - MOM_HOST=rabbitmq
       - BANK_EXCHANGE=bank_exchange
       - BANK_ROUTING_KEY_PREFIX=bank_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
       - PREFIX_WORKER=bank_filter
@@ -2591,15 +3604,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=7
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=4
-      - BANK_FILTERS_AMOUNT=6
+      - BANK_FILTERS_AMOUNT=7
       - MOM_HOST=rabbitmq
       - BANK_EXCHANGE=bank_exchange
       - BANK_ROUTING_KEY_PREFIX=bank_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
       - PREFIX_WORKER=bank_filter
@@ -2619,15 +3636,51 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=7
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=5
-      - BANK_FILTERS_AMOUNT=6
+      - BANK_FILTERS_AMOUNT=7
       - MOM_HOST=rabbitmq
       - BANK_EXCHANGE=bank_exchange
       - BANK_ROUTING_KEY_PREFIX=bank_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
+      - JOIN_ROUTING_KEY_PREFIX=join_partition
+      - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
+
+  bank_filter_6:
+    build:
+      context: ./src
+      dockerfile: entities/filters/bank_filter/Dockerfile
+    container_name: bank_filter_6
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=7
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - PROCESSING_DELAY_SECONDS=0
+      - ID=6
+      - BANK_FILTERS_AMOUNT=7
+      - MOM_HOST=rabbitmq
+      - BANK_EXCHANGE=bank_exchange
+      - BANK_ROUTING_KEY_PREFIX=bank_partition
+      - JOIN_EXCHANGE=query2_join_exchange
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
       - PREFIX_WORKER=bank_filter
@@ -2647,15 +3700,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2675,15 +3732,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2703,15 +3764,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2731,15 +3796,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=3
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2759,15 +3828,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=4
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2787,15 +3860,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=5
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2815,15 +3892,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=6
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2843,15 +3924,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=7
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2871,15 +3956,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=8
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2899,15 +3988,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=9
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2927,43 +4020,19 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=11
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=10
-      - MAP_AMOUNT=12
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - MAP_MAX_EXCHANGE=map_max_exchange
       - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
       - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
-      - JOIN_ROUTING_KEY_PREFIX=join_partition
-      - EOF_CONTROL_EXCHANGE=map_control_exchange
-      - PREFIX_WORKER=map_max_amount_per_bank
-      - INPUT_PREFIX=data_per_bank_redirector
-      - EXPECTED_INPUT_EOFS=1
-      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
-
-  map_max_amount_per_bank_11:
-    build:
-      context: ./src
-      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
-    container_name: map_max_amount_per_bank_11
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
-      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
-      - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ID=11
-      - MAP_AMOUNT=12
-      - MOM_HOST=rabbitmq
-      - MAP_MAX_EXCHANGE=map_max_exchange
-      - MAP_MAX_ROUTING_KEY_PREFIX=map_max_partition
-      - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_AMOUNT=4
+      - JOIN_AMOUNT=3
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
       - PREFIX_WORKER=map_max_amount_per_bank
@@ -2983,11 +4052,15 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=3
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=0
-      - JOIN_AMOUNT=4
-      - MAP_AMOUNT=12
+      - JOIN_AMOUNT=3
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - JOIN_EXCHANGE=query2_join_exchange
       - JOIN_ROUTING_KEY_PREFIX=join_partition
@@ -3011,11 +4084,15 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=3
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=1
-      - JOIN_AMOUNT=4
-      - MAP_AMOUNT=12
+      - JOIN_AMOUNT=3
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - JOIN_EXCHANGE=query2_join_exchange
       - JOIN_ROUTING_KEY_PREFIX=join_partition
@@ -3039,11 +4116,15 @@ services:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=3
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
       - LOG_LEVEL=INFO
       - PROCESSING_DELAY_SECONDS=0
       - ID=2
-      - JOIN_AMOUNT=4
-      - MAP_AMOUNT=12
+      - JOIN_AMOUNT=3
+      - MAP_AMOUNT=11
       - MOM_HOST=rabbitmq
       - JOIN_EXCHANGE=query2_join_exchange
       - JOIN_ROUTING_KEY_PREFIX=join_partition
@@ -3055,34 +4136,606 @@ services:
       - EXPECTED_INPUT_EOFS=2
       - NEXT_STAGE_PREFIX=gateway
 
-  join_max_amount_per_bank_3:
+  recovery_node_0:
     build:
       context: ./src
-      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
-    container_name: join_max_amount_per_bank_3
+      dockerfile: recovery_node/Dockerfile
+    container_name: recovery_node_0
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - date_filter_0
+      - date_filter_1
+      - date_filter_2
+      - date_filter_3
+      - date_filter_4
+      - date_filter_5
+      - date_filter_6
+      - date_filter_7
+      - date_filter_8
+      - date_filter_9
+      - date_filter_10
+      - date_filter_11
+      - date_filter_12
+      - usd_filter_q1q2_0
+      - usd_filter_q1q2_1
+      - usd_filter_q1q2_2
+      - usd_filter_q1q2_3
+      - usd_filter_q1q2_4
+      - usd_filter_q1q2_5
+      - usd_filter_q1q2_6
+      - usd_filter_q1q2_7
+      - usd_filter_q1q2_8
+      - usd_filter_q1q2_9
+      - usd_filter_q1q2_10
+      - usd_filter_q1q2_11
+      - usd_filter_q1q2_12
+      - usd_filter_q1q2_13
+      - usd_filter_q1q2_14
+      - usd_filter_q1q2_15
+      - amount_filter_q1_0
+      - amount_filter_q1_1
+      - amount_filter_q1_2
+      - amount_filter_q1_3
+      - usd_filter_q3_0
+      - usd_filter_q3_1
+      - usd_filter_q3_2
+      - usd_filter_q3_3
+      - usd_filter_q3_4
+      - usd_filter_q3_5
+      - usd_filter_q4_0
+      - usd_filter_q4_1
+      - usd_filter_q4_2
+      - usd_filter_q4_3
+      - usd_filter_q4_4
+      - usd_filter_q4_5
+      - usd_filter_q4_6
+      - usd_filter_q4_7
+      - usd_filter_q4_8
+      - usd_filter_q4_9
+      - usd_filter_q4_10
+      - usd_filter_q4_11
+      - usd_filter_q4_12
+      - pay_format_filter_0
+      - pay_format_filter_1
+      - pay_format_filter_2
+      - pay_format_filter_3
+      - pay_format_filter_4
+      - pay_format_filter_5
+      - pay_format_filter_6
+      - pay_format_filter_7
+      - pay_format_filter_8
+      - pay_format_filter_9
+      - pay_format_filter_10
+      - pay_format_filter_11
+      - pay_format_filter_12
+      - amount_filter_q3_0
+      - amount_filter_q3_1
+      - amount_filter_q3_2
+      - amount_filter_q3_3
+      - amount_filter_q3_4
+      - amount_filter_q5_0
+      - amount_filter_q5_1
+      - amount_filter_q5_2
+      - amount_filter_q5_3
+      - scather_gather_mapper_0
+      - scather_gather_mapper_1
+      - scather_gather_mapper_2
+      - scather_gather_mapper_3
+      - scather_gather_aggregator_0
+      - scather_gather_aggregator_1
+      - scather_gather_aggregator_2
+      - scather_gather_aggregator_3
+      - scather_gather_pair_joiner_0
+      - scather_gather_pair_joiner_1
+      - scather_gather_pair_joiner_2
+      - scather_gather_pair_joiner_3
+      - scather_gather_joiner_0
+      - scather_gather_joiner_1
+      - scather_gather_joiner_2
+      - scather_gather_joiner_3
+      - currency_converter_0
+      - currency_converter_1
+      - currency_converter_2
+      - currency_converter_3
+      - currency_converter_4
+      - average_per_pay_format_mapper_0
+      - average_per_pay_format_mapper_1
+      - average_per_pay_format_mapper_2
+      - average_per_pay_format_mapper_3
+      - average_per_pay_format_joiner_0
+      - data_per_bank_redirector_0
+      - data_per_bank_redirector_1
+      - data_per_bank_redirector_2
+      - data_per_bank_redirector_3
+      - data_per_bank_redirector_4
+      - data_per_bank_redirector_5
+      - data_per_bank_redirector_6
+      - data_per_bank_redirector_7
+      - data_per_bank_redirector_8
+      - bank_filter_0
+      - bank_filter_1
+      - bank_filter_2
+      - bank_filter_3
+      - bank_filter_4
+      - bank_filter_5
+      - bank_filter_6
+      - map_max_amount_per_bank_0
+      - map_max_amount_per_bank_1
+      - map_max_amount_per_bank_2
+      - map_max_amount_per_bank_3
+      - map_max_amount_per_bank_4
+      - map_max_amount_per_bank_5
+      - map_max_amount_per_bank_6
+      - map_max_amount_per_bank_7
+      - map_max_amount_per_bank_8
+      - map_max_amount_per_bank_9
+      - map_max_amount_per_bank_10
+      - join_max_amount_per_bank_0
+      - join_max_amount_per_bank_1
+      - join_max_amount_per_bank_2
     environment:
       - PYTHONUNBUFFERED=1
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ID=3
-      - JOIN_AMOUNT=4
-      - MAP_AMOUNT=12
+      - ID=0
       - MOM_HOST=rabbitmq
-      - JOIN_EXCHANGE=query2_join_exchange
-      - JOIN_ROUTING_KEY_PREFIX=join_partition
-      - OUTPUT_QUEUE=gateway_results_queue
-      - EOF_CONTROL_EXCHANGE=join_control_exchange
-      - PREFIX_WORKER=join_max_amount_per_bank
-      - INPUT_PREFIX_1=bank_filter
-      - INPUT_PREFIX_2=map_max_amount_per_bank
-      - EXPECTED_INPUT_EOFS=2
-      - NEXT_STAGE_PREFIX=gateway
-
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - MAX_HEARTBEAT_MISSES=4
+      - DOCKER_RESTART_TIMEOUT_SECS=15
+      - ALL_MONITORED_CONTAINERS=date_filter_0,date_filter_1,date_filter_2,date_filter_3,date_filter_4,date_filter_5,date_filter_6,date_filter_7,date_filter_8,date_filter_9,date_filter_10,date_filter_11,date_filter_12,usd_filter_q1q2_0,usd_filter_q1q2_1,usd_filter_q1q2_2,usd_filter_q1q2_3,usd_filter_q1q2_4,usd_filter_q1q2_5,usd_filter_q1q2_6,usd_filter_q1q2_7,usd_filter_q1q2_8,usd_filter_q1q2_9,usd_filter_q1q2_10,usd_filter_q1q2_11,usd_filter_q1q2_12,usd_filter_q1q2_13,usd_filter_q1q2_14,usd_filter_q1q2_15,amount_filter_q1_0,amount_filter_q1_1,amount_filter_q1_2,amount_filter_q1_3,usd_filter_q3_0,usd_filter_q3_1,usd_filter_q3_2,usd_filter_q3_3,usd_filter_q3_4,usd_filter_q3_5,usd_filter_q4_0,usd_filter_q4_1,usd_filter_q4_2,usd_filter_q4_3,usd_filter_q4_4,usd_filter_q4_5,usd_filter_q4_6,usd_filter_q4_7,usd_filter_q4_8,usd_filter_q4_9,usd_filter_q4_10,usd_filter_q4_11,usd_filter_q4_12,pay_format_filter_0,pay_format_filter_1,pay_format_filter_2,pay_format_filter_3,pay_format_filter_4,pay_format_filter_5,pay_format_filter_6,pay_format_filter_7,pay_format_filter_8,pay_format_filter_9,pay_format_filter_10,pay_format_filter_11,pay_format_filter_12,amount_filter_q3_0,amount_filter_q3_1,amount_filter_q3_2,amount_filter_q3_3,amount_filter_q3_4,amount_filter_q5_0,amount_filter_q5_1,amount_filter_q5_2,amount_filter_q5_3,scather_gather_mapper_0,scather_gather_mapper_1,scather_gather_mapper_2,scather_gather_mapper_3,scather_gather_aggregator_0,scather_gather_aggregator_1,scather_gather_aggregator_2,scather_gather_aggregator_3,scather_gather_pair_joiner_0,scather_gather_pair_joiner_1,scather_gather_pair_joiner_2,scather_gather_pair_joiner_3,scather_gather_joiner_0,scather_gather_joiner_1,scather_gather_joiner_2,scather_gather_joiner_3,currency_converter_0,currency_converter_1,currency_converter_2,currency_converter_3,currency_converter_4,average_per_pay_format_mapper_0,average_per_pay_format_mapper_1,average_per_pay_format_mapper_2,average_per_pay_format_mapper_3,average_per_pay_format_joiner_0,data_per_bank_redirector_0,data_per_bank_redirector_1,data_per_bank_redirector_2,data_per_bank_redirector_3,data_per_bank_redirector_4,data_per_bank_redirector_5,data_per_bank_redirector_6,data_per_bank_redirector_7,data_per_bank_redirector_8,bank_filter_0,bank_filter_1,bank_filter_2,bank_filter_3,bank_filter_4,bank_filter_5,bank_filter_6,map_max_amount_per_bank_0,map_max_amount_per_bank_1,map_max_amount_per_bank_2,map_max_amount_per_bank_3,map_max_amount_per_bank_4,map_max_amount_per_bank_5,map_max_amount_per_bank_6,map_max_amount_per_bank_7,map_max_amount_per_bank_8,map_max_amount_per_bank_9,map_max_amount_per_bank_10,join_max_amount_per_bank_0,join_max_amount_per_bank_1,join_max_amount_per_bank_2,recovery_node_0,recovery_node_1,recovery_node_2,recovery_node_3
+  recovery_node_1:
+    build:
+      context: ./src
+      dockerfile: recovery_node/Dockerfile
+    container_name: recovery_node_1
+    depends_on:
+      - date_filter_0
+      - date_filter_1
+      - date_filter_2
+      - date_filter_3
+      - date_filter_4
+      - date_filter_5
+      - date_filter_6
+      - date_filter_7
+      - date_filter_8
+      - date_filter_9
+      - date_filter_10
+      - date_filter_11
+      - date_filter_12
+      - usd_filter_q1q2_0
+      - usd_filter_q1q2_1
+      - usd_filter_q1q2_2
+      - usd_filter_q1q2_3
+      - usd_filter_q1q2_4
+      - usd_filter_q1q2_5
+      - usd_filter_q1q2_6
+      - usd_filter_q1q2_7
+      - usd_filter_q1q2_8
+      - usd_filter_q1q2_9
+      - usd_filter_q1q2_10
+      - usd_filter_q1q2_11
+      - usd_filter_q1q2_12
+      - usd_filter_q1q2_13
+      - usd_filter_q1q2_14
+      - usd_filter_q1q2_15
+      - amount_filter_q1_0
+      - amount_filter_q1_1
+      - amount_filter_q1_2
+      - amount_filter_q1_3
+      - usd_filter_q3_0
+      - usd_filter_q3_1
+      - usd_filter_q3_2
+      - usd_filter_q3_3
+      - usd_filter_q3_4
+      - usd_filter_q3_5
+      - usd_filter_q4_0
+      - usd_filter_q4_1
+      - usd_filter_q4_2
+      - usd_filter_q4_3
+      - usd_filter_q4_4
+      - usd_filter_q4_5
+      - usd_filter_q4_6
+      - usd_filter_q4_7
+      - usd_filter_q4_8
+      - usd_filter_q4_9
+      - usd_filter_q4_10
+      - usd_filter_q4_11
+      - usd_filter_q4_12
+      - pay_format_filter_0
+      - pay_format_filter_1
+      - pay_format_filter_2
+      - pay_format_filter_3
+      - pay_format_filter_4
+      - pay_format_filter_5
+      - pay_format_filter_6
+      - pay_format_filter_7
+      - pay_format_filter_8
+      - pay_format_filter_9
+      - pay_format_filter_10
+      - pay_format_filter_11
+      - pay_format_filter_12
+      - amount_filter_q3_0
+      - amount_filter_q3_1
+      - amount_filter_q3_2
+      - amount_filter_q3_3
+      - amount_filter_q3_4
+      - amount_filter_q5_0
+      - amount_filter_q5_1
+      - amount_filter_q5_2
+      - amount_filter_q5_3
+      - scather_gather_mapper_0
+      - scather_gather_mapper_1
+      - scather_gather_mapper_2
+      - scather_gather_mapper_3
+      - scather_gather_aggregator_0
+      - scather_gather_aggregator_1
+      - scather_gather_aggregator_2
+      - scather_gather_aggregator_3
+      - scather_gather_pair_joiner_0
+      - scather_gather_pair_joiner_1
+      - scather_gather_pair_joiner_2
+      - scather_gather_pair_joiner_3
+      - scather_gather_joiner_0
+      - scather_gather_joiner_1
+      - scather_gather_joiner_2
+      - scather_gather_joiner_3
+      - currency_converter_0
+      - currency_converter_1
+      - currency_converter_2
+      - currency_converter_3
+      - currency_converter_4
+      - average_per_pay_format_mapper_0
+      - average_per_pay_format_mapper_1
+      - average_per_pay_format_mapper_2
+      - average_per_pay_format_mapper_3
+      - average_per_pay_format_joiner_0
+      - data_per_bank_redirector_0
+      - data_per_bank_redirector_1
+      - data_per_bank_redirector_2
+      - data_per_bank_redirector_3
+      - data_per_bank_redirector_4
+      - data_per_bank_redirector_5
+      - data_per_bank_redirector_6
+      - data_per_bank_redirector_7
+      - data_per_bank_redirector_8
+      - bank_filter_0
+      - bank_filter_1
+      - bank_filter_2
+      - bank_filter_3
+      - bank_filter_4
+      - bank_filter_5
+      - bank_filter_6
+      - map_max_amount_per_bank_0
+      - map_max_amount_per_bank_1
+      - map_max_amount_per_bank_2
+      - map_max_amount_per_bank_3
+      - map_max_amount_per_bank_4
+      - map_max_amount_per_bank_5
+      - map_max_amount_per_bank_6
+      - map_max_amount_per_bank_7
+      - map_max_amount_per_bank_8
+      - map_max_amount_per_bank_9
+      - map_max_amount_per_bank_10
+      - join_max_amount_per_bank_0
+      - join_max_amount_per_bank_1
+      - join_max_amount_per_bank_2
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - LOG_LEVEL=INFO
+      - ID=1
+      - MOM_HOST=rabbitmq
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - MAX_HEARTBEAT_MISSES=4
+      - DOCKER_RESTART_TIMEOUT_SECS=15
+      - ALL_MONITORED_CONTAINERS=date_filter_0,date_filter_1,date_filter_2,date_filter_3,date_filter_4,date_filter_5,date_filter_6,date_filter_7,date_filter_8,date_filter_9,date_filter_10,date_filter_11,date_filter_12,usd_filter_q1q2_0,usd_filter_q1q2_1,usd_filter_q1q2_2,usd_filter_q1q2_3,usd_filter_q1q2_4,usd_filter_q1q2_5,usd_filter_q1q2_6,usd_filter_q1q2_7,usd_filter_q1q2_8,usd_filter_q1q2_9,usd_filter_q1q2_10,usd_filter_q1q2_11,usd_filter_q1q2_12,usd_filter_q1q2_13,usd_filter_q1q2_14,usd_filter_q1q2_15,amount_filter_q1_0,amount_filter_q1_1,amount_filter_q1_2,amount_filter_q1_3,usd_filter_q3_0,usd_filter_q3_1,usd_filter_q3_2,usd_filter_q3_3,usd_filter_q3_4,usd_filter_q3_5,usd_filter_q4_0,usd_filter_q4_1,usd_filter_q4_2,usd_filter_q4_3,usd_filter_q4_4,usd_filter_q4_5,usd_filter_q4_6,usd_filter_q4_7,usd_filter_q4_8,usd_filter_q4_9,usd_filter_q4_10,usd_filter_q4_11,usd_filter_q4_12,pay_format_filter_0,pay_format_filter_1,pay_format_filter_2,pay_format_filter_3,pay_format_filter_4,pay_format_filter_5,pay_format_filter_6,pay_format_filter_7,pay_format_filter_8,pay_format_filter_9,pay_format_filter_10,pay_format_filter_11,pay_format_filter_12,amount_filter_q3_0,amount_filter_q3_1,amount_filter_q3_2,amount_filter_q3_3,amount_filter_q3_4,amount_filter_q5_0,amount_filter_q5_1,amount_filter_q5_2,amount_filter_q5_3,scather_gather_mapper_0,scather_gather_mapper_1,scather_gather_mapper_2,scather_gather_mapper_3,scather_gather_aggregator_0,scather_gather_aggregator_1,scather_gather_aggregator_2,scather_gather_aggregator_3,scather_gather_pair_joiner_0,scather_gather_pair_joiner_1,scather_gather_pair_joiner_2,scather_gather_pair_joiner_3,scather_gather_joiner_0,scather_gather_joiner_1,scather_gather_joiner_2,scather_gather_joiner_3,currency_converter_0,currency_converter_1,currency_converter_2,currency_converter_3,currency_converter_4,average_per_pay_format_mapper_0,average_per_pay_format_mapper_1,average_per_pay_format_mapper_2,average_per_pay_format_mapper_3,average_per_pay_format_joiner_0,data_per_bank_redirector_0,data_per_bank_redirector_1,data_per_bank_redirector_2,data_per_bank_redirector_3,data_per_bank_redirector_4,data_per_bank_redirector_5,data_per_bank_redirector_6,data_per_bank_redirector_7,data_per_bank_redirector_8,bank_filter_0,bank_filter_1,bank_filter_2,bank_filter_3,bank_filter_4,bank_filter_5,bank_filter_6,map_max_amount_per_bank_0,map_max_amount_per_bank_1,map_max_amount_per_bank_2,map_max_amount_per_bank_3,map_max_amount_per_bank_4,map_max_amount_per_bank_5,map_max_amount_per_bank_6,map_max_amount_per_bank_7,map_max_amount_per_bank_8,map_max_amount_per_bank_9,map_max_amount_per_bank_10,join_max_amount_per_bank_0,join_max_amount_per_bank_1,join_max_amount_per_bank_2,recovery_node_0,recovery_node_1,recovery_node_2,recovery_node_3
+  recovery_node_2:
+    build:
+      context: ./src
+      dockerfile: recovery_node/Dockerfile
+    container_name: recovery_node_2
+    depends_on:
+      - date_filter_0
+      - date_filter_1
+      - date_filter_2
+      - date_filter_3
+      - date_filter_4
+      - date_filter_5
+      - date_filter_6
+      - date_filter_7
+      - date_filter_8
+      - date_filter_9
+      - date_filter_10
+      - date_filter_11
+      - date_filter_12
+      - usd_filter_q1q2_0
+      - usd_filter_q1q2_1
+      - usd_filter_q1q2_2
+      - usd_filter_q1q2_3
+      - usd_filter_q1q2_4
+      - usd_filter_q1q2_5
+      - usd_filter_q1q2_6
+      - usd_filter_q1q2_7
+      - usd_filter_q1q2_8
+      - usd_filter_q1q2_9
+      - usd_filter_q1q2_10
+      - usd_filter_q1q2_11
+      - usd_filter_q1q2_12
+      - usd_filter_q1q2_13
+      - usd_filter_q1q2_14
+      - usd_filter_q1q2_15
+      - amount_filter_q1_0
+      - amount_filter_q1_1
+      - amount_filter_q1_2
+      - amount_filter_q1_3
+      - usd_filter_q3_0
+      - usd_filter_q3_1
+      - usd_filter_q3_2
+      - usd_filter_q3_3
+      - usd_filter_q3_4
+      - usd_filter_q3_5
+      - usd_filter_q4_0
+      - usd_filter_q4_1
+      - usd_filter_q4_2
+      - usd_filter_q4_3
+      - usd_filter_q4_4
+      - usd_filter_q4_5
+      - usd_filter_q4_6
+      - usd_filter_q4_7
+      - usd_filter_q4_8
+      - usd_filter_q4_9
+      - usd_filter_q4_10
+      - usd_filter_q4_11
+      - usd_filter_q4_12
+      - pay_format_filter_0
+      - pay_format_filter_1
+      - pay_format_filter_2
+      - pay_format_filter_3
+      - pay_format_filter_4
+      - pay_format_filter_5
+      - pay_format_filter_6
+      - pay_format_filter_7
+      - pay_format_filter_8
+      - pay_format_filter_9
+      - pay_format_filter_10
+      - pay_format_filter_11
+      - pay_format_filter_12
+      - amount_filter_q3_0
+      - amount_filter_q3_1
+      - amount_filter_q3_2
+      - amount_filter_q3_3
+      - amount_filter_q3_4
+      - amount_filter_q5_0
+      - amount_filter_q5_1
+      - amount_filter_q5_2
+      - amount_filter_q5_3
+      - scather_gather_mapper_0
+      - scather_gather_mapper_1
+      - scather_gather_mapper_2
+      - scather_gather_mapper_3
+      - scather_gather_aggregator_0
+      - scather_gather_aggregator_1
+      - scather_gather_aggregator_2
+      - scather_gather_aggregator_3
+      - scather_gather_pair_joiner_0
+      - scather_gather_pair_joiner_1
+      - scather_gather_pair_joiner_2
+      - scather_gather_pair_joiner_3
+      - scather_gather_joiner_0
+      - scather_gather_joiner_1
+      - scather_gather_joiner_2
+      - scather_gather_joiner_3
+      - currency_converter_0
+      - currency_converter_1
+      - currency_converter_2
+      - currency_converter_3
+      - currency_converter_4
+      - average_per_pay_format_mapper_0
+      - average_per_pay_format_mapper_1
+      - average_per_pay_format_mapper_2
+      - average_per_pay_format_mapper_3
+      - average_per_pay_format_joiner_0
+      - data_per_bank_redirector_0
+      - data_per_bank_redirector_1
+      - data_per_bank_redirector_2
+      - data_per_bank_redirector_3
+      - data_per_bank_redirector_4
+      - data_per_bank_redirector_5
+      - data_per_bank_redirector_6
+      - data_per_bank_redirector_7
+      - data_per_bank_redirector_8
+      - bank_filter_0
+      - bank_filter_1
+      - bank_filter_2
+      - bank_filter_3
+      - bank_filter_4
+      - bank_filter_5
+      - bank_filter_6
+      - map_max_amount_per_bank_0
+      - map_max_amount_per_bank_1
+      - map_max_amount_per_bank_2
+      - map_max_amount_per_bank_3
+      - map_max_amount_per_bank_4
+      - map_max_amount_per_bank_5
+      - map_max_amount_per_bank_6
+      - map_max_amount_per_bank_7
+      - map_max_amount_per_bank_8
+      - map_max_amount_per_bank_9
+      - map_max_amount_per_bank_10
+      - join_max_amount_per_bank_0
+      - join_max_amount_per_bank_1
+      - join_max_amount_per_bank_2
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - LOG_LEVEL=INFO
+      - ID=2
+      - MOM_HOST=rabbitmq
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - MAX_HEARTBEAT_MISSES=4
+      - DOCKER_RESTART_TIMEOUT_SECS=15
+      - ALL_MONITORED_CONTAINERS=date_filter_0,date_filter_1,date_filter_2,date_filter_3,date_filter_4,date_filter_5,date_filter_6,date_filter_7,date_filter_8,date_filter_9,date_filter_10,date_filter_11,date_filter_12,usd_filter_q1q2_0,usd_filter_q1q2_1,usd_filter_q1q2_2,usd_filter_q1q2_3,usd_filter_q1q2_4,usd_filter_q1q2_5,usd_filter_q1q2_6,usd_filter_q1q2_7,usd_filter_q1q2_8,usd_filter_q1q2_9,usd_filter_q1q2_10,usd_filter_q1q2_11,usd_filter_q1q2_12,usd_filter_q1q2_13,usd_filter_q1q2_14,usd_filter_q1q2_15,amount_filter_q1_0,amount_filter_q1_1,amount_filter_q1_2,amount_filter_q1_3,usd_filter_q3_0,usd_filter_q3_1,usd_filter_q3_2,usd_filter_q3_3,usd_filter_q3_4,usd_filter_q3_5,usd_filter_q4_0,usd_filter_q4_1,usd_filter_q4_2,usd_filter_q4_3,usd_filter_q4_4,usd_filter_q4_5,usd_filter_q4_6,usd_filter_q4_7,usd_filter_q4_8,usd_filter_q4_9,usd_filter_q4_10,usd_filter_q4_11,usd_filter_q4_12,pay_format_filter_0,pay_format_filter_1,pay_format_filter_2,pay_format_filter_3,pay_format_filter_4,pay_format_filter_5,pay_format_filter_6,pay_format_filter_7,pay_format_filter_8,pay_format_filter_9,pay_format_filter_10,pay_format_filter_11,pay_format_filter_12,amount_filter_q3_0,amount_filter_q3_1,amount_filter_q3_2,amount_filter_q3_3,amount_filter_q3_4,amount_filter_q5_0,amount_filter_q5_1,amount_filter_q5_2,amount_filter_q5_3,scather_gather_mapper_0,scather_gather_mapper_1,scather_gather_mapper_2,scather_gather_mapper_3,scather_gather_aggregator_0,scather_gather_aggregator_1,scather_gather_aggregator_2,scather_gather_aggregator_3,scather_gather_pair_joiner_0,scather_gather_pair_joiner_1,scather_gather_pair_joiner_2,scather_gather_pair_joiner_3,scather_gather_joiner_0,scather_gather_joiner_1,scather_gather_joiner_2,scather_gather_joiner_3,currency_converter_0,currency_converter_1,currency_converter_2,currency_converter_3,currency_converter_4,average_per_pay_format_mapper_0,average_per_pay_format_mapper_1,average_per_pay_format_mapper_2,average_per_pay_format_mapper_3,average_per_pay_format_joiner_0,data_per_bank_redirector_0,data_per_bank_redirector_1,data_per_bank_redirector_2,data_per_bank_redirector_3,data_per_bank_redirector_4,data_per_bank_redirector_5,data_per_bank_redirector_6,data_per_bank_redirector_7,data_per_bank_redirector_8,bank_filter_0,bank_filter_1,bank_filter_2,bank_filter_3,bank_filter_4,bank_filter_5,bank_filter_6,map_max_amount_per_bank_0,map_max_amount_per_bank_1,map_max_amount_per_bank_2,map_max_amount_per_bank_3,map_max_amount_per_bank_4,map_max_amount_per_bank_5,map_max_amount_per_bank_6,map_max_amount_per_bank_7,map_max_amount_per_bank_8,map_max_amount_per_bank_9,map_max_amount_per_bank_10,join_max_amount_per_bank_0,join_max_amount_per_bank_1,join_max_amount_per_bank_2,recovery_node_0,recovery_node_1,recovery_node_2,recovery_node_3
+  recovery_node_3:
+    build:
+      context: ./src
+      dockerfile: recovery_node/Dockerfile
+    container_name: recovery_node_3
+    depends_on:
+      - date_filter_0
+      - date_filter_1
+      - date_filter_2
+      - date_filter_3
+      - date_filter_4
+      - date_filter_5
+      - date_filter_6
+      - date_filter_7
+      - date_filter_8
+      - date_filter_9
+      - date_filter_10
+      - date_filter_11
+      - date_filter_12
+      - usd_filter_q1q2_0
+      - usd_filter_q1q2_1
+      - usd_filter_q1q2_2
+      - usd_filter_q1q2_3
+      - usd_filter_q1q2_4
+      - usd_filter_q1q2_5
+      - usd_filter_q1q2_6
+      - usd_filter_q1q2_7
+      - usd_filter_q1q2_8
+      - usd_filter_q1q2_9
+      - usd_filter_q1q2_10
+      - usd_filter_q1q2_11
+      - usd_filter_q1q2_12
+      - usd_filter_q1q2_13
+      - usd_filter_q1q2_14
+      - usd_filter_q1q2_15
+      - amount_filter_q1_0
+      - amount_filter_q1_1
+      - amount_filter_q1_2
+      - amount_filter_q1_3
+      - usd_filter_q3_0
+      - usd_filter_q3_1
+      - usd_filter_q3_2
+      - usd_filter_q3_3
+      - usd_filter_q3_4
+      - usd_filter_q3_5
+      - usd_filter_q4_0
+      - usd_filter_q4_1
+      - usd_filter_q4_2
+      - usd_filter_q4_3
+      - usd_filter_q4_4
+      - usd_filter_q4_5
+      - usd_filter_q4_6
+      - usd_filter_q4_7
+      - usd_filter_q4_8
+      - usd_filter_q4_9
+      - usd_filter_q4_10
+      - usd_filter_q4_11
+      - usd_filter_q4_12
+      - pay_format_filter_0
+      - pay_format_filter_1
+      - pay_format_filter_2
+      - pay_format_filter_3
+      - pay_format_filter_4
+      - pay_format_filter_5
+      - pay_format_filter_6
+      - pay_format_filter_7
+      - pay_format_filter_8
+      - pay_format_filter_9
+      - pay_format_filter_10
+      - pay_format_filter_11
+      - pay_format_filter_12
+      - amount_filter_q3_0
+      - amount_filter_q3_1
+      - amount_filter_q3_2
+      - amount_filter_q3_3
+      - amount_filter_q3_4
+      - amount_filter_q5_0
+      - amount_filter_q5_1
+      - amount_filter_q5_2
+      - amount_filter_q5_3
+      - scather_gather_mapper_0
+      - scather_gather_mapper_1
+      - scather_gather_mapper_2
+      - scather_gather_mapper_3
+      - scather_gather_aggregator_0
+      - scather_gather_aggregator_1
+      - scather_gather_aggregator_2
+      - scather_gather_aggregator_3
+      - scather_gather_pair_joiner_0
+      - scather_gather_pair_joiner_1
+      - scather_gather_pair_joiner_2
+      - scather_gather_pair_joiner_3
+      - scather_gather_joiner_0
+      - scather_gather_joiner_1
+      - scather_gather_joiner_2
+      - scather_gather_joiner_3
+      - currency_converter_0
+      - currency_converter_1
+      - currency_converter_2
+      - currency_converter_3
+      - currency_converter_4
+      - average_per_pay_format_mapper_0
+      - average_per_pay_format_mapper_1
+      - average_per_pay_format_mapper_2
+      - average_per_pay_format_mapper_3
+      - average_per_pay_format_joiner_0
+      - data_per_bank_redirector_0
+      - data_per_bank_redirector_1
+      - data_per_bank_redirector_2
+      - data_per_bank_redirector_3
+      - data_per_bank_redirector_4
+      - data_per_bank_redirector_5
+      - data_per_bank_redirector_6
+      - data_per_bank_redirector_7
+      - data_per_bank_redirector_8
+      - bank_filter_0
+      - bank_filter_1
+      - bank_filter_2
+      - bank_filter_3
+      - bank_filter_4
+      - bank_filter_5
+      - bank_filter_6
+      - map_max_amount_per_bank_0
+      - map_max_amount_per_bank_1
+      - map_max_amount_per_bank_2
+      - map_max_amount_per_bank_3
+      - map_max_amount_per_bank_4
+      - map_max_amount_per_bank_5
+      - map_max_amount_per_bank_6
+      - map_max_amount_per_bank_7
+      - map_max_amount_per_bank_8
+      - map_max_amount_per_bank_9
+      - map_max_amount_per_bank_10
+      - join_max_amount_per_bank_0
+      - join_max_amount_per_bank_1
+      - join_max_amount_per_bank_2
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
+      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
+      - LOG_LEVEL=INFO
+      - ID=3
+      - MOM_HOST=rabbitmq
+      - RECOVERY_PREFIX=recovery_node
+      - RECOVERY_AMOUNT=4
+      - HEARTBEAT_EXCHANGE=recovery_node_heartbeat_exchange
+      - HEARTBEAT_INTERVAL=2
+      - MAX_HEARTBEAT_MISSES=4
+      - DOCKER_RESTART_TIMEOUT_SECS=15
+      - ALL_MONITORED_CONTAINERS=date_filter_0,date_filter_1,date_filter_2,date_filter_3,date_filter_4,date_filter_5,date_filter_6,date_filter_7,date_filter_8,date_filter_9,date_filter_10,date_filter_11,date_filter_12,usd_filter_q1q2_0,usd_filter_q1q2_1,usd_filter_q1q2_2,usd_filter_q1q2_3,usd_filter_q1q2_4,usd_filter_q1q2_5,usd_filter_q1q2_6,usd_filter_q1q2_7,usd_filter_q1q2_8,usd_filter_q1q2_9,usd_filter_q1q2_10,usd_filter_q1q2_11,usd_filter_q1q2_12,usd_filter_q1q2_13,usd_filter_q1q2_14,usd_filter_q1q2_15,amount_filter_q1_0,amount_filter_q1_1,amount_filter_q1_2,amount_filter_q1_3,usd_filter_q3_0,usd_filter_q3_1,usd_filter_q3_2,usd_filter_q3_3,usd_filter_q3_4,usd_filter_q3_5,usd_filter_q4_0,usd_filter_q4_1,usd_filter_q4_2,usd_filter_q4_3,usd_filter_q4_4,usd_filter_q4_5,usd_filter_q4_6,usd_filter_q4_7,usd_filter_q4_8,usd_filter_q4_9,usd_filter_q4_10,usd_filter_q4_11,usd_filter_q4_12,pay_format_filter_0,pay_format_filter_1,pay_format_filter_2,pay_format_filter_3,pay_format_filter_4,pay_format_filter_5,pay_format_filter_6,pay_format_filter_7,pay_format_filter_8,pay_format_filter_9,pay_format_filter_10,pay_format_filter_11,pay_format_filter_12,amount_filter_q3_0,amount_filter_q3_1,amount_filter_q3_2,amount_filter_q3_3,amount_filter_q3_4,amount_filter_q5_0,amount_filter_q5_1,amount_filter_q5_2,amount_filter_q5_3,scather_gather_mapper_0,scather_gather_mapper_1,scather_gather_mapper_2,scather_gather_mapper_3,scather_gather_aggregator_0,scather_gather_aggregator_1,scather_gather_aggregator_2,scather_gather_aggregator_3,scather_gather_pair_joiner_0,scather_gather_pair_joiner_1,scather_gather_pair_joiner_2,scather_gather_pair_joiner_3,scather_gather_joiner_0,scather_gather_joiner_1,scather_gather_joiner_2,scather_gather_joiner_3,currency_converter_0,currency_converter_1,currency_converter_2,currency_converter_3,currency_converter_4,average_per_pay_format_mapper_0,average_per_pay_format_mapper_1,average_per_pay_format_mapper_2,average_per_pay_format_mapper_3,average_per_pay_format_joiner_0,data_per_bank_redirector_0,data_per_bank_redirector_1,data_per_bank_redirector_2,data_per_bank_redirector_3,data_per_bank_redirector_4,data_per_bank_redirector_5,data_per_bank_redirector_6,data_per_bank_redirector_7,data_per_bank_redirector_8,bank_filter_0,bank_filter_1,bank_filter_2,bank_filter_3,bank_filter_4,bank_filter_5,bank_filter_6,map_max_amount_per_bank_0,map_max_amount_per_bank_1,map_max_amount_per_bank_2,map_max_amount_per_bank_3,map_max_amount_per_bank_4,map_max_amount_per_bank_5,map_max_amount_per_bank_6,map_max_amount_per_bank_7,map_max_amount_per_bank_8,map_max_amount_per_bank_9,map_max_amount_per_bank_10,join_max_amount_per_bank_0,join_max_amount_per_bank_1,join_max_amount_per_bank_2,recovery_node_0,recovery_node_1,recovery_node_2,recovery_node_3
   client:
     build:
       context: ./src
@@ -3102,6 +4755,7 @@ services:
       - date_filter_9
       - date_filter_10
       - date_filter_11
+      - date_filter_12
       - usd_filter_q1q2_0
       - usd_filter_q1q2_1
       - usd_filter_q1q2_2
@@ -3117,12 +4771,17 @@ services:
       - usd_filter_q1q2_12
       - usd_filter_q1q2_13
       - usd_filter_q1q2_14
+      - usd_filter_q1q2_15
       - amount_filter_q1_0
       - amount_filter_q1_1
       - amount_filter_q1_2
+      - amount_filter_q1_3
       - usd_filter_q3_0
       - usd_filter_q3_1
       - usd_filter_q3_2
+      - usd_filter_q3_3
+      - usd_filter_q3_4
+      - usd_filter_q3_5
       - usd_filter_q4_0
       - usd_filter_q4_1
       - usd_filter_q4_2
@@ -3135,6 +4794,7 @@ services:
       - usd_filter_q4_9
       - usd_filter_q4_10
       - usd_filter_q4_11
+      - usd_filter_q4_12
       - pay_format_filter_0
       - pay_format_filter_1
       - pay_format_filter_2
@@ -3147,28 +4807,41 @@ services:
       - pay_format_filter_9
       - pay_format_filter_10
       - pay_format_filter_11
+      - pay_format_filter_12
       - amount_filter_q3_0
+      - amount_filter_q3_1
+      - amount_filter_q3_2
+      - amount_filter_q3_3
+      - amount_filter_q3_4
       - amount_filter_q5_0
       - amount_filter_q5_1
       - amount_filter_q5_2
+      - amount_filter_q5_3
       - scather_gather_mapper_0
       - scather_gather_mapper_1
       - scather_gather_mapper_2
+      - scather_gather_mapper_3
       - scather_gather_aggregator_0
       - scather_gather_aggregator_1
       - scather_gather_aggregator_2
+      - scather_gather_aggregator_3
       - scather_gather_pair_joiner_0
       - scather_gather_pair_joiner_1
       - scather_gather_pair_joiner_2
+      - scather_gather_pair_joiner_3
       - scather_gather_joiner_0
       - scather_gather_joiner_1
       - scather_gather_joiner_2
+      - scather_gather_joiner_3
       - currency_converter_0
       - currency_converter_1
       - currency_converter_2
       - currency_converter_3
+      - currency_converter_4
       - average_per_pay_format_mapper_0
       - average_per_pay_format_mapper_1
+      - average_per_pay_format_mapper_2
+      - average_per_pay_format_mapper_3
       - average_per_pay_format_joiner_0
       - data_per_bank_redirector_0
       - data_per_bank_redirector_1
@@ -3178,12 +4851,14 @@ services:
       - data_per_bank_redirector_5
       - data_per_bank_redirector_6
       - data_per_bank_redirector_7
+      - data_per_bank_redirector_8
       - bank_filter_0
       - bank_filter_1
       - bank_filter_2
       - bank_filter_3
       - bank_filter_4
       - bank_filter_5
+      - bank_filter_6
       - map_max_amount_per_bank_0
       - map_max_amount_per_bank_1
       - map_max_amount_per_bank_2
@@ -3195,11 +4870,13 @@ services:
       - map_max_amount_per_bank_8
       - map_max_amount_per_bank_9
       - map_max_amount_per_bank_10
-      - map_max_amount_per_bank_11
       - join_max_amount_per_bank_0
       - join_max_amount_per_bank_1
       - join_max_amount_per_bank_2
-      - join_max_amount_per_bank_3
+      - recovery_node_0
+      - recovery_node_1
+      - recovery_node_2
+      - recovery_node_3
     volumes:
       - ./data:/data
       - ./output:/output

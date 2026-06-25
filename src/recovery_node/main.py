@@ -34,7 +34,7 @@ if MAX_HEARTBEAT_MISSES < 2:
 HEARTBEAT_TIMEOUT_SECS = MAX_HEARTBEAT_MISSES * HEARTBEAT_INTERVAL
 RECOVERY_GRACE_SECS = HEARTBEAT_TIMEOUT_SECS
 TTL_MESSAGE = HEARTBEAT_INTERVAL * (MAX_HEARTBEAT_MISSES - 1) * 1000 # en milisegundos
-RECOVERY_RESTART_SECS = int(os.environ.get("DOCKER_RESTART_TIMEOUT_SECS", "15"))
+DOCKER_RESTART_TIMEOUT_SECS = int(os.environ.get("DOCKER_RESTART_TIMEOUT_SECS", "15"))
 ALL_MONITORED_CONTAINERS = [
     name.strip()
     for name in os.environ.get("MONITORED_CONTAINERS", "").split(",")
@@ -223,7 +223,7 @@ class RecoveryNode:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                timeout=RECOVERY_RESTART_SECS,
+                timeout=DOCKER_RESTART_TIMEOUT_SECS,
             )
 
             if result.returncode != 0:

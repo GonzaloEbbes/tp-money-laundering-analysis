@@ -9,7 +9,7 @@ from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.eof_controller.message_handler import EOFMessageHandler
-from common.dedup import InMemoryDeduplicator
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from message_handler import MessageHandler as JoinMessageHandler
 
 ID = int(os.environ.get("ID", 0))
@@ -186,9 +186,7 @@ class JoinMaxAmountPerBank:
         self.deduplicator.remove_client(client_id)
 
     def _dedup_key(self, message):
-        if message.message_id is None:
-            return None
-        return f"{message.type}:{message.message_id}"
+        return message_dedup_key(message)
 
     def _should_process_message(self, message):
         return self.deduplicator.should_process(
