@@ -36,6 +36,9 @@ OUTPUT_PREFIX_3 = os.environ["OUTPUT_PREFIX_3"] #que es el prefix del PAY FORMAT
 class DateFilter(RecoverableWorker):
 
     def __init__(self):
+        super().__init__(
+            data_dir=f"/data/snapshots/date_filter_{ID}"
+        )
         self.gateway_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, INPUT_QUEUE
         )

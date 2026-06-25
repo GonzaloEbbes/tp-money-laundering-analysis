@@ -2,9 +2,16 @@ import threading
 from common.snapshots.snapshot import SnapshotManager
 
 class RecoverableWorker:
-    def __init__(self, data_dir, batch_max_size=1000, flush_interval=2.0):
+    def __init__(self, data_dir, batch_max_size=1000, flush_interval=2.0, set_keys=None):
+        default_set_keys = ['processed_ids', 'eof_state']
+        if set_keys:
+            all_set_keys = list(set(default_set_keys) | set(set_keys))
+        else:
+            all_set_keys = default_set_keys
+
+        
         self.snapshot_manager = SnapshotManager(data_dir)
-        self.state = self.snapshot_manager.recover()
+        self.state = self.snapshot_manager.recover(set_keys=all_set_keys)
         
         self.BATCH_MAX_SIZE = batch_max_size
         self.FLUSH_INTERVAL_SECONDS = flush_interval
@@ -19,12 +26,6 @@ class RecoverableWorker:
         self._flush_thread.start()
 
         self.processed_ids = self.state.setdefault('processed_ids', {})
-        self._convert_processed_ids_to_sets()
-
-    def _convert_processed_ids_to_sets(self):
-        for cid, ids in self.processed_ids.items():
-            if isinstance(ids, list):
-                self.processed_ids[cid] = set(ids)
 
     def ensure_idempotent(self, client_id, data_id):
         processed_set = self.processed_ids.setdefault(client_id, set())

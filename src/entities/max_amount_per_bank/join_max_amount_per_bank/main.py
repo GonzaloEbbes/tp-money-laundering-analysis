@@ -97,7 +97,9 @@ class JoinMaxAmountPerBank(StatefulWorker):
         if not self.ensure_idempotent(cid, msg.data_id):
             logging.debug(f"Data ID {msg.data_id} already processed for client {cid}, skipping")
             return
-        raw_bank_id = msg.data.get("bank_id")
+        raw_bank_id = msg.data.get("from_bank")
+        if raw_bank_id is None:
+            raw_bank_id = msg.data.get("bank_id")
         bank_name = msg.data.get("bank_name")
         if raw_bank_id is not None and bank_name is not None:
             bank_id = int(raw_bank_id)

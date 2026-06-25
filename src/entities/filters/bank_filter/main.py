@@ -26,7 +26,6 @@ PREFIX_WORKER = os.environ.get("PREFIX_WORKER", "bank_filter")
 INPUT_PREFIX = os.environ.get("INPUT_PREFIX", "gateway")
 EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", 1))
 NEXT_STAGE_PREFIX = os.environ.get("NEXT_STAGE_PREFIX", "query2_joiner")
-AUXILIARY_INPUT = os.environ["AUXILIARY_INPUT"] == "true"
 
 def stable_hash(value):
     try:
@@ -67,7 +66,7 @@ class BankFilter(StatefulWorker):
             None, 
             self._on_send_eof_to_joiner,
             self._clean_client_memory,
-            AUXILIARY_INPUT,
+            False,
             self.state.setdefault('eof_state', {}),
             self.append_to_batch
         )

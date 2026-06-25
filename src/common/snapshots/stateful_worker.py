@@ -13,22 +13,8 @@ class StatefulWorker(RecoverableWorker):
         """
         set_keys: lista de claves en self.state que deben ser sets (ej. ['processed_ids', 'seen_banks'])
         """
-        super().__init__(data_dir, **kwargs)
-        self.set_keys = set_keys or []
-        self.processed_ids = self.state.setdefault('processed_ids', {})
-        self._convert_state_lists_to_sets(self.set_keys)
+        super().__init__(data_dir, set_keys=set_keys, **kwargs)
         self.state_lock = threading.Lock()
-
-    def _convert_state_lists_to_sets(self, keys):
-        """Convierte listas a sets en las claves especificadas dentro de self.state."""
-        for key in keys:
-            if key in self.state:
-                if isinstance(self.state[key], dict):
-                    for cid, value in self.state[key].items():
-                        if isinstance(value, list):
-                            self.state[key][cid] = set(value)
-                elif isinstance(self.state[key], list):
-                    self.state[key] = set(self.state[key])
 
     def state_add_to_set(self, path, value):
         self.append_to_batch({'type': 'add_to_set', 'path': path, 'value': value})

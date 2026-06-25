@@ -39,6 +39,7 @@ OUTPUT_PREFIX_2 = os.environ["OUTPUT_PREFIX_2"] #al currency converter
 class PayFormatFilter(RecoverableWorker):
 
     def __init__(self):
+        super().__init__(data_dir=f"/data/snapshots/pay_format_filter_{ID}")
         self.date_filter_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, INPUT_QUEUE
         )

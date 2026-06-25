@@ -124,7 +124,7 @@ class MapMaxAmountPerBank(StatefulWorker):
                     self._handle_data_message(cid, msg)
                 case _:
                     logging.debug(f"Mapper {self.id} ignorando mensaje: {msg.type}")
-            self.append_to_batch(op=None, conn=self.input_queue._connection, ack_func=ack)
+            self.append_to_batch(op=None, conn=self.input_exchange._connection, ack_func=ack)
         except Exception as e:
             logging.exception(e)
             nack()
@@ -138,7 +138,7 @@ class MapMaxAmountPerBank(StatefulWorker):
         if not self.ensure_idempotent(cid, data_id):
             logging.debug(f"Data ID {data_id} already processed for client {cid}, skipping")
             return
-        bank_id = int(msg.data.get("bank_id"))
+        bank_id = int(msg.data.get("from_bank"))
         amount = float(msg.data.get("amount_received"))
         origin = msg.data.get("account_origin")
 

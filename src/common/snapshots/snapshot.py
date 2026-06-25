@@ -116,12 +116,35 @@ class SnapshotManager:
                 target = self.state
                 for key in path[:-1]:
                     target = target.setdefault(key, {})
-                target.setdefault(path[-1], set()).add(op['value'])
+                current = target.get(path[-1])
+                if current is None:
+                    # Si no existe, crear un set con el valor
+                    target[path[-1]] = {op['value']}
+                elif isinstance(current, list):
+                    # Convertir lista a set y añadir
+                    current_set = set(current)
+                    current_set.add(op['value'])
+                    target[path[-1]] = current_set
+                elif isinstance(current, set):
+                    current.add(op['value'])
+                else:
+                    # Si es otro tipo (ej. dict), crear un set con el valor existente y el nuevo
+                    target[path[-1]] = {current, op['value']}
             else:
                 key = op.get('key')
                 if key is None:
                     return
-                self.state.setdefault(key, set()).add(op['value'])
+                current = self.state.get(key)
+                if current is None:
+                    self.state[key] = {op['value']}
+                elif isinstance(current, list):
+                    current_set = set(current)
+                    current_set.add(op['value'])
+                    self.state[key] = current_set
+                elif isinstance(current, set):
+                    current.add(op['value'])
+                else:
+                    self.state[key] = {current, op['value']}
 
         elif op_type == 'remove_from_set':
             if 'path' in op:
@@ -129,14 +152,28 @@ class SnapshotManager:
                 target = self.state
                 for key in path[:-1]:
                     target = target.get(key, {})
-                if path and isinstance(target.get(path[-1]), set):
-                    target[path[-1]].discard(op['value'])
+                if not path:
+                    return
+                current = target.get(path[-1])
+                if isinstance(current, set):
+                    current.discard(op['value'])
+                elif isinstance(current, list):
+                    # Convertir lista a set y eliminar
+                    current_set = set(current)
+                    current_set.discard(op['value'])
+                    target[path[-1]] = current_set
+                # Si no es ni set ni lista, ignorar
             else:
                 key = op.get('key')
                 if key is None:
                     return
-                if isinstance(self.state.get(key), set):
-                    self.state[key].discard(op['value'])
+                current = self.state.get(key)
+                if isinstance(current, set):
+                    current.discard(op['value'])
+                elif isinstance(current, list):
+                    current_set = set(current)
+                    current_set.discard(op['value'])
+                    self.state[key] = current_set
 
 
     def take_snapshot(self) -> None:

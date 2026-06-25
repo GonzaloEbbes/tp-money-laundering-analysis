@@ -193,6 +193,8 @@ class ScatherGatherPairJoiner(StatefulWorker):
                 consumer.stop_consuming()
             except Exception as e:
                 logging.error(f"Error stopping consumer: {e}")
+        self.stop_recoverable_worker()
+
 
     def _close_resources(self):
         resources = [self.scather_gather_pair_joiner_input_exchange]
@@ -209,14 +211,12 @@ class ScatherGatherPairJoiner(StatefulWorker):
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
-        self.stop_recoverable_worker()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
         self._runtime_error = True
         self.stop()
         self.eof_controller.on_stop()
-        self.stop_recoverable_worker()
     
     def start(self):
 
