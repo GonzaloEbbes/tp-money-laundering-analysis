@@ -233,3 +233,18 @@ class SnapshotManager:
     def get_state(self) -> Dict[str, Any]:
         with self._lock:
             return dict(self.state)
+    
+    def apply_batch(self, ops: List[Dict]) -> None:
+        with self._lock:
+            lines = []
+            for op in ops:
+                self.op_count_since_snapshot += 1
+                op['index'] = self.last_snapshot_index + self.op_count_since_snapshot
+                lines.append(json.dumps(op))
+                self._apply_op_no_wal(op)
+            
+            with open(self.wal_path, 'a', encoding='utf-8') as f:
+                f.write('\n'.join(lines) + '\n')
+            
+            if self.op_count_since_snapshot >= self.snapshot_interval_ops:
+                self._take_snapshot_locked()

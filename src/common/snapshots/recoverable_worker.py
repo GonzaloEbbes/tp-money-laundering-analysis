@@ -2,7 +2,7 @@ import threading
 from common.snapshots.snapshot import SnapshotManager
 
 class RecoverableWorker:
-    def __init__(self, data_dir, batch_max_size=1000, flush_interval=2.0, set_keys=None):
+    def __init__(self, data_dir, batch_max_size=10000, flush_interval=5.0, set_keys=None):
         default_set_keys = ['processed_ids', 'eof_state']
         if set_keys:
             all_set_keys = list(set(default_set_keys) | set(set_keys))
