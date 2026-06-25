@@ -7,16 +7,16 @@ from common.message_protocol.internal import InternalMessage, TransactionData
 class MessageHandler:
 
 
-    def serialize_usd_filter_q3_message(client : str, message_id : str, message : any):
+    def serialize_usd_filter_q3_message(client : str, data_id : str, message : any, message_id=None):
         parsedMessage = TransactionData()
         parsedMessage.account_origin = message["account_origin"]
         parsedMessage.amount_received = message["amount_received"]
         parsedMessage.payment_currency = message["payment_currency"]
         parsedMessage.receiving_currency = message["receiving_currency"]
         parsedMessage.payment_format = message["payment_format"]
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q3, client, message_id, parsedMessage)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q3, client, data_id, parsedMessage, message_id=message_id)
 
-    def serialize_usd_filter_q4_message(client : str, message_id : str, message : any):
+    def serialize_usd_filter_q4_message(client : str, data_id : str, message : any, message_id=None):
         parsedMessage = TransactionData()
         parsedMessage.account_origin = message["account_origin"]
         parsedMessage.account_destination = message["account_destination"]
@@ -24,15 +24,15 @@ class MessageHandler:
         parsedMessage.receiving_currency = message["receiving_currency"]
         parsedMessage.payment_currency = message["payment_currency"]
         parsedMessage.payment_format = message["payment_format"]
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q4, client, message_id, parsedMessage)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.DATE_FILTER_TO_USD_FILTER_Q4, client, data_id, parsedMessage, message_id=message_id)
     
-    def serialize_pay_format_filter_message(client : str, message_id : str, message : any):
+    def serialize_pay_format_filter_message(client : str, data_id : str, message : any, message_id=None):
         parsedMessage = TransactionData()
         parsedMessage.timestamp = message["timestamp"]
         parsedMessage.amount_paid = message["amount_paid"]
         parsedMessage.payment_currency = message["payment_currency"]
         parsedMessage.payment_format = message["payment_format"]
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.DATE_FILTER_TO_PAY_FORMAT_FILTER, client, message_id, parsedMessage)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.DATE_FILTER_TO_PAY_FORMAT_FILTER, client, data_id, parsedMessage, message_id=message_id)
     
     def deserialize_gateway_message(message):
         internal_message = message_protocol.internal.deserialize(message)

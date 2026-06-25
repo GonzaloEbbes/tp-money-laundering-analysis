@@ -7,12 +7,18 @@ import threading
 from common import middleware, message_protocol
 from common.snapshots.stateful_worker import StatefulWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as ScatherGatherMessageHandler
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
+RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
+RECOVERY_AMOUNT = int(os.environ.get("RECOVERY_AMOUNT", "1"))
+HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2"))
 EOF_CONTROL_EXCHANGE = os.environ["EOF_CONTROL_EXCHANGE"]
 
 SCATHER_GATHER_JOINER_AMOUNT = int(os.environ["SCATHER_GATHER_JOINER_AMOUNT"])
@@ -40,11 +46,27 @@ class ScatherGatherJoiner(StatefulWorker):
         
         self.id = int(ID)
 
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=SCATHER_GATHER_JOINER_PREFIX,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        )
+
         # definicion de exchanges para enviar a los agregadores
         self.gateway_final_query_queue = middleware.MessageMiddlewareQueueRabbitMQ(MOM_HOST, OUTPUT_QUEUE)
         self.producer_lock = threading.Lock()
 
+<<<<<<< HEAD
         self.scather_gather_accounts = self.state.setdefault('scather_gather_accounts', {})
+=======
+        self.dicts_lock = threading.Lock()
+        self.scather_gather_accounts : dict[str, dict[tuple[str], set[str]]] = {}
+        self.deduplicator = InMemoryDeduplicator()
+>>>>>>> origin/add-recovery-controller
 
         #Control de shutdown y estado de clientes
         self._sigterm_received = False
@@ -74,6 +96,7 @@ class ScatherGatherJoiner(StatefulWorker):
             self._handle_runtime_failure(e, "Scather Gather joiner consumer crashed")
 
     def process_scather_gather_pair_joiner_messages(self, message, ack, nack):
+<<<<<<< HEAD
         try:
             message = message_protocol.internal.deserialize(message)
             client_id = message.source_client_uuid
@@ -87,6 +110,22 @@ class ScatherGatherJoiner(StatefulWorker):
         except Exception as e:
             logging.error(f"Error processing message: {e}")
             nack()
+=======
+        message = message_protocol.internal.deserialize(message)
+        match message.type:
+            case message_protocol.internal.InternalMessageType.SCATHER_GATHER_PAIR_JOINER_TO_SCATHER_GATHER_JOINER:
+                if not self._should_process_message(message):
+                    ack()
+                    return
+                client_id = message.source_client_uuid
+                self._process_transaction(message.data, client_id, message.data_id)
+                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+                self.deduplicator.mark_processed(client_id, self._dedup_key(message))
+            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                client_id = message.source_client_uuid
+                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+        ack()
+>>>>>>> origin/add-recovery-controller
     
 
     def _process_transaction(self, transaction_data, client_id, data_id):
@@ -142,7 +181,22 @@ class ScatherGatherJoiner(StatefulWorker):
         logging.info(f"Sent final EOF for client {client_id} to gateway final query queue")
 
     def on_clean_client_callback(self, client_id):
+<<<<<<< HEAD
         self.clean_client_data(client_id, ['scather_gather_accounts'])
+=======
+        with self.dicts_lock:
+            self.scather_gather_accounts.pop(client_id, None)
+        self.deduplicator.remove_client(client_id)
+
+    def _dedup_key(self, message):
+        return message_dedup_key(message)
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
+
+>>>>>>> origin/add-recovery-controller
 
     def stop(self):
         with self._stop_lock:
@@ -173,7 +227,11 @@ class ScatherGatherJoiner(StatefulWorker):
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+<<<<<<< HEAD
         self.stop_recoverable_worker()
+=======
+        self.recovery_producer_controller.on_sigterm()
+>>>>>>> origin/add-recovery-controller
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
@@ -190,9 +248,15 @@ class ScatherGatherJoiner(StatefulWorker):
         )
 
         processing_thread_started = False
+        stop_recovery_controller_callback = None
         eof_exit_code=0
+        recovery_controller_exit_code = 0
 
         try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+
             process_thread.start()
             processing_thread_started = True
             eof_exit_code = self.eof_controller.start()
@@ -203,15 +267,18 @@ class ScatherGatherJoiner(StatefulWorker):
         except Exception as e:
             logging.error(e)
             self.stop()
-            return max(eof_exit_code, 2)
+            return max(eof_exit_code, recovery_controller_exit_code, 2)
 
         finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
             self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
-            return max(eof_exit_code, 1)
+            return max(eof_exit_code, recovery_controller_exit_code, 1)
 
-        return max(eof_exit_code, 0)
+        return max(eof_exit_code, recovery_controller_exit_code, 0)
 
 
 def main():

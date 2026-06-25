@@ -9,12 +9,18 @@ from common.snapshots.recoverable_worker import RecoverableWorker
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.eof_controller.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from message_handler import MessageHandler as DataPerBankRedirectorMessageHandler
 
 ID = int(os.environ.get("ID", 0))
 DATA_PER_BANK_REDIRECTOR_AMOUNT = int(os.environ.get("DATA_PER_BANK_REDIRECTOR_AMOUNT", 1))
 MOM_HOST = os.environ["MOM_HOST"]
+RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
+RECOVERY_AMOUNT = int(os.environ.get("RECOVERY_AMOUNT", "1"))
+HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2"))
 INPUT_QUEUE = os.environ["INPUT_QUEUE"]
 EOF_CONTROL_EXCHANGE = os.environ.get("EOF_CONTROL_EXCHANGE", "data_per_bank_control_exchange")
 MAP_MAX_EXCHANGE = os.environ.get("MAP_MAX_EXCHANGE", "map_max_exchange")
@@ -40,8 +46,19 @@ class DataPerBankRedirector(RecoverableWorker):
         self.input_queue = middleware.MessageMiddlewareQueueRabbitMQ(MOM_HOST, INPUT_QUEUE)
         self.map_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(MOM_HOST, MAP_MAX_EXCHANGE)
         self.id = ID
+
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=PREFIX_WORKER,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        )
         self._sigterm_received = False
         self._map_exchange_lock = threading.Lock()
+        self.deduplicator = InMemoryDeduplicator()
 
         self.eof_controller = EOFController(
             mom_host=MOM_HOST,
@@ -50,7 +67,7 @@ class DataPerBankRedirector(RecoverableWorker):
             amount_workers=DATA_PER_BANK_REDIRECTOR_AMOUNT,
             eof_control_exchange_name=EOF_CONTROL_EXCHANGE,
             input_eofs_quantities=EXPECTED_INPUT_EOFS,
-            on_consensus_ok_callback=None, 
+            on_consensus_ok_callback=None,
             on_send_eof_to_next_stage_callback=self._on_send_eof_to_mappers,
             on_clean_client_in_main_thread_callback=None,
             recovered_state=self.state.setdefault('eof_state', {}),
@@ -59,11 +76,11 @@ class DataPerBankRedirector(RecoverableWorker):
 
     def _on_send_eof_to_mappers(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         total_sent_to_mappers = totals_by_output.get(MAPPER_PREFIX, 0)
-        
+
         eof_bytes = EOFMessageHandler.serialize_eof_message(
             client_id, total_sent_to_mappers, origin_worker_prefix, amount_origin_workers
         )
-        
+
         for i in range(TOTAL_MAPPERS):
             routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{i}"
             with self._map_exchange_lock:
@@ -80,8 +97,20 @@ class DataPerBankRedirector(RecoverableWorker):
             match msg.type:
                 case InternalMessageType.EOF_MESSAGE | InternalMessageType.EOF_FINAL_MESSAGE:
                     self._handle_eof_message(cid, msg.data)
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/add-recovery-controller
                 case InternalMessageType.USD_FILTER_Q1Q2_TO_DATA_PER_BANK_SHUFFLER:
+                    if not self._should_process_message(msg):
+                        ack()
+                        return
                     self._handle_data_message(cid, msg)
+<<<<<<< HEAD
+=======
+                    self.deduplicator.mark_processed(cid, self._dedup_key(msg))
+
+>>>>>>> origin/add-recovery-controller
                 case _:
                     logging.debug(f"Redirector {self.id} ignorando mensaje de tipo no soportado o de control en la cola de datos: {msg.type}")
 
@@ -102,38 +131,63 @@ class DataPerBankRedirector(RecoverableWorker):
         raw_bank_id = msg.data.get("from_bank")
         if raw_bank_id is not None:
             from_bank = str(int(raw_bank_id))
-        
+
         if from_bank is not None:
             partition = stable_hash(from_bank) % TOTAL_MAPPERS
             routing_key = f"{MAP_MAX_ROUTING_KEY_PREFIX}_{partition}"
             account_origin = msg.data.get("account_origin")
             amount_received = msg.data.get("amount_received")
-            
+
             redirect_msg = DataPerBankRedirectorMessageHandler.serialize_redirect(
-                cid, msg.data_id, from_bank, account_origin, amount_received
+                cid,
+                msg.data_id,
+                from_bank,
+                account_origin,
+                amount_received,
+                message_id=msg.message_id,
             )
-            
+
             with self._map_exchange_lock:
                 self.map_exchange.send(redirect_msg, routing_key=routing_key)
-            
+
             self.eof_controller.on_packet_sent_by_client_to(MAPPER_PREFIX, cid)
 
         self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX)
 
+    def _dedup_key(self, message):
+        return message_dedup_key(message)
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
+
     def start(self):
         input_thread = threading.Thread(
-            target=self._run_input_consumer, 
+            target=self._run_input_consumer,
             name=f"redirector-{self.id}-input-consumer"
         )
-        input_thread.start()
-        eof_exit_code = self.eof_controller.start()
-        input_thread.join()
+        stop_recovery_controller_callback = None
+        eof_exit_code = 0
+        recovery_controller_exit_code = 0
 
-        self.input_queue.close()
-        if hasattr(self, 'map_exchange'):
-            self.map_exchange.close()
-        
-        return eof_exit_code
+        try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+            input_thread.start()
+            eof_exit_code = self.eof_controller.start()
+            input_thread.join()
+
+        finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
+            self.input_queue.close()
+            if hasattr(self, 'map_exchange'):
+                self.map_exchange.close()
+
+        return max(eof_exit_code, recovery_controller_exit_code, 0)
 
     def stop(self):
         self._sigterm_received = True
@@ -143,9 +197,13 @@ class DataPerBankRedirector(RecoverableWorker):
             )
         except Exception as e:
             logging.error(f"Error al detener consumidor: {e}")
-            
+
         self.eof_controller.on_sigterm()
+<<<<<<< HEAD
         self.stop_recoverable_worker()
+=======
+        self.recovery_producer_controller.on_sigterm()
+>>>>>>> origin/add-recovery-controller
 
 def main():
     configure_logging_from_env()
@@ -158,4 +216,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

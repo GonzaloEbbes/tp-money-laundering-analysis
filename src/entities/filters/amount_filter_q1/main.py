@@ -7,13 +7,19 @@ import threading
 from common import middleware, message_protocol
 from common.snapshots.recoverable_worker import RecoverableWorker
 from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from message_handler import MessageHandler as AmountFilterQ1MessageHandler
 from common.logging import configure_logging_from_env
 
 
 ID = os.environ["ID"]
 MOM_HOST = os.environ["MOM_HOST"]
+RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
+RECOVERY_AMOUNT = int(os.environ.get("RECOVERY_AMOUNT", "1"))
+HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2"))
 USD_FILTER_Q1Q2_QUEUE = os.environ["INPUT_QUEUE"] #Es la propia, que conecta con el filtro USD q1q2
 AMOUNT_FILTER_PREFIX = os.environ["AMOUNT_FILTER_PREFIX"]
 AMOUNT_FILTER_AMOUNT = int(os.environ["AMOUNT_FILTER_AMOUNT"])
@@ -34,6 +40,16 @@ class AmountFilterQ1(RecoverableWorker):
         )
         
         self.id = int(ID)
+
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=AMOUNT_FILTER_PREFIX,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        )
         self.producer_lock = threading.Lock()
         # definicion de working queue exchanges de la instancia posterior
         self.gateway_final_query_queue = middleware.MessageMiddlewareQueueRabbitMQ(
@@ -44,6 +60,7 @@ class AmountFilterQ1(RecoverableWorker):
         self._runtime_error = False
         self._stop_lock = threading.Lock()
         self._stopping = False
+<<<<<<< HEAD
         self.eof_controller = EOFController(
             MOM_HOST, 
             self.id, 
@@ -58,6 +75,10 @@ class AmountFilterQ1(RecoverableWorker):
             self.state.setdefault('eof_state', {}),
             self.append_to_batch
             )
+=======
+        self.deduplicator = InMemoryDeduplicator()
+        self.eof_controller = EOFController(MOM_HOST, self.id, AMOUNT_FILTER_PREFIX, AMOUNT_FILTER_AMOUNT, EOF_CONTROL_EXCHANGE, EXPECTED_INPUT_EOFS,None,self.on_send_eof_to_next_stage_callback, None, AUXILIARY_INPUT)
+>>>>>>> origin/add-recovery-controller
 
     
     def _run_usd_filter_q1q2_consumer(self):
@@ -68,6 +89,7 @@ class AmountFilterQ1(RecoverableWorker):
 
     
     def process_usd_filter_q1q2_messages(self, message, ack, nack):
+<<<<<<< HEAD
         try:
             message = message_protocol.internal.deserialize(message)
             client_id = message.source_client_uuid
@@ -81,14 +103,32 @@ class AmountFilterQ1(RecoverableWorker):
         except Exception as e:
             logging.exception("Error en filtro: %s", e)
             nack()
+=======
+        message = message_protocol.internal.deserialize(message)
+        match message.type:
+            case message_protocol.internal.InternalMessageType.USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1:
+                if not self._should_process_message(message):
+                    ack()
+                    return
+                client_id = message.source_client_uuid
+                self._process_transaction(message.data, client_id, message.data_id, message.message_id)
+                self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
+                self.deduplicator.mark_processed(client_id, self._dedup_key(message))
+            case message_protocol.internal.InternalMessageType.EOF_MESSAGE:
+                client_id = message.source_client_uuid
+                self.eof_controller.on_input_queue_eof_reception(client_id, message.data)
+        ack()
+        
+        
+>>>>>>> origin/add-recovery-controller
 
-    def _process_transaction(self, transaction_data, client_id, data_id):
+    def _process_transaction(self, transaction_data, client_id, data_id, message_id=None):
         logging.debug(f"Received USD_FILTER_Q1Q2_TO_AMOUNT_FILTER_Q1 for client {client_id}")
         amount_received = float(transaction_data.get("amount_received"))
 
         if amount_received > 0 and amount_received < 50:
             with self.producer_lock:
-                self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data))
+                self.gateway_final_query_queue.send(AmountFilterQ1MessageHandler.serialize_gateway_query_message(client_id, data_id, transaction_data, message_id=message_id))
                 self.eof_controller.on_packet_sent_by_client_to(OUTPUT_PREFIX_1, client_id)
             logging.debug(f"Transaction for client {client_id} sent to final gateway queue")
 
@@ -97,6 +137,14 @@ class AmountFilterQ1(RecoverableWorker):
         with self.producer_lock:
             self.gateway_final_query_queue.send(EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers))
         logging.info(f"Sent final EOF for client {client_id} to gateway final query queue")
+
+    def _dedup_key(self, message):
+        return message_dedup_key(message)
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
 
     def stop(self):
         with self._stop_lock:
@@ -128,6 +176,7 @@ class AmountFilterQ1(RecoverableWorker):
         self._sigterm_received = True
         self.stop()
         self.eof_controller.on_sigterm()
+        self.recovery_producer_controller.on_sigterm()
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
@@ -143,9 +192,15 @@ class AmountFilterQ1(RecoverableWorker):
         )
 
         processing_thread_started = False
+        stop_recovery_controller_callback = None
         eof_exit_code=0
+        recovery_controller_exit_code = 0
 
         try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+
             process_thread.start()
             processing_thread_started = True
             eof_exit_code = self.eof_controller.start()
@@ -156,15 +211,18 @@ class AmountFilterQ1(RecoverableWorker):
         except Exception as e:
             logging.error(e)
             self.stop()
-            return max(eof_exit_code, 2)
+            return max(eof_exit_code, recovery_controller_exit_code, 2)
 
         finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
             self._close_resources()
 
         if self._runtime_error and not self._sigterm_received:
-            return max(eof_exit_code, 1)
+            return max(eof_exit_code, recovery_controller_exit_code, 1)
 
-        return max(eof_exit_code, 0)
+        return max(eof_exit_code, recovery_controller_exit_code, 0)
 
 
 def main():
@@ -180,4 +238,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

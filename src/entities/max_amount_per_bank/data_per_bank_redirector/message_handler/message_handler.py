@@ -3,7 +3,7 @@ from common.message_protocol.internal import InternalMessageType
 
 class MessageHandler:
     @staticmethod
-    def serialize_redirect(client_uuid, data_id, from_bank, account_origin, amount_received):
+    def serialize_redirect(client_uuid, data_id, from_bank, account_origin, amount_received, message_id=None):
         data = {
             "from_bank": from_bank,
             "account_origin": account_origin,
@@ -14,4 +14,5 @@ class MessageHandler:
             client_uuid,
             data_id,
             data,
+            message_id=message_id,
         )

@@ -10,12 +10,18 @@ from common import middleware, message_protocol
 from common.snapshots.stateful_worker import StatefulWorker
 from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from message_handler import MessageHandler as MapperMessageHandler
 
 ID = int(os.environ["ID"])
 MAP_AMOUNT = int(os.environ.get("MAP_AMOUNT", 1))
 MOM_HOST = os.environ["MOM_HOST"]
+RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
+RECOVERY_AMOUNT = int(os.environ.get("RECOVERY_AMOUNT", "1"))
+HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2"))
 MAP_MAX_EXCHANGE = os.environ.get("MAP_MAX_EXCHANGE", "map_max_exchange")
 MAP_MAX_ROUTING_KEY_PREFIX = os.environ.get("MAP_MAX_ROUTING_KEY_PREFIX", "map_max_partition")
 JOIN_EXCHANGE = os.environ.get("JOIN_EXCHANGE", "query2_join_exchange")
@@ -23,8 +29,8 @@ JOIN_AMOUNT = int(os.environ.get("JOIN_AMOUNT", 1))
 JOIN_ROUTING_KEY_PREFIX = os.environ.get("JOIN_ROUTING_KEY_PREFIX", "join_partition")
 
 PREFIX_WORKER = os.environ.get("PREFIX_WORKER", "map_max_amount_per_bank")
-INPUT_PREFIX = os.environ.get("INPUT_PREFIX", "data_per_bank_redirector") 
-EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", 1)) 
+INPUT_PREFIX = os.environ.get("INPUT_PREFIX", "data_per_bank_redirector")
+EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", 1))
 EOF_CONTROL_EXCHANGE = os.environ.get("EOF_CONTROL_EXCHANGE", "mapper_control_exchange")
 NEXT_STAGE_PREFIX = os.environ.get("NEXT_STAGE_PREFIX", "query2_joiner")
 
@@ -42,6 +48,16 @@ class MapMaxAmountPerBank(StatefulWorker):
             set_keys=['bank_max'] 
             )
         self.id = ID
+
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=PREFIX_WORKER,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        )
         self.input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
             MOM_HOST,
             MAP_MAX_EXCHANGE,
@@ -56,6 +72,7 @@ class MapMaxAmountPerBank(StatefulWorker):
         self.bank_max = self.state.setdefault('bank_max', {})
         self._join_exchange_lock = threading.Lock()
         self._sigterm_received = False
+        self.deduplicator = InMemoryDeduplicator()
 
         self.eof_controller = EOFController(
             mom_host=MOM_HOST,
@@ -64,7 +81,7 @@ class MapMaxAmountPerBank(StatefulWorker):
             amount_workers=MAP_AMOUNT,
             eof_control_exchange_name=EOF_CONTROL_EXCHANGE,
             input_eofs_quantities=EXPECTED_INPUT_EOFS,
-            on_consensus_ok_callback=self._on_consensus_ok_process_pending_data, 
+            on_consensus_ok_callback=self._on_consensus_ok_process_pending_data,
             on_send_eof_to_next_stage_callback=self._on_send_eof_to_next_stage,
             on_clean_client_in_main_thread_callback=self._clean_client_memory
         )
@@ -78,28 +95,34 @@ class MapMaxAmountPerBank(StatefulWorker):
         if client_id not in self.bank_max:
             return
 
-        logging.info(f"Mapper {self.id} procesando datos pendientes tras consenso EOF para cliente {client_id}")
-        
+        logging.debug(f"Mapper {self.id} procesando datos pendientes tras consenso EOF para cliente {client_id}")
+
         for from_bank, (amount, origin) in self.bank_max[client_id].items():
             partition = stable_hash(from_bank) % JOIN_AMOUNT
             routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{partition}"
+            result_id = f"{self.id}:{from_bank}"
             result_bytes = MapperMessageHandler.serialize_result(
-                client_id, "FINAL_RESULT", from_bank, amount, origin
+                client_id,
+                result_id,
+                from_bank,
+                amount,
+                origin,
+                message_id=result_id,
             )
             with self._join_exchange_lock:
                 self.join_exchange.send(result_bytes, routing_key=routing_key)
-            
+
             self.eof_controller.on_packet_sent_by_client_to(NEXT_STAGE_PREFIX, client_id)
 
         logging.info(f"Mapper {self.id} envió {len(self.bank_max[client_id])} resultados finales para cliente {client_id}")
 
     def _on_send_eof_to_next_stage(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         total_sent_to_joiner = totals_by_output.get(NEXT_STAGE_PREFIX, 0)
-        
+
         eof_bytes = EOFMessageHandler.serialize_eof_message(
             client_id, total_sent_to_joiner, origin_worker_prefix, amount_origin_workers
         )
-        
+
         for i in range(JOIN_AMOUNT):
             routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{i}"
             with self._join_exchange_lock:
@@ -107,7 +130,14 @@ class MapMaxAmountPerBank(StatefulWorker):
         logging.info(f"Se envió EOF al map_max_amount_per_bank_joiner para cliente {client_id}")
 
     def _clean_client_memory(self, client_id):
+<<<<<<< HEAD
         self.clean_client_data(client_id, ['bank_max'])
+=======
+        if client_id in self.bank_max:
+            del self.bank_max[client_id]
+            logging.debug(f"Memoria limpiada para el cliente {client_id} en el Mapper {self.id}")
+        self.deduplicator.remove_client(client_id)
+>>>>>>> origin/add-recovery-controller
 
     def process_message(self, raw_msg, ack, nack):
         try:
@@ -121,10 +151,19 @@ class MapMaxAmountPerBank(StatefulWorker):
                 case InternalMessageType.EOF_MESSAGE | InternalMessageType.EOF_FINAL_MESSAGE:
                     self._handle_eof_message(cid, msg.data)
                 case InternalMessageType.DATA_PER_BANK_SHUFFLER_TO_MAP_MAX_AMOUNT_PER_BANK:
+                    if not self._should_process_message(msg):
+                        ack()
+                        return
                     self._handle_data_message(cid, msg)
+                    self.deduplicator.mark_processed(cid, self._dedup_key(msg))
                 case _:
                     logging.debug(f"Mapper {self.id} ignorando mensaje: {msg.type}")
+<<<<<<< HEAD
             self.append_to_batch(op=None, conn=self.input_exchange._connection, ack_func=ack)
+=======
+            ack()
+
+>>>>>>> origin/add-recovery-controller
         except Exception as e:
             logging.exception(e)
             nack()
@@ -134,6 +173,7 @@ class MapMaxAmountPerBank(StatefulWorker):
         self.eof_controller.on_input_queue_eof_reception(cid, data)
 
     def _handle_data_message(self, cid, msg):
+<<<<<<< HEAD
         data_id = msg.data_id
         if not self.ensure_idempotent(cid, data_id):
             logging.debug(f"Data ID {data_id} already processed for client {cid}, skipping")
@@ -157,25 +197,58 @@ class MapMaxAmountPerBank(StatefulWorker):
             self.join_exchange.send(serialized, routing_key=routing_key)
             self.eof_controller.on_packet_sent_by_client_to("joiner", cid)
         
+=======
+        raw_from_bank = msg.data.get("from_bank")
+        amount = msg.data.get("amount_received")
+
+        if amount is not None and raw_from_bank is not None:
+            from_bank = int(raw_from_bank)
+            origin = msg.data.get("account_origin")
+
+            current = self.bank_max[cid].get(from_bank)
+            if current is None or amount > current[0]:
+                self.bank_max[cid][from_bank] = (amount, origin)
+
+>>>>>>> origin/add-recovery-controller
         self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX)
+
+    def _dedup_key(self, message):
+        return message_dedup_key(message)
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
 
     def _run_input_consumer(self):
         self.input_exchange.start_consuming(self.process_message)
 
     def start(self):
         input_thread = threading.Thread(
-            target=self._run_input_consumer, 
+            target=self._run_input_consumer,
             name=f"mapper-{self.id}-input-consumer"
         )
-        input_thread.start()
-        eof_exit_code = self.eof_controller.start()
-        input_thread.join()
+        stop_recovery_controller_callback = None
+        eof_exit_code = 0
+        recovery_controller_exit_code = 0
 
-        self.input_exchange.close()
-        if hasattr(self, 'join_exchange'):
-            self.join_exchange.close()
-        
-        return eof_exit_code
+        try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+            input_thread.start()
+            eof_exit_code = self.eof_controller.start()
+            input_thread.join()
+
+        finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
+            self.input_exchange.close()
+            if hasattr(self, 'join_exchange'):
+                self.join_exchange.close()
+
+        return max(eof_exit_code, recovery_controller_exit_code, 0)
 
     def stop(self):
         self._sigterm_received = True
@@ -185,9 +258,13 @@ class MapMaxAmountPerBank(StatefulWorker):
             )
         except Exception as e:
             logging.error(f"Error al detener consumidor: {e}")
-            
+
         self.eof_controller.on_sigterm()
+<<<<<<< HEAD
         self.stop_recoverable_worker()
+=======
+        self.recovery_producer_controller.on_sigterm()
+>>>>>>> origin/add-recovery-controller
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -196,9 +273,15 @@ def main():
         logging.info("SIGTERM received")
         w.stop()
     signal.signal(signal.SIGTERM, _sigterm)
+<<<<<<< HEAD
     return w.start()
     
+=======
+    exit_code = w.start()
+
+    import sys
+    sys.exit(exit_code)
+>>>>>>> origin/add-recovery-controller
 
 if __name__ == "__main__":
     sys.exit(main())
-    

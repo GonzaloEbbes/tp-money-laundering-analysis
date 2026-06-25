@@ -7,11 +7,11 @@ from common.message_protocol.internal import TransactionData
 class MessageHandler:
 
 
-    def serialize_gateway_query_message(client : str, message_id : str, message : any):
+    def serialize_gateway_query_message(client : str, data_id : str, message : any, message_id=None):
         parsedMessage = TransactionData()
         parsedMessage.account_origin = message["account_origin"]
         parsedMessage.amount_received = message["amount_received"]
-        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q3_TO_GATEWAY, client, message_id, parsedMessage)
+        return message_protocol.internal.serialize(message_protocol.internal.InternalMessageType.AMOUNT_FILTER_Q3_TO_GATEWAY, client, data_id, parsedMessage, message_id=message_id)
 
     def deserialize_input_message(message):
         internal_message = message_protocol.internal.deserialize(message)

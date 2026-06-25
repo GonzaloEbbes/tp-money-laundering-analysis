@@ -19,6 +19,10 @@ from .middleware import (
 	MessageMiddlewareExchangePublisher,
 )
 
+
+def _log_close_failure(resource_name, error):
+	logging.exception("Error closing %s: %s", resource_name, error)
+
 class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 
 	# Inicializa la conexion con RabbitMQ y el canal de comunicacion.
@@ -129,12 +133,14 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 			try:
 				self._batched_publisher.close()
 			except Exception as e:
+				_log_close_failure("queue batched publisher", e)
 				errors.append(e)
 		if self._channel is not None:
 			try:
 				if self._channel.is_open:
 					self._channel.close()
 			except Exception as e:
+				_log_close_failure("queue channel", e)
 				errors.append(e)
 
 		if self._connection is not None:
@@ -142,6 +148,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 				if self._connection.is_open:
 					self._connection.close()
 			except Exception as e:
+				_log_close_failure("queue connection", e)
 				errors.append(e)
 
 		self._batched_publisher = None
@@ -167,7 +174,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 	# parciales y eleva MessageMiddlewareMessageError.
 	# Si ocurre un error al liberar recursos parciales, 
 	# eleva MessageMiddlewareCloseError.
-	def __init__(self, host, exchange_name, routing_keys, queue_name=None, exclusive=True):
+	def __init__(self, host, exchange_name, routing_keys, queue_name=None, exclusive=True, queue_arguments=None):
 		self._connection = None
 		self._channel = None
 		self._exchange_name = exchange_name
@@ -176,6 +183,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 		self._exclusive = exclusive
 		self._on_message_callback = None
 		self._batched_publisher = None
+		self._queue_arguments = queue_arguments or {}
 
 		#Flags
 		self._consuming = False
@@ -240,7 +248,11 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			result = self._channel.queue_declare(queue='', exclusive=True)
 			self._queue_name = result.method.queue
 		else:
+<<<<<<< HEAD
 			self._channel.queue_declare(queue=self._queue_name, durable=False, exclusive=self._exclusive)
+=======
+			self._channel.queue_declare(queue=self._queue_name, durable=True, exclusive=self._exclusive, arguments=self._queue_arguments)
+>>>>>>> origin/add-recovery-controller
 		for routing_key in self._routing_keys:
 			self._channel.queue_bind(
 				queue=self._queue_name,
@@ -249,6 +261,19 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			)
 		self._consumer_queue_declared = True
 
+	def discard_pending_messages_in_exchange_queue(self):
+		try:
+			self._declare_and_bind_queue_to_routing_keys()
+			self._channel.queue_purge(queue=self._queue_name)
+		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
+			raise MessageMiddlewareDisconnectedError(
+				f"Connection Error during discard_pending_messages_in_exchange_queue: {e}"
+			) from e
+		except Exception as e:
+			raise MessageMiddlewareMessageError(
+				"Internal Error during discard_pending_messages_in_exchange_queue: "
+				f"{e}"
+			) from e	
 	# Si se estaba consumiendo desde el exchange, detiene la escucha.
 	# Si no se estaba consumiendo, no tiene efecto ni levanta error.
 	# Si se pierde la conexión con el middleware eleva MessageMiddlewareDisconnectedError.
@@ -285,6 +310,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			try:
 				self._batched_publisher.close()
 			except Exception as e:
+				_log_close_failure("exchange batched publisher", e)
 				errors.append(e)
 
 		if self._channel is not None:
@@ -292,6 +318,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 				if self._channel.is_open:
 					self._channel.close()
 			except Exception as e:
+				_log_close_failure("exchange channel", e)
 				errors.append(e)
 
 		if self._connection is not None:
@@ -299,6 +326,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 				if self._connection.is_open:
 					self._connection.close()
 			except Exception as e:
+				_log_close_failure("exchange connection", e)
 				errors.append(e)
 
 		self._batched_publisher = None
@@ -314,6 +342,18 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			detail = "; ".join(str(e) for e in errors)
 			raise MessageMiddlewareCloseError(f"Close Error: {detail}")
 
+	def purge(self):
+		try:
+			self._declare_and_bind_queue_to_routing_keys()
+			self._channel.queue_purge(queue=self._queue_name)
+		except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
+			raise MessageMiddlewareDisconnectedError(
+				f"Connection Error during purge: {e}"
+			) from e
+		except Exception as e:
+			raise MessageMiddlewareMessageError(
+				f"Internal Error during purge: {e}"
+			) from e
 
 class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublisher):
 	def __init__(self, host, exchange_name, bindings=None):
@@ -365,6 +405,7 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 			try:
 				self._batched_publisher.close()
 			except Exception as e:
+				_log_close_failure("exchange publisher batched publisher", e)
 				errors.append(e)
 
 		if self._channel is not None:
@@ -372,6 +413,7 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 				if self._channel.is_open:
 					self._channel.close()
 			except Exception as e:
+				_log_close_failure("exchange publisher channel", e)
 				errors.append(e)
 
 		if self._connection is not None:
@@ -379,6 +421,7 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 				if self._connection.is_open:
 					self._connection.close()
 			except Exception as e:
+				_log_close_failure("exchange publisher connection", e)
 				errors.append(e)
 
 		self._batched_publisher = None

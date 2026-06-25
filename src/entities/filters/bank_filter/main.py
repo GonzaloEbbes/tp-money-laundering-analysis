@@ -9,12 +9,21 @@ from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from message_handler import MessageHandler as BankFilterMessageHandler
 from common.controllers.eof_controller.EOF_controller import EOFController
+<<<<<<< HEAD
 from common.snapshots.stateful_worker import StatefulWorker
+=======
+from common.controllers.healthcheck.recovery_controller import RecoveryController
+>>>>>>> origin/add-recovery-controller
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 
 ID = int(os.environ["ID"])
 BANK_FILTERS_AMOUNT = int(os.environ.get("BANK_FILTERS_AMOUNT", 1))
 MOM_HOST = os.environ["MOM_HOST"]
+RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
+RECOVERY_AMOUNT = int(os.environ.get("RECOVERY_AMOUNT", "1"))
+HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2"))
 BANK_EXCHANGE = os.environ.get("BANK_EXCHANGE", "bank_exchange")
 BANK_ROUTING_KEY_PREFIX = os.environ.get("BANK_ROUTING_KEY_PREFIX", "bank_partition")
 JOIN_EXCHANGE = os.environ.get("JOIN_EXCHANGE", "query2_join_exchange")
@@ -41,18 +50,29 @@ class BankFilter(StatefulWorker):
             set_keys=['seen_banks']
             )
         self.id = ID
+
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=PREFIX_WORKER,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        )
         self.routing_key = f"{BANK_ROUTING_KEY_PREFIX}_{ID}"
         self.input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
             MOM_HOST,
             BANK_EXCHANGE,
             routing_keys=[self.routing_key],
-            queue_name=None,     
+            queue_name=None,
             exclusive=True
         )
         self.join_exchange = middleware.MessageMiddlewareExchangePublisherRabbitMQ(
             MOM_HOST, JOIN_EXCHANGE
         )
         self._sigterm_received = False
+<<<<<<< HEAD
         
         self.seen_banks = self.state.setdefault('seen_banks', {})
         self._join_exchange_lock = threading.Lock()
@@ -71,6 +91,26 @@ class BankFilter(StatefulWorker):
             self.append_to_batch
         )
     
+=======
+
+        self.seen_banks = {} # {cid: set()}
+        self._join_exchange_lock = threading.Lock()
+        self.deduplicator = InMemoryDeduplicator()
+
+        self.eof_controller = EOFController(
+            mom_host=MOM_HOST,
+            id_worker=self.id,
+            prefix_worker=PREFIX_WORKER,
+            amount_workers=BANK_FILTERS_AMOUNT,
+            eof_control_exchange_name=EOF_CONTROL_EXCHANGE,
+            input_eofs_quantities=EXPECTED_INPUT_EOFS,
+            on_consensus_ok_callback=None,
+            on_send_eof_to_next_stage_callback=self._on_send_eof_to_joiner,
+            on_clean_client_in_main_thread_callback=self._clean_client_memory
+        )
+
+
+>>>>>>> origin/add-recovery-controller
     def process_message(self, raw_msg, ack, nack):
         try:
             msg = message_protocol.internal.deserialize(raw_msg)
@@ -80,7 +120,11 @@ class BankFilter(StatefulWorker):
                 case InternalMessageType.EOF_MESSAGE | InternalMessageType.EOF_FINAL_MESSAGE:
                     self._handle_eof_message(cid, msg.data)
                 case InternalMessageType.GATEWAY_TO_BANK_FILTER:
+                    if not self._should_process_message(msg):
+                        ack()
+                        return
                     self._handle_data_message(cid, msg)
+                    self.deduplicator.mark_processed(cid, self._dedup_key(msg))
                 case _:
                     logging.debug("Ignoring message type: %s", msg.type)
 
@@ -92,30 +136,56 @@ class BankFilter(StatefulWorker):
     def _handle_eof_message(self, cid, data):
         logging.debug(f"BankFilter {self.id} recibió mensaje EOF para el cliente {cid}")
         self.eof_controller.on_input_queue_eof_reception(cid, data)
-    
+
     def _handle_data_message(self, cid, msg):
         if not self.ensure_idempotent(cid, msg.data_id):
             return
         raw_bank_id = msg.data.get("bank_id")
         if raw_bank_id is None:
             raw_bank_id = msg.data.get("id")
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/add-recovery-controller
         bank_name = msg.data.get("bank_name")
         if raw_bank_id is not None:
             bank_id = int(raw_bank_id)
+<<<<<<< HEAD
             client_set = self.seen_banks.setdefault(cid, set())
             if bank_id not in client_set:
                 client_set.add(bank_id)
                 self.state_add_to_set(['seen_banks', cid], bank_id)
                 partition = stable_hash(bank_id) % JOIN_AMOUNT
                 routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{partition}"
+=======
+
+            if cid not in self.seen_banks:
+                self.seen_banks[cid] = set()
+
+            if bank_id not in self.seen_banks[cid]:
+                self.seen_banks[cid].add(bank_id)
+                partition = stable_hash(bank_id) % JOIN_AMOUNT
+                routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{partition}"
+
+>>>>>>> origin/add-recovery-controller
                 serialized = BankFilterMessageHandler.serialize_join_message(
-                    cid, msg.data_id, bank_id, bank_name
+                    cid, msg.data_id, bank_id, bank_name, message_id=msg.message_id
                 )
+<<<<<<< HEAD
                 with self._join_exchange_lock:
                     self.join_exchange.send(serialized, routing_key=routing_key)
                 self.eof_controller.on_packet_sent_by_client_to(NEXT_STAGE_PREFIX, cid)
             self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX)
     
+=======
+
+                with self._join_exchange_lock:
+                    self.join_exchange.send(serialized, routing_key=routing_key)
+
+                self.eof_controller.on_packet_sent_by_client_to(NEXT_STAGE_PREFIX, cid)
+        self.eof_controller.on_processed_packet_by_client(cid, INPUT_PREFIX)
+
+>>>>>>> origin/add-recovery-controller
     def _on_send_eof_to_joiner(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         total_sent_to_joiner = totals_by_output.get(NEXT_STAGE_PREFIX, 0)
 
@@ -130,49 +200,81 @@ class BankFilter(StatefulWorker):
         logging.info(f"BankFilter envió EOF final al map_max_amount_per_bank_joiner para cliente {client_id}")
 
     def _clean_client_memory(self, client_id):
+<<<<<<< HEAD
         self.clean_client_data(client_id, ['seen_banks'])
+=======
+        """Callback que el controlador llama una vez que todo el proceso ha finalizado con éxito."""
+        if client_id in self.seen_banks:
+            del self.seen_banks[client_id]
+            logging.debug(f"Memoria de bancos limpiada para el cliente {client_id} en BankFilter {self.id}")
+        self.deduplicator.remove_client(client_id)
+
+    def _dedup_key(self, message):
+        return message_dedup_key(message)
+
+    def _should_process_message(self, message):
+        return self.deduplicator.should_process(
+            message.source_client_uuid, self._dedup_key(message)
+        )
+>>>>>>> origin/add-recovery-controller
 
     def _run_input_consumer(self):
         self.input_exchange.start_consuming(self.process_message)
 
     def start(self):
         input_thread = threading.Thread(
-            target=self._run_input_consumer, 
+            target=self._run_input_consumer,
             name=f"bankfilter-{self.id}-input-consumer"
         )
-        input_thread.start()
-        eof_exit_code = self.eof_controller.start()
-        input_thread.join()
+        stop_recovery_controller_callback = None
+        eof_exit_code = 0
+        recovery_controller_exit_code = 0
 
-        self.input_exchange.close()
-        if hasattr(self, 'join_exchange'):
-            self.join_exchange.close()
+        try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+            input_thread.start()
+            eof_exit_code = self.eof_controller.start()
+            input_thread.join()
 
-        return eof_exit_code
+        finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
+            self.input_exchange.close()
+            if hasattr(self, 'join_exchange'):
+                self.join_exchange.close()
+
+        return max(eof_exit_code, recovery_controller_exit_code, 0)
 
     def stop(self):
-        self._sigterm_received = True 
+        self._sigterm_received = True
         try:
             self.input_exchange._connection.add_callback_threadsafe(
                 self.input_exchange.stop_consuming
             )
         except Exception as e:
             logging.error(f"Error al detener consumidor: {e}")
-            
+
         self.eof_controller.on_sigterm()
+<<<<<<< HEAD
         self.stop_recoverable_worker()
+=======
+        self.recovery_producer_controller.on_sigterm()
+>>>>>>> origin/add-recovery-controller
 
 def main():
     configure_logging_from_env()
     w = BankFilter()
-    
+
     def _sigterm(*_):
         logging.info("SIGTERM recibido")
         w.stop()
-        
+
     signal.signal(signal.SIGTERM, _sigterm)
     exit_code = w.start()
-    
+
     import sys
     sys.exit(exit_code)
 

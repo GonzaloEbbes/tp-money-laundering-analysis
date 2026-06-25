@@ -12,9 +12,10 @@ class CSVFileManager:
     """
 
     # CSV column headers matching TransactionData fields
-    # _data_id is added to track the original message ID
+    # Internal IDs are stored to preserve dedup information while rows wait for averages.
     CSV_HEADERS = [
         "_data_id",
+        "_message_id",
         "timestamp",
         "from_bank",
         "account_origin",
@@ -65,14 +66,21 @@ class CSVFileManager:
                 writer = csv.DictWriter(f, fieldnames=self.CSV_HEADERS)
                 writer.writeheader()
 
-    def append_transaction(self, client_id: str, transaction_data: Dict[str, Any], data_id: str = "") -> None:
+    def append_transaction(
+        self,
+        client_id: str,
+        transaction_data: Dict[str, Any],
+        data_id: str = "",
+        message_id: str = "",
+    ) -> None:
         """
         Append a transaction to the client's CSV file (thread-safe).
         
         Args:
             client_id: The client ID
             transaction_data: Dictionary containing transaction data
-            data_id: The original message ID from the pipeline
+            data_id: The original data ID from the pipeline
+            message_id: The original message ID used for deduplication
         """
         lock = self._get_file_lock(client_id)
         
@@ -83,22 +91,23 @@ class CSVFileManager:
             # Extract only the fields that match CSV headers
             row = {header: transaction_data.get(header, "") for header in self.CSV_HEADERS}
             row["_data_id"] = data_id  # Include the data_id
+            row["_message_id"] = message_id
             
             with open(csv_path, 'a', newline='') as f:
                 writer = csv.DictWriter(f, fieldnames=self.CSV_HEADERS)
                 writer.writerow(row)
 
-    def read_all_transactions(self, client_id: str) -> List[Tuple[Dict[str, Any], str]]:
+    def read_all_transactions(self, client_id: str) -> List[Tuple[Dict[str, Any], str, str]]:
         """
         Read all transactions from client's CSV file (thread-safe).
         Converts numeric fields back to their correct types.
-        Returns list of tuples (transaction_data, data_id) to match original format.
+        Returns list of tuples (transaction_data, data_id, message_id).
         
         Args:
             client_id: The client ID
             
         Returns:
-            List of tuples containing (transaction_data, data_id)
+            List of tuples containing (transaction_data, data_id, message_id)
         """
         lock = self._get_file_lock(client_id)
         transactions = []
@@ -114,8 +123,9 @@ class CSVFileManager:
             with open(csv_path, 'r', newline='') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    # Extract data_id and remove it from the transaction data
+                    # Extract internal IDs and remove them from the transaction data.
                     data_id = row.pop("_data_id", "")
+                    message_id = row.pop("_message_id", "")
                     transaction_data = dict(row)
                     
                     # Convert float fields to their correct type
@@ -127,7 +137,7 @@ class CSVFileManager:
                                 # If conversion fails, keep as string or set to 0
                                 transaction_data[field] = 0.0
                     
-                    transactions.append((transaction_data, data_id))
+                    transactions.append((transaction_data, data_id, message_id))
         
         return transactions
 

@@ -9,4 +9,5 @@ output/
 .env.*
 
 /data/*.csv
-/scripts
+/scripts/*
+!/scripts/run_test_battery.py
