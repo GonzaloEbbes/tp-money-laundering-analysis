@@ -8,6 +8,7 @@ import zlib
 from common import middleware, message_protocol
 from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
 from common.dedup import InMemoryDeduplicator
 from message_handler import MessageHandler as MapperMessageHandler
@@ -15,6 +16,10 @@ from message_handler import MessageHandler as MapperMessageHandler
 ID = int(os.environ["ID"])
 MAP_AMOUNT = int(os.environ.get("MAP_AMOUNT", 1))
 MOM_HOST = os.environ["MOM_HOST"]
+RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
+RECOVERY_AMOUNT = int(os.environ.get("RECOVERY_AMOUNT", "1"))
+HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2"))
 MAP_MAX_EXCHANGE = os.environ.get("MAP_MAX_EXCHANGE", "map_max_exchange")
 MAP_MAX_ROUTING_KEY_PREFIX = os.environ.get("MAP_MAX_ROUTING_KEY_PREFIX", "map_max_partition")
 JOIN_EXCHANGE = os.environ.get("JOIN_EXCHANGE", "query2_join_exchange")
@@ -37,6 +42,16 @@ def stable_hash(value):
 class MapMaxAmountPerBank:
     def __init__(self):
         self.id = ID
+
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=PREFIX_WORKER,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        )
         self.input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
             MOM_HOST,
             MAP_MAX_EXCHANGE,
@@ -175,15 +190,27 @@ class MapMaxAmountPerBank:
             target=self._run_input_consumer,
             name=f"mapper-{self.id}-input-consumer"
         )
-        input_thread.start()
-        eof_exit_code = self.eof_controller.start()
-        input_thread.join()
+        stop_recovery_controller_callback = None
+        eof_exit_code = 0
+        recovery_controller_exit_code = 0
 
-        self.input_exchange.close()
-        if hasattr(self, 'join_exchange'):
-            self.join_exchange.close()
+        try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+            input_thread.start()
+            eof_exit_code = self.eof_controller.start()
+            input_thread.join()
 
-        return eof_exit_code
+        finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
+            self.input_exchange.close()
+            if hasattr(self, 'join_exchange'):
+                self.join_exchange.close()
+
+        return max(eof_exit_code, recovery_controller_exit_code, 0)
 
     def stop(self):
         self._sigterm_received = True
@@ -195,6 +222,7 @@ class MapMaxAmountPerBank:
             logging.error(f"Error al detener consumidor: {e}")
 
         self.eof_controller.on_sigterm()
+        self.recovery_producer_controller.on_sigterm()
 
 def main():
     logging.basicConfig(level=logging.INFO)

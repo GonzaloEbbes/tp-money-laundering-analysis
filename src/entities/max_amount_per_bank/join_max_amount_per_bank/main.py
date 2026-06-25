@@ -7,6 +7,7 @@ from common import middleware, message_protocol
 from common.logging.logging_config import configure_logging_from_env
 from common.message_protocol.internal import InternalMessageType
 from common.controllers.eof_controller.EOF_controller import EOFController
+from common.controllers.healthcheck.recovery_controller import RecoveryController
 from common.controllers.eof_controller.message_handler import EOFMessageHandler
 from common.dedup import InMemoryDeduplicator
 from message_handler import MessageHandler as JoinMessageHandler
@@ -15,6 +16,10 @@ ID = int(os.environ.get("ID", 0))
 JOIN_AMOUNT = int(os.environ.get("JOIN_AMOUNT", 1))
 MAP_AMOUNT = int(os.environ.get("MAP_AMOUNT", 1))
 MOM_HOST = os.environ["MOM_HOST"]
+RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
+RECOVERY_AMOUNT = int(os.environ.get("RECOVERY_AMOUNT", "1"))
+HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
+HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2"))
 OUTPUT_QUEUE = os.environ["OUTPUT_QUEUE"]
 JOIN_EXCHANGE = os.environ.get("JOIN_EXCHANGE", "query2_join_exchange")
 JOIN_ROUTING_KEY_PREFIX = os.environ.get("JOIN_ROUTING_KEY_PREFIX", "join_partition")
@@ -31,6 +36,16 @@ EXPECTED_INPUT_EOFS = int(os.environ.get("EXPECTED_INPUT_EOFS", 2))
 class JoinMaxAmountPerBank:
     def __init__(self):
         self.id = ID
+
+        self.recovery_producer_controller = RecoveryController(
+            mom_host=MOM_HOST,
+            heartbeat_exchange=HEARTBEAT_EXCHANGE,
+            id=ID,
+            prefix=PREFIX_WORKER,
+            recovery_prefix=RECOVERY_PREFIX,
+            recovery_amount=RECOVERY_AMOUNT,
+            heartbeat_interval=HEARTBEAT_INTERVAL,
+        )
         self.routing_key = f"{JOIN_ROUTING_KEY_PREFIX}_{ID}"
         self.input_exchange = middleware.MessageMiddlewareExchangeRabbitMQ(
             MOM_HOST,
@@ -188,15 +203,27 @@ class JoinMaxAmountPerBank:
             target=self._run_input_consumer,
             name=f"joiner-{self.id}-input-consumer"
         )
-        input_thread.start()
-        eof_exit_code = self.eof_controller.start()
-        input_thread.join()
+        stop_recovery_controller_callback = None
+        eof_exit_code = 0
+        recovery_controller_exit_code = 0
 
-        self.input_exchange.close()
-        if hasattr(self, 'output_queue'):
-            self.output_queue.close()
+        try:
+            stop_recovery_controller_callback = (
+                self.recovery_producer_controller.start_recovery_producer_controller()
+            )
+            input_thread.start()
+            eof_exit_code = self.eof_controller.start()
+            input_thread.join()
 
-        return eof_exit_code
+        finally:
+            if stop_recovery_controller_callback is not None:
+                recovery_controller_exit_code = stop_recovery_controller_callback()
+
+            self.input_exchange.close()
+            if hasattr(self, 'output_queue'):
+                self.output_queue.close()
+
+        return max(eof_exit_code, recovery_controller_exit_code, 0)
 
 
     def stop(self):
@@ -208,6 +235,7 @@ class JoinMaxAmountPerBank:
         except Exception as e:
             logging.error(f"Error stopping consumer: {e}")
         self.eof_controller.on_sigterm()
+        self.recovery_producer_controller.on_sigterm()
 
 
 def main():
