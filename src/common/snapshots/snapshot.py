@@ -18,6 +18,24 @@ class SnapshotManager:
         self.snapshot_interval_ops = snapshot_interval_ops
         self.op_count_since_snapshot = 0
         self.last_snapshot_index = 0
+        self._wal_fd = open(self.wal_path, 'a', encoding='utf-8')
+
+    def append_to_wal(self, batch_of_operations):
+        if not batch_of_operations:
+            return
+
+        log_lines = "\n".join(json.dumps(op) for op in batch_of_operations) + "\n"
+        
+        self._wal_fd.write(log_lines)
+        self._wal_fd.flush()
+        os.fsync(self._wal_fd.fileno())
+
+    def close(self):
+        """Cierre limpio (Graceful Shutdown) invocado al recibir SIGTERM."""
+        if hasattr(self, '_wal_fd') and not self._wal_fd.closed:
+            self._wal_fd.flush()
+            os.fsync(self._wal_fd.fileno())
+            self._wal_fd.close()
 
     def recover(self, set_keys: Optional[List[str]] = None) -> Dict[str, Any]:
         """
@@ -30,20 +48,30 @@ class SnapshotManager:
                 with open(self.snapshot_path, 'r', encoding='utf-8') as f:
                     snap = json.load(f, object_hook=set_decoder)
                 self.state = snap.get('data', {})
+
+                if set_keys:
+                    self.state = self._convert_lists_to_sets(
+                        self.state,
+                        set_keys
+                    )
                 self.last_snapshot_index = snap.get('last_index', 0)
             else:
                 self.state = {}
                 self.last_snapshot_index = 0
-
-            # Replay del WAL
-            if os.path.exists(self.wal_path):
-                with open(self.wal_path, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        op = json.loads(line.strip(), object_hook=set_decoder)
-                        if op.get('index', 0) > self.last_snapshot_index:
-                            self._apply_op_no_wal(op)
-
             self.op_count_since_snapshot = 0
+            self._wal_fd.flush()
+
+            if os.path.exists(self.wal_path) and os.path.getsize(self.wal_path) > 0:
+                with open(self.wal_path, 'r', encoding='utf-8') as wal_file:
+                    for line in wal_file:
+                        if not line.strip(): 
+                            continue
+                        try:
+                            op = json.loads(line)
+                            self._apply_op_no_wal(op)
+                            self.op_count_since_snapshot += 1
+                        except json.JSONDecodeError:
+                            continue
             return self.state
 
 
@@ -176,7 +204,6 @@ class SnapshotManager:
             self._take_snapshot_locked()
 
     def _take_snapshot_locked(self) -> None:
-        #state_serializable = self._convert_sets_to_lists(self.state)
         snapshot_data = {
             'last_index': self.last_snapshot_index + self.op_count_since_snapshot,
             'data': self.state
@@ -184,21 +211,16 @@ class SnapshotManager:
         temp_path = self.snapshot_path + '.tmp'
         with open(temp_path, 'w', encoding='utf-8') as f:
             json.dump(snapshot_data, f, cls=SetEncoder)
+            f.flush()
+            os.fsync(f.fileno())
         shutil.move(temp_path, self.snapshot_path)
 
-        # Compactar WAL
-        if os.path.exists(self.wal_path):
-            with open(self.wal_path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-            new_lines = []
-            for line in lines:
-                op = json.loads(line.strip(), object_hook=set_decoder)
-                if op.get('index', 0) > snapshot_data['last_index']:
-                    new_lines.append(line)
-            with open(self.wal_path, 'w', encoding='utf-8') as f:
-                f.writelines(new_lines)
+        self._wal_fd.seek(0)
+        self._wal_fd.truncate()
+        self._wal_fd.flush()
+        os.fsync(self._wal_fd.fileno())
 
-        self.last_snapshot_index = snapshot_data['last_index']
+        self.last_snapshot_index += self.op_count_since_snapshot
         self.op_count_since_snapshot = 0
 
     def _convert_sets_to_lists(self, obj):
@@ -211,19 +233,30 @@ class SnapshotManager:
         else:
             return obj
 
-    def _convert_lists_to_sets(self, obj, set_keys):
+    def _convert_lists_to_sets(self, obj, set_keys, parent_key=None):
+
         if isinstance(obj, dict):
             new_dict = {}
-            for k, v in obj.items():
-                if k in set_keys and isinstance(v, list):
+            for k,v in obj.items():
+                if parent_key in set_keys and isinstance(v,list):
                     new_dict[k] = set(v)
                 else:
-                    new_dict[k] = self._convert_lists_to_sets(v, set_keys)
+                    new_dict[k] = self._convert_lists_to_sets(
+                        v,
+                        set_keys,
+                        k
+                    )
             return new_dict
-        elif isinstance(obj, list):
-            return [self._convert_lists_to_sets(item, set_keys) for item in obj]
-        else:
-            return obj
+        elif isinstance(obj,list):
+            return [
+                self._convert_lists_to_sets(
+                    item,
+                    set_keys,
+                    parent_key
+                )
+                for item in obj
+            ]
+        return obj
 
     def get_state(self) -> Dict[str, Any]:
         with self._lock:
@@ -231,18 +264,20 @@ class SnapshotManager:
     
     def apply_batch(self, ops: List[Dict]) -> None:
         with self._lock:
-            lines = []
+            if not ops:
+                return
+            log_lines = "\n".join(json.dumps(op, cls=SetEncoder) for op in ops) + "\n"
+            
+            self._wal_fd.write(log_lines)
+            self._wal_fd.flush()
+            os.fsync(self._wal_fd.fileno())
+
+            self.op_count_since_snapshot += len(ops)
             for op in ops:
-                self.op_count_since_snapshot += 1
-                op['index'] = self.last_snapshot_index + self.op_count_since_snapshot
-                lines.append(json.dumps(op, cls=SetEncoder))
                 self._apply_op_no_wal(op)
-            
-            with open(self.wal_path, 'a', encoding='utf-8') as f:
-                f.write('\n'.join(lines) + '\n')
-            
+
             if self.op_count_since_snapshot >= self.snapshot_interval_ops:
-                self._take_snapshot_locked()
+                self.take_snapshot()
 
 
 class SetEncoder(json.JSONEncoder):

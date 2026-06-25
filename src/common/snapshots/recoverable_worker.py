@@ -1,4 +1,5 @@
 import threading
+import logging
 from common.snapshots.snapshot import SnapshotManager
 
 class RecoverableWorker:
@@ -62,17 +63,23 @@ class RecoverableWorker:
                 self._flush_batch_locked()
 
     def _flush_batch_locked(self):
-        if self.batch_ops:
-            if hasattr(self.snapshot_manager, 'apply_batch'):
+        try:
+            if self.batch_ops:
                 self.snapshot_manager.apply_batch(self.batch_ops)
-            else:
-                for op in self.batch_ops:
-                    self.snapshot_manager.apply_operation(op)
-            self.batch_ops.clear()
+                self.batch_ops.clear()
+        except Exception as e:
+            logging.error(f"Error saving operations: {e}")
+            raise
 
         for conn, ack_func in self.batch_acks:
             if conn is not None and callable(ack_func):
-                conn.add_callback_threadsafe(ack_func)
+                try:
+                    if conn.is_open:
+                        conn.add_callback_threadsafe(ack_func)
+                    else:
+                        logging.warning("RabbitMQ connection closed. Skipping ACK.")
+                except Exception as e:
+                    logging.error(f"Error ack: {e}")
         self.batch_acks.clear()
 
     def stop_recoverable_worker(self):
@@ -81,3 +88,4 @@ class RecoverableWorker:
             self._flush_thread.join()
         with self.batch_lock:
             self._flush_batch_locked()
+        self.snapshot_manager.close()

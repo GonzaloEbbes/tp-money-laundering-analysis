@@ -8,7 +8,7 @@ up:
 
 down:
 	docker compose -f docker-compose.yaml stop -t 5
-	docker compose -f docker-compose.yaml down
+	docker compose -f docker-compose.yaml down -v
 .PHONY: down
 
 logs:
