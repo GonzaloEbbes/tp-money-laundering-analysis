@@ -7,7 +7,7 @@ import threading
 from common import middleware, message_protocol
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
-from common.dedup import InMemoryDeduplicator
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.logging.logging_config import configure_logging_from_env
 from message_handler import MessageHandler as USDFilterMessageHandler
 
@@ -99,9 +99,7 @@ class USDFilterQ4:
         logging.info(f"Sent final EOF for client {client_id} to all downstream queues")
 
     def _dedup_key(self, message):
-        if message.message_id is None:
-            return None
-        return f"{message.type}:{message.message_id}"
+        return message_dedup_key(message)
 
     def _should_process_message(self, message):
         return self.deduplicator.should_process(
