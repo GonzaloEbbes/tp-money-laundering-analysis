@@ -41,6 +41,7 @@ class InternalMessageType:
     EOF_POST_CONSENSUS_OK = 36
     EOF_LEADER_FALLEN = 37
     EOF_LEADER_ELECTION = 38
+    HEARTBEAT_MESSAGE = 39
 
 
 class ScatherGatherData(dict):
@@ -65,6 +66,7 @@ class ScatherGatherData(dict):
             del self[name]
         except KeyError:
             raise AttributeError(name)
+
 class TransactionData(dict):
     timestamp : str
     from_bank : str
@@ -122,6 +124,27 @@ class AccountData(dict):
     account_number : str
     entity_id : str
     entity_name : str
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        try:
+            del self[name]
+        except KeyError:
+            raise AttributeError(name)
+        
+class HealthCheckData(dict):
+    container_name : str
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
