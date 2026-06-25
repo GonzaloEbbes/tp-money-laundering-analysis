@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 from common import middleware, message_protocol
 from common.controllers.eof_controller.EOF_controller import EOFController
 from common.controllers.eof_controller.message_handler.message_handler import EOFMessageHandler
-from common.dedup import InMemoryDeduplicator
+from common.dedup import InMemoryDeduplicator, message_dedup_key
 from common.middleware.middleware_rabbitmq import MessageMiddlewareExchangeRabbitMQ
 from message_handler import MessageHandler as CurrencyConverterMessageHandler
 from common.logging import configure_logging_from_env
@@ -157,9 +157,7 @@ class CurrencyConverter:
         logging.info(f"Sent final EOF for client {client_id} to amount filter q5")
 
     def _dedup_key(self, message):
-        if message.message_id is None:
-            return None
-        return f"{message.type}:{message.message_id}"
+        return message_dedup_key(message)
 
     def _should_process_message(self, message):
         return self.deduplicator.should_process(
