@@ -1,6 +1,7 @@
 import hashlib
 import os
 import logging
+from random import randint
 import re
 import signal
 import sys
@@ -57,7 +58,7 @@ class PayFormatFilter:
         self.amount_filter_q5_queue = middleware.MessageMiddlewareQueueRabbitMQ(
                 MOM_HOST, AMOUNT_FILTER_Q5_QUEUE
             )
-        logging.info(
+        logging.debug(
             "PayFormatFilter wiring: input_queue=%s conversion_exchange=%s conversion_queue_prefix=%s "
             "conversion_workers=%s amount_filter_q5_queue=%s",
             INPUT_QUEUE,
@@ -148,17 +149,12 @@ class PayFormatFilter:
 
     def on_send_eof_to_next_stage_callback(self, client_id, totals_by_output, origin_worker_prefix, amount_origin_workers):
         eof_message = EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_2, 0), origin_worker_prefix, amount_origin_workers)
-        for shard in range(TOTAL_CONVERSION_WORKERS):
-            logging.info(
-                "Q5 route: sending EOF to converter shard client=%s exchange=%s routing_key=%s expected_converter_queue=%s",
-                client_id,
-                CONVERSION_EXCHANGE,
-                self._conversion_routing_key(shard),
-                f"{CONVERSION_QUEUE_PREFIX}_{shard}",
-            )
+
+        random_shard = randint(0, TOTAL_CONVERSION_WORKERS - 1)
+        with self.producer_lock:
             self.usd_currency_converter_exchange.send(
                 eof_message,
-                routing_key=self._conversion_routing_key(shard),
+                routing_key=self._conversion_routing_key(random_shard),
             )
         eof_message = EOFMessageHandler.serialize_eof_message(client_id, totals_by_output.get(OUTPUT_PREFIX_1, 0), origin_worker_prefix, amount_origin_workers)
         self.amount_filter_q5_queue.send(eof_message)

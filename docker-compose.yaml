@@ -12,6 +12,7 @@ services:
       - RABBITMQ_BATCH_MAX_SECONDS=2
       - RABBITMQ_BATCH_HEADER=x-middleware-batch
       - RABBITMQ_BATCH_HEADER_VALUE=v1
+      - RABBITMQ_LOG=error
     healthcheck:
       interval: 5s
       retries: 10
@@ -1740,7 +1741,7 @@ services:
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
       - AMOUNT_FILTER_AMOUNT=3
-      - EXPECTED_INPUT_EOFS=5
+      - EXPECTED_INPUT_EOFS=2
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
       - INPUT_PREFIX_1=pay_format_filter
@@ -1766,7 +1767,7 @@ services:
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
       - AMOUNT_FILTER_AMOUNT=3
-      - EXPECTED_INPUT_EOFS=5
+      - EXPECTED_INPUT_EOFS=2
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
       - INPUT_PREFIX_1=pay_format_filter
@@ -1792,7 +1793,7 @@ services:
       - INPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
       - AMOUNT_FILTER_PREFIX=amount_filter_q5
       - AMOUNT_FILTER_AMOUNT=3
-      - EXPECTED_INPUT_EOFS=5
+      - EXPECTED_INPUT_EOFS=2
       - EOF_CONTROL_EXCHANGE=amount_filter_q5_eof_control_exchange
       - GATEWAY_FINAL_QUERY_QUEUE=gateway_results_queue
       - INPUT_PREFIX_1=pay_format_filter
@@ -2109,7 +2110,7 @@ services:
   currency_converter_0:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/filters/currency_converter/Dockerfile
     container_name: currency_converter_0
     depends_on:
       rabbitmq:
@@ -2119,19 +2120,23 @@ services:
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=currency_converter_queue_0
-      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - ID=0
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.0
-      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
-      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CURRENCY_CONVERTER_PREFIX=currency_converter
+      - CURRENCY_CONVERTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=pay_format_filter
+      - OUTPUT_PREFIX_1=amount_filter_q5
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
       - CONVERSION_DATE_FIELD=timestamp
       - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - FRANKFURTER_MAX_RETRIES=10
       - FRANKFURTER_RETRY_DELAY_SECONDS=1
       - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
@@ -2141,7 +2146,7 @@ services:
   currency_converter_1:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/filters/currency_converter/Dockerfile
     container_name: currency_converter_1
     depends_on:
       rabbitmq:
@@ -2151,19 +2156,23 @@ services:
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=currency_converter_queue_1
-      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - ID=1
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.1
-      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
-      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CURRENCY_CONVERTER_PREFIX=currency_converter
+      - CURRENCY_CONVERTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=pay_format_filter
+      - OUTPUT_PREFIX_1=amount_filter_q5
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
       - CONVERSION_DATE_FIELD=timestamp
       - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - FRANKFURTER_MAX_RETRIES=10
       - FRANKFURTER_RETRY_DELAY_SECONDS=1
       - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
@@ -2173,7 +2182,7 @@ services:
   currency_converter_2:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/filters/currency_converter/Dockerfile
     container_name: currency_converter_2
     depends_on:
       rabbitmq:
@@ -2183,19 +2192,23 @@ services:
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=currency_converter_queue_2
-      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - ID=2
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.2
-      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
-      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CURRENCY_CONVERTER_PREFIX=currency_converter
+      - CURRENCY_CONVERTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=pay_format_filter
+      - OUTPUT_PREFIX_1=amount_filter_q5
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
       - CONVERSION_DATE_FIELD=timestamp
       - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - FRANKFURTER_MAX_RETRIES=10
       - FRANKFURTER_RETRY_DELAY_SECONDS=1
       - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
@@ -2205,7 +2218,7 @@ services:
   currency_converter_3:
     build:
       context: ./src
-      dockerfile: entities/Dockerfile
+      dockerfile: entities/filters/currency_converter/Dockerfile
     container_name: currency_converter_3
     depends_on:
       rabbitmq:
@@ -2215,19 +2228,23 @@ services:
       - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}
       - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}
       - LOG_LEVEL=INFO
-      - PROCESSING_DELAY_SECONDS=0
-      - ENTITY_CLASS=CurrencyConverter
       - MOM_HOST=rabbitmq
-      - INPUT_QUEUE=currency_converter_queue_3
-      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - ID=3
       - CONVERSION_INPUT_EXCHANGE=pay_format_filter_to_usd_currency_converter_exchange
       - CONVERSION_ROUTING_KEY=conversion.3
-      - CONVERSION_PROVIDER=${CONVERSION_PROVIDER:-frankfurter}
-      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
+      - CURRENCY_CONVERTER_PREFIX=currency_converter
+      - CURRENCY_CONVERTER_AMOUNT=4
+      - EOF_CONTROL_EXCHANGE=currency_converter_eof_control_exchange
+      - OUTPUT_QUEUE=pay_format_filter_to_amount_filter_q5_queue
+      - EXPECTED_INPUT_EOFS=1
+      - AUXILIARY_INPUT=false
+      - INPUT_PREFIX_1=pay_format_filter
+      - OUTPUT_PREFIX_1=amount_filter_q5
       - CONVERSION_AMOUNT_FIELD=amount_paid
       - CONVERSION_CURRENCY_FIELD=payment_currency
       - CONVERSION_DATE_FIELD=timestamp
       - CONVERSION_OUTPUT_AMOUNT_FIELD=amount_paid
+      - STATIC_CONVERSION_RATES_PATH=/data/static_conversion_rates.json
       - FRANKFURTER_MAX_RETRIES=10
       - FRANKFURTER_RETRY_DELAY_SECONDS=1
       - FRANKFURTER_MAX_RETRY_DELAY_SECONDS=60
@@ -2237,7 +2254,7 @@ services:
   data_per_bank_redirector_0:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_0
     depends_on:
       rabbitmq:
@@ -2256,11 +2273,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_1:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_1
     depends_on:
       rabbitmq:
@@ -2279,11 +2300,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_2:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_2
     depends_on:
       rabbitmq:
@@ -2302,11 +2327,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_3:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_3
     depends_on:
       rabbitmq:
@@ -2325,11 +2354,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_4:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_4
     depends_on:
       rabbitmq:
@@ -2348,11 +2381,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_5:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_5
     depends_on:
       rabbitmq:
@@ -2371,11 +2408,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_6:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_6
     depends_on:
       rabbitmq:
@@ -2394,11 +2435,15 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   data_per_bank_redirector_7:
     build:
       context: ./src
-      dockerfile: entities/general/data_per_bank_redirector/Dockerfile
+      dockerfile: entities/max_amount_per_bank/data_per_bank_redirector/Dockerfile
     container_name: data_per_bank_redirector_7
     depends_on:
       rabbitmq:
@@ -2417,6 +2462,10 @@ services:
       - EXCHANGE_NAME=map_max_exchange
       - OUTPUT_ROUTING_KEY_PREFIX=map_partition
       - EOF_CONTROL_EXCHANGE=dpb_control_exchange
+      - PREFIX_WORKER=data_per_bank_redirector
+      - INPUT_PREFIX=usd_filter_q1q2
+      - EXPECTED_INPUT_EOFS=1
+      - MAPPER_PREFIX=map_max_amount_per_bank
 
   bank_filter_0:
     build:
@@ -2441,6 +2490,10 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_1:
     build:
@@ -2465,6 +2518,10 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_2:
     build:
@@ -2489,6 +2546,10 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_3:
     build:
@@ -2513,6 +2574,10 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_4:
     build:
@@ -2537,6 +2602,10 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   bank_filter_5:
     build:
@@ -2561,11 +2630,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=bank_filter_control_exchange
+      - PREFIX_WORKER=bank_filter
+      - INPUT_PREFIX=gateway
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_0:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_0
     depends_on:
       rabbitmq:
@@ -2585,11 +2658,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_1:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_1
     depends_on:
       rabbitmq:
@@ -2609,11 +2686,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_2:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_2
     depends_on:
       rabbitmq:
@@ -2633,11 +2714,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_3:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_3
     depends_on:
       rabbitmq:
@@ -2657,11 +2742,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_4:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_4
     depends_on:
       rabbitmq:
@@ -2681,11 +2770,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_5:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_5
     depends_on:
       rabbitmq:
@@ -2705,11 +2798,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_6:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_6
     depends_on:
       rabbitmq:
@@ -2729,11 +2826,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_7:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_7
     depends_on:
       rabbitmq:
@@ -2753,11 +2854,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_8:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_8
     depends_on:
       rabbitmq:
@@ -2777,11 +2882,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_9:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_9
     depends_on:
       rabbitmq:
@@ -2801,11 +2910,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_10:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_10
     depends_on:
       rabbitmq:
@@ -2825,11 +2938,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   map_max_amount_per_bank_11:
     build:
       context: ./src
-      dockerfile: entities/mappers/map_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/map_max_amount_per_bank/Dockerfile
     container_name: map_max_amount_per_bank_11
     depends_on:
       rabbitmq:
@@ -2849,11 +2966,15 @@ services:
       - JOIN_AMOUNT=4
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - EOF_CONTROL_EXCHANGE=map_control_exchange
+      - PREFIX_WORKER=map_max_amount_per_bank
+      - INPUT_PREFIX=data_per_bank_redirector
+      - EXPECTED_INPUT_EOFS=1
+      - NEXT_STAGE_PREFIX=join_max_amount_per_bank
 
   join_max_amount_per_bank_0:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_0
     depends_on:
       rabbitmq:
@@ -2872,11 +2993,16 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   join_max_amount_per_bank_1:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_1
     depends_on:
       rabbitmq:
@@ -2895,11 +3021,16 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   join_max_amount_per_bank_2:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_2
     depends_on:
       rabbitmq:
@@ -2918,11 +3049,16 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   join_max_amount_per_bank_3:
     build:
       context: ./src
-      dockerfile: entities/joiners/join_max_amount_per_bank/Dockerfile
+      dockerfile: entities/max_amount_per_bank/join_max_amount_per_bank/Dockerfile
     container_name: join_max_amount_per_bank_3
     depends_on:
       rabbitmq:
@@ -2941,6 +3077,11 @@ services:
       - JOIN_ROUTING_KEY_PREFIX=join_partition
       - OUTPUT_QUEUE=gateway_results_queue
       - EOF_CONTROL_EXCHANGE=join_control_exchange
+      - PREFIX_WORKER=join_max_amount_per_bank
+      - INPUT_PREFIX_1=bank_filter
+      - INPUT_PREFIX_2=map_max_amount_per_bank
+      - EXPECTED_INPUT_EOFS=2
+      - NEXT_STAGE_PREFIX=gateway
 
   client:
     build:

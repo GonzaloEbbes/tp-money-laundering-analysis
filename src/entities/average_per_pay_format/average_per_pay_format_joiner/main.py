@@ -30,7 +30,7 @@ class AveragePerPayFormatJoiner:
         self.input_queue = middleware.MessageMiddlewareQueueRabbitMQ(
             MOM_HOST, INPUT_QUEUE
         )
-        logging.info(
+        logging.debug(
             "AveragePerPayFormatJoiner wiring: input_queue=%s output_queue=%s joiner_prefix=%s "
             "joiner_amount=%s expected_input_eofs=%s",
             INPUT_QUEUE,

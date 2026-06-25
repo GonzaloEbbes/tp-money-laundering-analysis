@@ -107,7 +107,7 @@ class ScatherGatherPairJoiner:
             #EL EOF SE ENVIA A UNA INSTANCIA ALEATORIA
             eof_random_instance = randint(0, SCATHER_GATHER_JOINER_AMOUNT - 1)
             self.scather_gather_joiner_exchanges[eof_random_instance].send(eof_message)
-        logging.info(f"Sent final EOFs for client {client_id} to scather gather joiners")
+        logging.info(f"Sent final EOF for client {client_id} to scather gather joiners")
 
     def on_consensus_ok_callback(self, client_id):
         with self.dicts_lock:

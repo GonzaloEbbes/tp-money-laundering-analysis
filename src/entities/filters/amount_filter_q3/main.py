@@ -77,7 +77,7 @@ class AmountFilterQ3:
         message = message_protocol.internal.deserialize(message)
         match message.type:
             case message_protocol.internal.InternalMessageType.AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3:
-                logging.info(f"Received AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3 message for client {message.source_client_uuid}")
+                logging.debug(f"Received AVERAGE_PER_PAY_FORMAT_JOINER_TO_AMOUNT_FILTER_Q3 message for client {message.source_client_uuid}")
                 client_id = message.source_client_uuid
                 self._process_average_message(message.data, client_id)
                 self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_2)

@@ -77,7 +77,7 @@ class ToxicRabbitMQ:
     def send(self, message, *args, **kwargs):
         send_count = self._config.send_count_for(message)
         if send_count > 1:
-            logging.warning("ToxicRabbitMQ sending message %s times", send_count)
+            logging.debug("ToxicRabbitMQ sending message %s times", send_count)
 
         for _ in range(send_count):
             self._inner.send(message, *args, **kwargs)

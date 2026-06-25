@@ -121,7 +121,7 @@ class ScatherGatherAggregator:
             #EL EOF SE ENVIA A UNA INSTANCIA ALEATORIA
             eof_random_instance = randint(0, SCATHER_GATHER_PAIR_JOINER_AMOUNT - 1)
             self.scather_gather_pair_joiner_exchanges[eof_random_instance].send(eof_message)
-        logging.info(f"Sent final EOFs for client {client_id} to scather gather pair joiners")
+        logging.info(f"Sent final EOF for client {client_id} to scather gather pair joiners")
 
     def _send_data_to_pair_joiners(self, client_id):
         with self.dicts_lock:
