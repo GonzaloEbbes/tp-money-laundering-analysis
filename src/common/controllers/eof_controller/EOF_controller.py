@@ -43,13 +43,9 @@ class EOFController:
         self.append_batch_callback = append_batch_callback
         self.state = recovered_state if recovered_state is not None else {}
 
-        self.eofs_received_by_client = self.state.setdefault('eofs_received', {})
-        self.total_packets_received_by_client = self.state.setdefault('total_packets_received', {})
-        self.packets_processed_by_client = self.state.setdefault('packets_processed', {})
-
         # Por cliente, set de prefixes de los cuales se recibieron EOFs
         self.eofs_received_by_client_lock = threading.Lock()
-        self.eofs_received_by_client : dict[str, set] = {} 
+        self.eofs_received_by_client : dict[str, set] = {}
 
         # Por cliente, set de prefixes de los cuales se recibieron EOFs
         self.postprocess_received_by_client_lock = threading.Lock()
@@ -58,7 +54,7 @@ class EOFController:
 
         # Totalizadores de EOF de la capa anterior informados por cliente
         self.total_packets_received_by_client_lock = threading.Lock()
-        self.total_packets_received_by_client : dict[str, total_count_by_prefix] = {} 
+        self.total_packets_received_by_client : dict[str, total_count_by_prefix] = {}
 
         # Parciales de procesamiento de paquetes de esta instancia
         self.packets_processed_by_client_lock = threading.Lock()
@@ -67,19 +63,23 @@ class EOFController:
         # Parcial de consenso - usados solo por el lider
         self.consensus_partial_count_by_client_lock = threading.Lock()
         self.consensus_partial_count_by_client : dict[str, partial_count_by_worker_prefix_and_id] = {}
-        
-        #Parcial de envio de paquetes a la capa siguiente 
-        self.total_packets_sent_by_client_lock = threading.Lock() 
-        self.total_packets_sent_by_client : dict[str, partial_count_by_worker_prefix_and_id ] = {} #acumulado del lider 
+
+        #Parcial de envio de paquetes a la capa siguiente
+        self.total_packets_sent_by_client_lock = threading.Lock()
+        self.total_packets_sent_by_client : dict[str, partial_count_by_worker_prefix_and_id ] = {} #acumulado del lider
         self.packets_partial_sent_by_client_lock = threading.Lock()
         self.packets_partial_sent_by_client : dict[str, partial_count_by_worker_prefix] = {} #parcial propio de envio de paquetes
-        
+
         self.consensus_request_transition_lock = threading.Lock() #lock para evitar condicion de carrera entre el comienzo de consenso desde el input thread y la lectura de un mensaje RESPONSE de consenso en el eof consumer
 
         # FUNCIONES DE CALLBACK A CONECTAR SI O SI. PUEDEN VENIR COMO None SI NO HACE FALTA
         self.on_consensus_ok_reception_for_client_callback = on_consensus_ok_callback #Son las acciones de post proceso, como armar consolidados
         self.on_send_eof_to_next_stage_callback = on_send_eof_to_next_stage_callback #se necesita para desde el hilo principal enviar el mensaje por el producer correcto
         self.on_clean_client_in_main_thread_callback = on_clean_client_in_main_thread_callback #si desde el hilo principal hay que limpiar datos al finalizar
+
+        self.eofs_received_by_client = self.state.setdefault('eofs_received', {})
+        self.total_packets_received_by_client = self.state.setdefault('total_packets_received', {})
+        self.packets_processed_by_client = self.state.setdefault('packets_processed', {})
 
         if not self.is_single_instance():
             other_worker_instances = []

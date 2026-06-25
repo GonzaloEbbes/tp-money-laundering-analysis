@@ -121,10 +121,10 @@ class ScatherGatherPairJoiner(StatefulWorker):
         value = transaction_data.get("value")
         if type == "FANIN_MIDDLE":
             logging.debug(f"Received FANIN_MIDDLE message for client {client_id}")
-            self._process_fanin_transaction_in_middle_structure(client_id, key, value, data_id)
+            self._process_fanin_transaction_in_middle_structure(client_id, key, value)
         elif type == "FANOUT_MIDDLE":
             logging.debug(f"Received FANOUT_MIDDLE message for client {client_id}")
-            self._process_fanout_transaction_in_middle_structure(client_id, key, value, data_id)
+            self._process_fanout_transaction_in_middle_structure(client_id, key, value)
         else:
             logging.warning(f"Received unknown transaction type {type} for client {client_id}")
         self.eof_controller.on_processed_packet_by_client(client_id, INPUT_PREFIX_1)
@@ -173,8 +173,7 @@ class ScatherGatherPairJoiner(StatefulWorker):
 
     def _worker_to_send_data_to_joiners(self, origen, destino):
         hashkey=("".join([origen, destino])).encode("utf-8")
-        digest= zlib.crc32(str(hashkey).encode("utf-8"))
-        value = int.from_bytes(digest, byteorder="big")
+        value = zlib.crc32(str(hashkey).encode("utf-8"))
         return value % SCATHER_GATHER_JOINER_AMOUNT
 
     def on_clean_client_callback(self, client_id):

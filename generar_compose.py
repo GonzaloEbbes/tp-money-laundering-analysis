@@ -111,6 +111,15 @@ def set_rabbitmq():
         "",
     ]
 
+def with_middleware_impl_env(lines):
+    result = []
+    for line in lines:
+        result.append(line)
+        if line == "      - PYTHONUNBUFFERED=1":
+            result.append("      - MIDDLEWARE_IMPL=${MIDDLEWARE_IMPL:-rabbitmq}")
+            result.append("      - TOXIC_RABBIT_CONFIG_PATH=${TOXIC_RABBIT_CONFIG_PATH:-/common/middleware/testing/toxic-rabbit.json}")
+    return result
+
 def set_gateway_config(bank_filters_amount, log_level):
     return [
         "  gateway:",
@@ -468,6 +477,8 @@ def set_scather_gather_mapper_config(id,total_mappers,total_aggregators, log_lev
         "      - AUXILIARY_INPUT=false",
         "      - INPUT_PREFIX_1=usd_filter_q4",
         "      - OUTPUT_PREFIX_1=scather_gather_aggregator",
+        "    volumes:",
+        "      - snapshots_volume:/data",
         "",
     ]
 
@@ -830,12 +841,13 @@ def generate_compose(config_id,log_level, chaos_profile):
     for i in range(config["join_max_amount_per_bank"]):
         yaml_lines += set_join_max_amount_per_bank_config(i, config["join_max_amount_per_bank"], config["map_max_amount_per_bank"], log_level)
     yaml_lines += set_client(config, log_level)
-    if chaos_monkey_config["disabled"] is not None:
-        yaml_lines += set_chaos_monkey_config(chaos_monkey_config)
+    if chaos_profile != "disabled" and chaos_profile in chaos_monkey_config:
+        yaml_lines += set_chaos_monkey_config(chaos_monkey_config[chaos_profile])
     yaml_lines += [
         "volumes:",
         "  snapshots_volume:"
     ]
+    yaml_lines = with_middleware_impl_env(yaml_lines)
 
     with open("docker-compose.yaml", "w", encoding="utf-8") as f:
         f.write("\n".join(yaml_lines))

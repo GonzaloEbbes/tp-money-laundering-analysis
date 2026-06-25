@@ -168,8 +168,7 @@ class ScatherGatherMapper(StatefulWorker):
 
     def _worker_to_send_data_to_aggregator(self, clave_fanin_fanout):
         key=(clave_fanin_fanout).encode("utf-8")
-        digest= zlib.crc32(str(key).encode("utf-8"))
-        value = int.from_bytes(digest, byteorder="big")
+        value = zlib.crc32(str(key).encode("utf-8"))
         return value % SCATHER_GATHER_AGGREGATOR_AMOUNT
 
     def on_clean_client_callback(self, client_id):

@@ -199,8 +199,7 @@ class ScatherGatherAggregator(StatefulWorker):
 
     def _worker_to_send_data_to_pair_joiners(self, middle_account : str):
         hashkey=middle_account.encode("utf-8")
-        digest= zlib.crc32(str(hashkey).encode("utf-8"))
-        value = int.from_bytes(digest, byteorder="big")
+        value = zlib.crc32(str(hashkey).encode("utf-8"))
         return value % SCATHER_GATHER_PAIR_JOINER_AMOUNT
 
     def on_consensus_ok_callback(self, client_id):
