@@ -58,7 +58,7 @@ class _BatchAckController:
 		return self._finished
 
 	def ack_one(self):
-		if self._finished:
+		if self._finished or self._channel is None:
 			return
 
 		self._pending_acks -= 1
@@ -151,7 +151,7 @@ class _DestinationBatchPublisher:
 				channel.exchange_declare(
 					exchange=self._exchange_name,
 					exchange_type='direct',
-					durable=True,
+					durable=False,
 				)
 
 			self._ready_event.set()

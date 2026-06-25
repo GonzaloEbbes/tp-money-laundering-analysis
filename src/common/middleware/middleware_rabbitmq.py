@@ -81,7 +81,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 	def _ensure_consumer_queue_declared(self):
 		if self._consumer_queue_declared:
 			return
-		self._channel.queue_declare(queue=self._queue_name, durable=True)
+		self._channel.queue_declare(queue=self._queue_name, durable=False)
 		self._consumer_queue_declared = True
 
 	# Funcion adaptadora que convierte el callback de pika al formato del
@@ -99,7 +99,7 @@ class MessageMiddlewareQueueRabbitMQ(MessageMiddlewareQueue):
 	# Si no se estaba consumiendo, no tiene efecto ni levanta error.
 	# Si se pierde la conexión con el middleware eleva MessageMiddlewareDisconnectedError.
 	def stop_consuming(self):
-		if self._consuming:
+		if self._consuming and self._consumer_tag is not None:
 			try:
 				self._channel.stop_consuming(consumer_tag=self._consumer_tag)
 			except (ConnectionError, pika.exceptions.AMQPConnectionError) as e:
@@ -186,7 +186,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			self._connection = pika.BlockingConnection(rabbitmq_connection_parameters(host))
 			self._channel = self._connection.channel()
 			self._channel.basic_qos(prefetch_count=RABBITMQ_SETTINGS.max_unacked_messages)
-			self._channel.exchange_declare(exchange=exchange_name,exchange_type='direct',durable=True)
+			self._channel.exchange_declare(exchange=exchange_name,exchange_type='direct',durable=False)
 			self._batched_publisher = _DestinationBatchPublisher(host, exchange_name=exchange_name, declare_exchange=True)
 		except Exception as e:
 			self.close()
@@ -240,7 +240,7 @@ class MessageMiddlewareExchangeRabbitMQ(MessageMiddlewareExchange):
 			result = self._channel.queue_declare(queue='', exclusive=True)
 			self._queue_name = result.method.queue
 		else:
-			self._channel.queue_declare(queue=self._queue_name, durable=True, exclusive=self._exclusive)
+			self._channel.queue_declare(queue=self._queue_name, durable=False, exclusive=self._exclusive)
 		for routing_key in self._routing_keys:
 			self._channel.queue_bind(
 				queue=self._queue_name,
@@ -329,11 +329,11 @@ class MessageMiddlewareExchangePublisherRabbitMQ(MessageMiddlewareExchangePublis
 			self._channel.exchange_declare(
 				exchange=exchange_name,
 				exchange_type='direct',
-				durable=True,
+				durable=False,
 			)
 
 			for queue_name, routing_key in self._bindings:
-				self._channel.queue_declare(queue=queue_name, durable=True)
+				self._channel.queue_declare(queue=queue_name, durable=False)
 				self._channel.queue_bind(
 					queue=queue_name,
 					exchange=exchange_name,
