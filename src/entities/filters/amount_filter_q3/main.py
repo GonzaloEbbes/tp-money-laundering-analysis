@@ -99,7 +99,7 @@ class AmountFilterQ3(StatefulWorker):
             logging.error(f"Error processing average message: {e}")
             nack()
     
-    def _process_average_message(self, average_data, client_id, ack):
+    def _process_average_message(self, average_data, client_id):
         averages = average_data.get("averages", {})
         if not averages:
             return
