@@ -74,7 +74,7 @@ class MapMaxAmountPerBank:
         if client_id not in self.bank_max:
             return
 
-        logging.info(f"Mapper {self.id} procesando datos pendientes tras consenso EOF para cliente {client_id}")
+        logging.debug(f"Mapper {self.id} procesando datos pendientes tras consenso EOF para cliente {client_id}")
 
         for from_bank, (amount, origin) in self.bank_max[client_id].items():
             partition = stable_hash(from_bank) % JOIN_AMOUNT

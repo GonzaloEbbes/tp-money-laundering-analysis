@@ -67,7 +67,7 @@ def set_rabbitmq():
         "      - RABBITMQ_HEARTBEAT=0",
         "      - RABBITMQ_BLOCKED_CONNECTION_TIMEOUT_SECONDS=300",
         "      - RABBITMQ_BATCH_MAX_MESSAGES=100000",
-        "      - RABBITMQ_BATCH_MAX_SECONDS=2",
+        "      - RABBITMQ_BATCH_MAX_SECONDS=0.5",
         "      - RABBITMQ_BATCH_HEADER=x-middleware-batch",
         "      - RABBITMQ_BATCH_HEADER_VALUE=v1",
         "      - RABBITMQ_LOG=error",
