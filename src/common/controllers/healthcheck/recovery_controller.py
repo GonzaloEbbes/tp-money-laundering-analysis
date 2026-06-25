@@ -60,9 +60,19 @@ class RecoveryController:
         if self._runtime_error and not self._sigterm_received:
             return 1
         return 0
+    
+    def notify_sigterm(self):
+        logging.info("SIGTERM received in recovery controller")
+        self._sigterm_received = True
 
     def start_recovery_controller(self):
 
+
+        def _handle_sigterm(signum, frame):
+            logging.info("SIGTERM received in amount filter q1")
+            self.notify_sigterm()
+        
+        signal.signal(signal.SIGTERM, _handle_sigterm)
         
         heartbeat_sender = threading.Thread(
             target=self._run_heartbeat_sender,

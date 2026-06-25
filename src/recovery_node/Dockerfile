@@ -1,5 +1,5 @@
 FROM python:3-alpine
-
+RUN apk add --no-cache docker-cli
 RUN pip3 install pika
 
 COPY common ./common

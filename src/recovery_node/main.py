@@ -4,6 +4,7 @@ import logging
 import signal
 import sys
 import threading
+import subprocess
 from time import sleep, monotonic
 
 from common import middleware, message_protocol
@@ -12,7 +13,11 @@ from common.controllers.healthcheck.utils import recovery_node_id_responsible_of
 from common.logging import configure_logging_from_env
 from common.message_protocol.internal import HealthCheckData
 
-
+#TODO: en el docker-compose
+'''
+volumes:
+  - /var/run/docker.sock:/var/run/docker.sock
+  '''
 ID = os.environ.get("ID")
 MOM_HOST = os.environ.get("MOM_HOST", "rabbitmq")
 RECOVERY_PREFIX = os.environ.get("RECOVERY_PREFIX", "recovery")
@@ -22,11 +27,13 @@ HEARTBEAT_EXCHANGE = os.environ.get("HEARTBEAT_EXCHANGE", "heartbeat_exchange")
 HEARTBEAT_INTERVAL = int(os.environ.get("HEARTBEAT_INTERVAL", "2")) # debe ser 2 o mas
 MAX_HEARTBEAT_MISSES = int(os.environ.get("MAX_HEARTBEAT_MISSES", "4"))
 
-HEALTHCHECK_INTERVAL = HEARTBEAT_INTERVAL
+if MAX_HEARTBEAT_MISSES < 2:
+    raise ValueError("MAX_HEARTBEAT_MISSES must be >= 2")
+
 HEARTBEAT_TIMEOUT_SECS = MAX_HEARTBEAT_MISSES * HEARTBEAT_INTERVAL
 RECOVERY_GRACE_SECS = HEARTBEAT_TIMEOUT_SECS
-TTL_MESSAGE = HEARTBEAT_INTERVAL * 2 * 1000 # en milisegundos
-
+TTL_MESSAGE = HEARTBEAT_INTERVAL * (MAX_HEARTBEAT_MISSES - 1) * 1000 # en milisegundos
+RECOVERY_RESTART_SECS = int(os.environ.get("DOCKER_RESTART_TIMEOUT_SECS", "15"))
 ALL_MONITORED_CONTAINERS = [
     name.strip()
     for name in os.environ.get("MONITORED_CONTAINERS", "").split(",")
@@ -139,7 +146,7 @@ class RecoveryNode:
     def _run_heartbeat_checker(self):
         try:
             while not self._sigterm_received and not self._runtime_error:
-                sleep(HEALTHCHECK_INTERVAL)
+                sleep(HEARTBEAT_INTERVAL)
                 self._check_heartbeats()
         except Exception as e:
             self._handle_runtime_failure(e, "Heartbeat checker crashed")
@@ -188,11 +195,48 @@ class RecoveryNode:
             if now - last_seen <= HEARTBEAT_TIMEOUT_SECS:
                 return
 
-            self.workers_currently_reseting[container_name] = now + RECOVERY_GRACE_SECS
-            self.last_heartbeat_received[container_name] = now
+            # Marco "restart en progreso" para evitar doble restart concurrente.
+            self.workers_currently_reseting[container_name] = float("inf")
 
-        # docker restart container_name
+        restarted = self.docker_restart_container(container_name)
+        now_after_restart = self.request_time_mark()
 
+        with self.state_lock:
+            if restarted:
+                self.workers_currently_reseting[container_name] = now_after_restart + RECOVERY_GRACE_SECS
+                self.last_heartbeat_received[container_name] = now_after_restart
+            else:
+                self.workers_currently_reseting.pop(container_name, None)
+
+    def docker_restart_container(self, container_name):
+        try:
+            logging.info(f"Restarting container {container_name}")
+
+            result = subprocess.run(
+                ["docker", "restart", "--time", "3", container_name],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=RECOVERY_RESTART_SECS,
+            )
+
+            if result.returncode != 0:
+                logging.error(
+                    f"Error restarting {container_name}. "
+                    f"returncode={result.returncode}, stderr={result.stderr}"
+                )
+                return False
+
+            logging.info(f"Container {container_name} restarted successfully.")
+            return True
+
+        except subprocess.TimeoutExpired:
+            logging.error(f"Timeout restarting container {container_name}")
+            return False
+        except Exception as e:
+            logging.error(f"Unexpected error restarting container {container_name}: {e}")
+            return False
 
     def _handle_runtime_failure(self, error, context):
         logging.error(f"{context}: {error}")
